@@ -99,7 +99,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 	var heldItem = 0
 	var lastTime = curTime
 
-	var direction = Point3D(math.random, 0, math.random).normal
+	var direction = Point3D.zero//(math.random, 0, math.random).normal
 
 	var pluginMessage: Option[spr.PluginMessage] = None
 
@@ -311,11 +311,11 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 			//val jumpSpeed = 40
 
 			//jump!
-			if(selfEnt.onGround && math.random < 0.4 && false) updateEntity(selfId) { case ent: Player =>
+			if(selfEnt.onGround && math.random < 0.4) updateEntity(selfId) { case ent: Player =>
 				ent.copy(pitch = ent.pitch + math.random * 40 - 20, vel = ent.vel + Point3D(0, jumpSpeed, 0))
 			}
 
-			if(math.random < 0.3) direction = Point3D(math.random, 0, math.random).normal
+			//if(math.random < 0.3) direction = Point3D(math.random, 0, math.random).normal
 
 			if(dead) {
 				//sendPosition

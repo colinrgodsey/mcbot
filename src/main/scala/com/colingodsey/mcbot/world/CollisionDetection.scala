@@ -148,47 +148,8 @@ trait CollisionDetection { world: World =>
 
 		if(!startBlock.btyp.isPassable) {
 			StartSolid
-			//Start solid
-			/*//inch ventor up a tiny bit to see if its not start solid...
-
-			val backupBlock = getBlock(from - centerVec * startSolidSecEp)
-
-			val backupSolid = !backupBlock.btyp.isPassable
-
-			//perfect 0-delta edges are confusing, so reference the center of mass
-			//to see if we are stuck in something, or, stuck to something
-			if(backupSolid) StartSolid
-			else StartHit(normalFromBlockDelta(backupBlock, startBlock))*/
 		} else if(isSeg) {
-			val blockCenter = startBlock.globalPos.toPoint3D + Block.halfBlockVec
-			val closerEnd = closerPoint + vec
-			val endBlock =
-				if(closerEnd.y < 0 || closerEnd.y > 255)
-					NoBlock(closerEnd.x.toInt, closerEnd.y.toInt, closerEnd.z.toInt)
-				else getBlock(closerEnd)
-
-			val normals = normalsFromBlockDelta(startBlock, endBlock)
-
-			if(startBlock == endBlock) return NoHit(vec.length)
-
-			def distFromNormal(normal: Point3D) = {
-				val faceCenter = blockCenter - normal / 2
-				//val pDist = (from - faceCenter) * normal
-				val sDist = faceCenter * normal
-				val pDist = (from * normal) - sDist
-				val vDot = normal * vec.normal
-				-(pDist / vDot)
-			}
-
-			val ds = normals.toSeq.sortBy(distFromNormal)
-			val normal = ds.head
-			val d = distFromNormal(normal)
-
-			require(d >= 0, s"bad d $d for $vec $normal")
-
-			if(endBlock.btyp.isPassable) NoHit(vec.length)
-			else TraceHit(d, normal)
-			/*def checkSubComponent(surfaceNormal: Point3D): TraceResult = {
+			def checkSubComponent(surfaceNormal: Point3D): TraceResult = {
 				//val blockCenter = startBlock.globalPos.toPoint3D + Block.halfBlockVec
 				//require(directionNormal.isAxisAligned)
 
@@ -209,6 +170,8 @@ trait CollisionDetection { world: World =>
 				val innerStartBlock = startBlock
 				val adjustedEnd = from + directionVec - centerVec * startSolidSecEp
 				val innerEndBlock = getBlock(adjustedEnd)
+
+				if(innerStartBlock == innerEndBlock) return NoHit(vec.length)
 
 				val blockCenter = innerStartBlock.globalPos.toPoint3D + Block.halfBlockVec
 				val faceCenter = blockCenter + directionNormal / 2
@@ -233,7 +196,7 @@ trait CollisionDetection { world: World =>
 				} else NoHit(vec.length)
 			}
 
-			blockNormals.toSeq.map(checkSubComponent).sortBy(_.dist).head*/
+			blockNormals.toSeq.map(checkSubComponent).sortBy(_.dist).head
 		} else { //break into segments
 			var i = 0
 
