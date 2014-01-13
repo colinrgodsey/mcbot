@@ -1,0 +1,534 @@
+[INFO] [01/10/2014 23:06:18.263] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding PlayerPosition(111.94019433779138,68.0,69.62000000476837,210.32416092078782,true)
+[INFO] [01/10/2014 23:06:19.310] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding PlayerPosition(111.94019433779138,68.0,69.62000000476837,210.32416092078782,true)
+[INFO] [01/10/2014 23:06:20.360] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding PlayerPosition(111.94019433779138,68.0,69.62000000476837,210.32416092078782,true)
+[INFO] [01/10/2014 23:06:21.073] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding BlockChange(94,11,139,VarInt(74),0)
+[INFO] [01/10/2014 23:06:21.412] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding PlayerPosition(111.94019433779138,68.0,69.62000000476837,210.32416092078782,true)
+[INFO] [01/10/2014 23:06:21.669] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding BlockChange(93,11,139,VarInt(74),0)
+[INFO] [01/10/2014 23:06:22.463] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding PlayerPosition(111.94019433779138,68.0,69.62000000476837,210.32416092078782,true)
+[INFO] [01/10/2014 23:06:22.812] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding ChatMessage(/kill)
+[INFO] [01/10/2014 23:06:22.827] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChatMessage({"translate":"death.attack.outOfWorld","with":[{"clickEvent":{"action":"suggest_command","value":"/msg colinrgodsey "},"text":"colinrgodsey"}]})
+[INFO] [01/10/2014 23:06:22.827] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnObject(VarInt(15507),2,3582,2218,6730,0,98,1,-29,1600,58)
+[INFO] [01/10/2014 23:06:22.827] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnObject(VarInt(15508),2,3582,2218,6730,0,-49,1,53,1600,2721)
+[INFO] [01/10/2014 23:06:22.827] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnObject(VarInt(15509),2,3582,2218,6730,0,120,1,2903,1600,-2313)
+[INFO] [01/10/2014 23:06:22.827] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnObject(VarInt(15510),2,3582,2218,6730,0,-95,1,-12,1600,38)
+[INFO] [01/10/2014 23:06:22.827] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChatMessage({"translate":"commands.kill.success"})
+[INFO] [01/10/2014 23:06:22.827] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateHealth(0.0,20,5.0)
+[INFO] [01/10/2014 23:06:22.872] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SetSlot(0,36,Slot(-1,0,0,List()))
+[INFO] [01/10/2014 23:06:22.872] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SetSlot(0,37,Slot(-1,0,0,List()))
+[INFO] [01/10/2014 23:06:22.872] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SetSlot(0,38,Slot(-1,0,0,List()))
+[INFO] [01/10/2014 23:06:22.872] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SetSlot(0,39,Slot(-1,0,0,List()))
+[INFO] [01/10/2014 23:06:23.514] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding PlayerPosition(111.94019433779138,68.0,69.62000000476837,210.32416092078782,true)
+[INFO] [01/10/2014 23:06:25.875] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding PlayerListItem(colinrgodsey,true,1)
+[INFO] [01/10/2014 23:06:25.916] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding ClientStatus(0)
+[INFO] [01/10/2014 23:06:25.925] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.925] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.925] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.925] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.925] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.925] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.925] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.925] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.925] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.925] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.926] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.926] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.926] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.926] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.926] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.926] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.926] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.926] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.926] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.926] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.927] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.927] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.927] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.927] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.927] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.927] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.927] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.927] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.927] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.927] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.927] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.927] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.928] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.928] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.928] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.928] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.928] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.928] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.928] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.928] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.928] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.928] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.928] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.928] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.929] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.929] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.929] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.929] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.929] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.929] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.929] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.929] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.929] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.929] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.930] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.930] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.930] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.930] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.930] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.930] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.930] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.930] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.931] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.931] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.931] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.931] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.931] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.931] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.931] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.931] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.931] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.931] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.931] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.932] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.932] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.932] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.932] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.932] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.933] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.933] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.933] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.933] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.933] [MCProxy-akka.actor.default-dispatcher-6] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.933] [MCProxy-akka.actor.default-dispatcher-6] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.933] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.933] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.933] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.933] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.933] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.933] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-6] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-6] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-6] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-6] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.934] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-14] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-14] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-14] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-6] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-6] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-15] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-15] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.935] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-7] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-7] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-7] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.936] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-18] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-18] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-18] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-17] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-17] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-17] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-14] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-14] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-14] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-6] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-18] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-17] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.937] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-17] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-17] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-14] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-12] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-10] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-6] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-6] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-14] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-14] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-14] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.938] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-2] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-18] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-18] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-18] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-18] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-18] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.939] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-15] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-15] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-18] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-7] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.940] [MCProxy-akka.actor.default-dispatcher-7] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.941] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.941] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.941] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.941] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.941] [MCProxy-akka.actor.default-dispatcher-7] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.941] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.941] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.941] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.941] [MCProxy-akka.actor.default-dispatcher-18] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.941] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding ChunkData
+[INFO] [01/10/2014 23:06:25.941] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding PlayerAbilities(0,0.05,0.1)
+[INFO] [01/10/2014 23:06:25.941] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding PlayerAbilities(0,0.05,0.1)
+[INFO] [01/10/2014 23:06:25.944] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding Respawn(0,1,0,default)
+[INFO] [01/10/2014 23:06:25.944] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding PositionAndLook(131.5,86.71999847888947,-278.5,0.0,0.0,false)
+[INFO] [01/10/2014 23:06:25.944] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPosition(104,64,248)
+[INFO] [01/10/2014 23:06:25.944] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SetExperience(0.0,0,0)
+[INFO] [01/10/2014 23:06:25.971] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding PlayerPositionAndLook(131.5,85.0999984741211,86.71999847888947,-278.5,0.0,0.0,false)
+[INFO] [01/10/2014 23:06:26.063] [MCProxy-akka.actor.default-dispatcher-7] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding HeldItemChange(0)
+[INFO] [01/10/2014 23:06:26.063] [MCProxy-akka.actor.default-dispatcher-20] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding PlayerPosition(131.5,85.0999984741211,86.71999847888947,-278.5,false)
+[INFO] [01/10/2014 23:06:26.064] [MCProxy-akka.actor.default-dispatcher-20] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding PlayerPosition(131.5,85.00199847221374,86.62199847698211,-278.5,false)
+[INFO] [01/10/2014 23:06:26.130] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding PlayerPosition(131.5,84.90399847030639,86.52399847507476,-278.5,false)
+[INFO] [01/10/2014 23:06:26.181] [MCProxy-akka.actor.default-dispatcher-20] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding PlayerPosition(131.5,84.80599846839904,86.42599847316741,-278.5,false)
+[INFO] [01/10/2014 23:06:26.213] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding PlayerPosition(131.5,84.70799846649169,86.32799847126006,-278.5,false)
+[INFO] [01/10/2014 23:06:26.214] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding WindowItems(0,Vector(Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List()), Slot(-1,0,0,List())))
+[INFO] [01/10/2014 23:06:26.214] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SetSlot(-1,-1,Slot(-1,0,0,List()))
+[INFO] [01/10/2014 23:06:26.214] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateHealth(20.0,20,5.0)
+[INFO] [01/10/2014 23:06:26.214] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SetExperience(0.0,0,0)
+[INFO] [01/10/2014 23:06:26.214] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding PositionAndLook(131.5,86.62199847698211,-278.5,0.0,0.0,false)
+[INFO] [01/10/2014 23:06:26.236] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.237] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(129,80,-282,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, 61, 3, -46, -107, 64, 126, 0, -112, -82, 0, -46, -115, 12, 0, -87, -73, 82, 123, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.237] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(135,86,-283,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 0, 2, 32, -45, -77, 36, 53, 23, -56, 82, 99, 102, 96, -84, -6, -1, -1, -33, 83, 32, 93, 9, -28, -121, 1, -23, 10, 32, -35, -50, 0, 0, -54, -61, 82, 126, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.237] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(129,78,-282,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, 61, 3, -46, -107, 64, -66, 31, -112, -82, 0, -46, -115, 12, 0, -14, 6, 53, 66, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.237] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(140,86,-280,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, -67, 0, -46, -107, 64, 126, 24, -112, -82, 0, -46, 61, 12, 0, 42, -85, -49, -38, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.237] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(135,79,-279,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, -67, 4, -46, -107, 64, -66, 63, -112, -82, 0, -46, -19, 12, 0, 34, 110, -46, 13, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.237] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(128,77,-282,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, 61, 3, -46, -107, 64, -66, 47, -112, -82, 0, -46, 13, 12, 0, -80, -116, 25, -80, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.237] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(134,77,-274,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, -67, 3, -46, -107, 64, -66, 47, -112, -82, 0, -46, 109, 12, 0, 58, -123, 18, -15, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.246] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(136,77,-279,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, -67, 4, -46, -107, 64, -66, 47, -112, -82, 0, -46, 29, 12, 0, -48, -94, -65, -114, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.247] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(135,79,-281,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, 61, 7, -46, -107, 64, -66, 63, -112, -82, 0, -46, -19, 12, 0, -85, 124, -1, 20, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.247] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(144,86,-286,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, 61, 2, -46, -107, 64, 126, 24, -112, -82, 0, -46, 19, 24, 0, -8, 51, 61, 46, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.247] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(146,87,-286,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 0, 2, 32, -45, -77, 36, 53, 23, -56, 82, 99, 102, 96, -84, -6, -1, -1, -33, 35, 32, 93, 9, -28, -121, 3, -23, 10, 32, 61, -119, 1, 0, -124, 68, 11, 71, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.247] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(147,86,-286,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, 61, 2, -46, -107, 64, 126, 24, -112, -82, 0, -46, -109, 25, 0, 59, 96, 16, 5, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.247] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(145,87,-286,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 0, 2, 32, -45, -77, 36, 53, 23, -56, 82, 99, 102, 96, -84, -6, -1, -1, -33, 35, 32, 93, 9, -28, -121, 3, -23, 10, 32, 61, -111, 1, 0, 71, 23, 38, 108, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.247] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(131,76,-268,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 0, 2, 32, -45, -77, 36, 53, 23, -56, 82, 99, 102, 96, -84, -6, -1, -1, -33, 23, 32, 93, 9, -28, -5, 0, -23, 10, 32, -35, -52, 0, 0, 22, -3, 67, -21, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.250] [MCProxy-akka.actor.default-dispatcher-20] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15575),Aztec,129,79,-282,0)
+[INFO] [01/10/2014 23:06:26.250] [MCProxy-akka.actor.default-dispatcher-20] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15574),Alban,129,77,-282,0)
+[INFO] [01/10/2014 23:06:26.250] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15573),Bomb,128,78,-282,0)
+[INFO] [01/10/2014 23:06:26.250] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15581),Creebet,133,86,-283,2)
+[INFO] [01/10/2014 23:06:26.250] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15580),Pigscene,129,87,-283,2)
+[INFO] [01/10/2014 23:06:26.250] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15579),Kebab,132,87,-283,2)
+[INFO] [01/10/2014 23:06:26.250] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15578),Wasteland,133,87,-283,2)
+[INFO] [01/10/2014 23:06:26.250] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15577),Stage,128,87,-283,0)
+[INFO] [01/10/2014 23:06:26.251] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnObject(VarInt(15833),2,4379,2404,-8690,0,-41,1,0,0,0)
+[INFO] [01/10/2014 23:06:26.251] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnObject(VarInt(15834),2,4308,2404,-8700,0,-53,1,0,0,0)
+[INFO] [01/10/2014 23:06:26.264] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding PlayerPositionAndLook(131.5,85.00199847221374,86.62199847698211,-278.5,0.0,0.0,false)
+[INFO] [01/10/2014 23:06:26.266] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding PlayerPosition(131.5,85.00199847221374,86.62199847698211,-278.5,false)
+[INFO] [01/10/2014 23:06:26.267] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.269] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(126,77,-282,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, 61, 3, -46, -107, 64, -66, 47, -112, -82, 0, -46, 117, 12, 0, -125, 64, 38, 58, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.269] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(125,80,-282,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, 61, 3, -46, -107, 64, 126, 0, -112, -82, 0, -46, -75, 12, 0, 24, 25, 91, -61, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.269] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(124,77,-282,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, 61, 3, -46, -107, 64, -66, 47, -112, -82, 0, -46, 53, 12, 0, 1, 34, 16, 8, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.269] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(123,77,-274,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, -67, 3, -46, -107, 64, -66, 47, -112, -82, 0, -46, -43, 12, 0, -54, 26, 0, 80, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.269] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(124,79,-282,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 4, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, 61, 3, -46, -107, 64, -66, 63, -112, -82, 0, -46, 53, 12, 0, -29, -101, -41, 56, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.269] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(125,78,-282,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 4, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, 61, 3, -46, -107, 64, -66, 31, -112, -82, 0, -46, -75, 12, 0, -100, -63, 14, -50, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.270] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(127,80,-282,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, 61, 3, -46, -107, 64, 126, 0, -112, -82, 0, -46, -11, 12, 0, -102, 123, 109, -15, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.270] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(124,86,-275,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, -67, 5, -46, -107, 64, 126, 24, -112, -82, 0, -46, 53, 12, 0, 112, 43, -119, 42, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.270] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(130,78,-304,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, 93, 0, -46, -107, 64, -66, 31, -112, -82, 0, -46, 77, 12, 0, -100, 13, -127, 20, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.270] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(132,77,-302,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 0, 2, 32, -45, -77, 36, 53, 23, -56, 82, 99, 102, 96, -84, -6, -1, -1, -33, 37, 32, 93, 9, -28, -5, 2, -23, 10, 32, -35, -62, 0, 0, 90, 4, -6, 24, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.270] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(138,77,-302,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 0, 2, 32, -45, -77, 36, 53, 23, -56, 82, 99, 102, 96, -84, -6, -1, -1, -33, 37, 32, 93, 9, -28, -5, 2, -23, 10, 32, -35, -59, 0, 0, -44, 41, 121, -122, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.270] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(147,86,-300,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, 93, 1, -46, -107, 64, 126, 24, -112, -82, 0, -46, -109, 25, 0, -106, 56, -119, 120, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.270] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15820),Alban,125,77,-282,0)
+[INFO] [01/10/2014 23:06:26.270] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15821),Kebab,124,78,-282,0)
+[INFO] [01/10/2014 23:06:26.271] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15822),Aztec2,127,77,-282,0)
+[INFO] [01/10/2014 23:06:26.271] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15823),Aztec2,125,79,-282,0)
+[INFO] [01/10/2014 23:06:26.271] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15818),Plant,127,79,-282,0)
+[INFO] [01/10/2014 23:06:26.271] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15819),Aztec,126,78,-282,0)
+[INFO] [01/10/2014 23:06:26.271] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15831),Stage,129,87,-301,0)
+[INFO] [01/10/2014 23:06:26.271] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnObject(VarInt(15832),71,4192,2784,-9728,0,64,1,0,0,0)
+[INFO] [01/10/2014 23:06:26.281] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.294] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.307] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.308] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(108,71,-315,1,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, 69, -116, 65, 10, -62, 48, 20, 68, -89, 105, 45, 37, 32, 40, 94, -64, -69, 88, 17, 23, 21, 105, 79, -112, -110, -113, 4, 74, 90, 99, -118, -119, -98, 79, -16, 84, -42, 24, 17, 87, -61, -101, 25, 30, 7, 10, 48, 37, -63, -85, -66, 109, 6, 113, -43, 100, 24, -26, -107, -46, 17, 74, -22, -124, -57, -109, 97, 85, -45, 121, 84, -122, -28, 49, 20, 100, 106, -95, 79, -124, 5, -61, 44, 62, -110, 59, -61, -78, 18, -18, 64, -62, -76, 126, -85, -83, -78, -118, 46, -56, 63, 38, -31, -2, -90, 116, -51, -64, 35, 126, 5, -39, 15, 55, -3, -88, 45, -78, 20, -55, 109, -102, 94, -113, 2, 69, -108, -8, -67, 68, -34, 12, 74, -110, 9, -109, 7, -80, 11, -23, 66, 118, 120, 3, 109, 55, 77, 44, -70, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.308] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(130,78,-308,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 3, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, -99, 1, -46, -107, 64, -66, 31, -112, -82, 0, -46, 77, 12, 0, -114, 40, -37, 38, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.308] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(132,90,-305,4,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, -32, 116, -83, 40, 41, 74, 12, -87, 44, 72, 5, -15, -104, 50, 83, 24, 88, -125, -77, 75, 115, 114, 24, 25, 56, -63, 52, 88, -122, -111, -127, 57, 40, -65, -124, -123, -103, -127, -79, -22, -1, -1, 127, -25, -127, 116, 37, 3, 3, 67, 20, -112, -82, 0, -46, 45, 12, 0, -58, 80, 127, 47, 74, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.308] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(132,88,-307,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 4, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, -99, 5, -46, -107, 64, 126, 4, -112, -82, 0, -46, 45, 12, 0, -103, -95, 81, -127, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.308] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnObject(VarInt(15830),71,4192,2784,-9760,0,64,1,0,0,0)
+[INFO] [01/10/2014 23:06:26.319] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.332] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.342] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.385] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.435] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.488] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.537] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.588] [MCProxy-akka.actor.default-dispatcher-6] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.634] [MCProxy-akka.actor.default-dispatcher-6] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.635] [MCProxy-akka.actor.default-dispatcher-6] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(71,66,-231,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 0, -54, 0, -103, -98, 37, -87, -71, 64, -90, 26, 51, 3, 99, -43, -1, -1, -1, 37, -127, 116, 37, -112, -17, 4, -92, 43, -128, -76, 59, 3, 0, -13, 19, 83, -21, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:26.635] [MCProxy-akka.actor.default-dispatcher-6] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15779),Pool,76,67,-232,1)
+[INFO] [01/10/2014 23:06:26.635] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnObject(VarInt(15780),2,2442,2180,-7658,0,-65,1,0,0,0)
+[INFO] [01/10/2014 23:06:26.636] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnObject(VarInt(15778),2,2512,2244,-7868,0,-21,1,0,0,0)
+[INFO] [01/10/2014 23:06:26.637] [MCProxy-akka.actor.default-dispatcher-11] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnObject(VarInt(15777),2,2439,2180,-7868,0,38,1,0,0,0)
+[INFO] [01/10/2014 23:06:26.687] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.735] [MCProxy-akka.actor.default-dispatcher-15] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.788] [MCProxy-akka.actor.default-dispatcher-7] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.836] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.887] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.921] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding BlockChange(65,66,-221,VarInt(64),6)
+[INFO] [01/10/2014 23:06:26.937] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.979] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:26.985] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15727),Courbet,64,71,-216,1)
+[INFO] [01/10/2014 23:06:26.985] [MCProxy-akka.actor.default-dispatcher-9] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15726),Fighters,61,67,-216,2)
+[INFO] [01/10/2014 23:06:26.988] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnObject(VarInt(15730),71,1984,2208,-6688,0,64,1,0,0,0)
+[INFO] [01/10/2014 23:06:26.989] [MCProxy-akka.actor.default-dispatcher-7] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15723),Plant,60,67,-228,2)
+[INFO] [01/10/2014 23:06:26.991] [MCProxy-akka.actor.default-dispatcher-5] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15708),Stage,60,68,-243,0)
+[ERROR] [01/10/2014 23:06:26.991] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2/server-stream] Couldnt read packet id=14, length=22, read=22
+java.io.EOFException
+	at java.io.DataInputStream.readShort(DataInputStream.java:315)
+	at com.colingodsey.mcbot.protocol.Fields$ShortCodec$.read(Fields.scala:72)
+	at com.colingodsey.mcbot.protocol.Fields$ShortCodec$.read(Fields.scala:70)
+	at com.colingodsey.mcbot.protocol.CodecFrom$$anon$14.read(CodecFrom.scala:205)
+	at com.colingodsey.mcbot.protocol.CodecFrom$$anon$14.read(CodecFrom.scala:202)
+	at com.colingodsey.mcbot.protocol.Protocol$class.readPacket(Protocol.scala:24)
+	at com.colingodsey.mcbot.protocol.client.package$.readPacket(package.scala:5)
+	at com.colingodsey.mcbot.network.ProtocolStream$class.handlePacket(ProtocolStream.scala:72)
+	at com.colingodsey.mcbot.network.NettyClientProtocolStream.handlePacket(NettyConnection.scala:199)
+	at com.colingodsey.mcbot.network.ProtocolStream$class.handleData(ProtocolStream.scala:51)
+	at com.colingodsey.mcbot.network.NettyClientProtocolStream.handleData(NettyConnection.scala:199)
+	at com.colingodsey.mcbot.network.ProtocolStream$$anonfun$handleRawData$1.applyOrElse(ProtocolStream.scala:137)
+	at scala.PartialFunction$OrElse.applyOrElse(PartialFunction.scala:165)
+	at akka.actor.ActorCell.receiveMessage(ActorCell.scala:498)
+	at akka.actor.ActorCell.invoke(ActorCell.scala:456)
+	at akka.dispatch.Mailbox.processMailbox(Mailbox.scala:237)
+	at akka.dispatch.Mailbox.run(Mailbox.scala:219)
+	at akka.dispatch.ForkJoinExecutorConfigurator$AkkaForkJoinTask.exec(AbstractDispatcher.scala:386)
+	at scala.concurrent.forkjoin.ForkJoinTask.doExec(ForkJoinTask.java:260)
+	at scala.concurrent.forkjoin.ForkJoinPool$WorkQueue.runTask(ForkJoinPool.java:1339)
+	at scala.concurrent.forkjoin.ForkJoinPool.runWorker(ForkJoinPool.java:1979)
+	at scala.concurrent.forkjoin.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:107)
+
+[INFO] [01/10/2014 23:06:27.033] [MCProxy-akka.actor.default-dispatcher-20] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.087] [MCProxy-akka.actor.default-dispatcher-23] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.135] [MCProxy-akka.actor.default-dispatcher-23] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.172] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding BlockChange(66,68,-209,VarInt(64),2)
+[INFO] [01/10/2014 23:06:27.191] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.234] [MCProxy-akka.actor.default-dispatcher-22] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.282] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.282] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(195,24,-188,1,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, 69, -116, -79, 10, -62, 48, 24, -124, -49, -76, -106, 80, 16, 20, 29, 28, 125, 23, -21, -32, 80, -111, -70, -71, 37, -28, 71, 2, -102, 106, 76, -79, -15, -11, 92, 124, -85, 24, 83, -60, -23, -8, -18, -114, -81, 4, 56, -104, 86, 40, -21, 86, 30, -82, -30, 97, -56, 50, 76, 106, 109, 18, 84, 116, 22, 30, 111, -122, 121, 67, -73, 78, 91, 82, -5, 88, -112, 109, -124, 57, 17, -90, 12, -29, -31, -79, 96, -104, -43, -94, -33, -111, -80, -46, 111, -116, -45, 78, -45, 29, -59, -41, 36, -6, -65, 41, 91, 49, -108, 9, 7, 65, -2, -61, 117, -37, 25, -121, 60, -61, -24, 25, 66, -88, 56, 120, -110, -8, -83, 66, 113, 108, 47, 82, 83, -100, 60, -128, 101, -52, 62, -26, 11, 31, -115, -47, 111, -58, -70, 0, 0, 0))
+[INFO] [01/10/2014 23:06:27.316] [MCProxy-akka.actor.default-dispatcher-15] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding PlayerPosition(131.5,85.0,86.62000000476837,-278.5,true)
+[INFO] [01/10/2014 23:06:27.338] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.379] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.379] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15702),Stage,36,75,-191,1)
+[INFO] [01/10/2014 23:06:27.436] [MCProxy-akka.actor.default-dispatcher-18] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.485] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.521] [MCProxy-akka.actor.default-dispatcher-15] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding BlockChange(66,68,-209,VarInt(64),6)
+[INFO] [01/10/2014 23:06:27.533] [MCProxy-akka.actor.default-dispatcher-15] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.583] [MCProxy-akka.actor.default-dispatcher-19] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.633] [MCProxy-akka.actor.default-dispatcher-16] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.688] [MCProxy-akka.actor.default-dispatcher-22] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.734] [MCProxy-akka.actor.default-dispatcher-22] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.782] [MCProxy-akka.actor.default-dispatcher-15] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SoundEffect(mob.villager.idle,1007,600,-2168,1.0,59)
+[INFO] [01/10/2014 23:06:27.786] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.834] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.881] [MCProxy-akka.actor.default-dispatcher-4] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.919] [MCProxy-akka.actor.default-dispatcher-14] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding BlockChange(65,66,-221,VarInt(64),2)
+[INFO] [01/10/2014 23:06:27.932] [MCProxy-akka.actor.default-dispatcher-22] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:27.991] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[ERROR] [01/10/2014 23:06:27.991] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2/server-stream] Couldnt read packet id=14, length=22, read=22
+java.io.EOFException
+	at java.io.DataInputStream.readShort(DataInputStream.java:315)
+	at com.colingodsey.mcbot.protocol.Fields$ShortCodec$.read(Fields.scala:72)
+	at com.colingodsey.mcbot.protocol.Fields$ShortCodec$.read(Fields.scala:70)
+	at com.colingodsey.mcbot.protocol.CodecFrom$$anon$14.read(CodecFrom.scala:205)
+	at com.colingodsey.mcbot.protocol.CodecFrom$$anon$14.read(CodecFrom.scala:202)
+	at com.colingodsey.mcbot.protocol.Protocol$class.readPacket(Protocol.scala:24)
+	at com.colingodsey.mcbot.protocol.client.package$.readPacket(package.scala:5)
+	at com.colingodsey.mcbot.network.ProtocolStream$class.handlePacket(ProtocolStream.scala:72)
+	at com.colingodsey.mcbot.network.NettyClientProtocolStream.handlePacket(NettyConnection.scala:199)
+	at com.colingodsey.mcbot.network.ProtocolStream$class.handleData(ProtocolStream.scala:51)
+	at com.colingodsey.mcbot.network.NettyClientProtocolStream.handleData(NettyConnection.scala:199)
+	at com.colingodsey.mcbot.network.ProtocolStream$class.handleData(ProtocolStream.scala:53)
+	at com.colingodsey.mcbot.network.NettyClientProtocolStream.handleData(NettyConnection.scala:199)
+	at com.colingodsey.mcbot.network.ProtocolStream$class.handleData(ProtocolStream.scala:53)
+	at com.colingodsey.mcbot.network.NettyClientProtocolStream.handleData(NettyConnection.scala:199)
+	at com.colingodsey.mcbot.network.ProtocolStream$class.handleData(ProtocolStream.scala:53)
+	at com.colingodsey.mcbot.network.NettyClientProtocolStream.handleData(NettyConnection.scala:199)
+	at com.colingodsey.mcbot.network.ProtocolStream$class.handleData(ProtocolStream.scala:53)
+	at com.colingodsey.mcbot.network.NettyClientProtocolStream.handleData(NettyConnection.scala:199)
+	at com.colingodsey.mcbot.network.ProtocolStream$class.handleData(ProtocolStream.scala:53)
+	at com.colingodsey.mcbot.network.NettyClientProtocolStream.handleData(NettyConnection.scala:199)
+	at com.colingodsey.mcbot.network.ProtocolStream$$anonfun$handleRawData$1.applyOrElse(ProtocolStream.scala:137)
+	at scala.PartialFunction$OrElse.applyOrElse(PartialFunction.scala:165)
+	at akka.actor.ActorCell.receiveMessage(ActorCell.scala:498)
+	at akka.actor.ActorCell.invoke(ActorCell.scala:456)
+	at akka.dispatch.Mailbox.processMailbox(Mailbox.scala:237)
+	at akka.dispatch.Mailbox.run(Mailbox.scala:219)
+	at akka.dispatch.ForkJoinExecutorConfigurator$AkkaForkJoinTask.exec(AbstractDispatcher.scala:386)
+	at scala.concurrent.forkjoin.ForkJoinTask.doExec(ForkJoinTask.java:260)
+	at scala.concurrent.forkjoin.ForkJoinPool$WorkQueue.runTask(ForkJoinPool.java:1339)
+	at scala.concurrent.forkjoin.ForkJoinPool.runWorker(ForkJoinPool.java:1979)
+	at scala.concurrent.forkjoin.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:107)
+
+[INFO] [01/10/2014 23:06:27.991] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(20,70,-296,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 4, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, -35, 0, -46, -107, 64, -66, 27, -112, -82, 0, -46, 34, 12, 0, 39, -89, 46, 3, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:27.991] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding UpdateBlockEntity(24,70,-296,5,Vector(31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -29, 98, 96, -32, 96, 96, -54, 76, 97, -32, 116, -53, -55, 47, 79, 45, 10, -56, 47, 97, 102, 96, 113, 73, 44, 73, 100, 96, 96, 96, 4, 50, 61, 75, 82, 115, -127, 76, 53, 102, 6, -58, -86, -1, -1, -1, -35, 0, -46, -107, 64, -66, 27, -112, -82, 0, -46, 18, 12, 0, 43, -24, -101, -81, 66, 0, 0, 0))
+[INFO] [01/10/2014 23:06:27.991] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SpawnPainting(VarInt(15673),Void,18,65,-232,3)
+[INFO] [01/10/2014 23:06:28.034] [MCProxy-akka.actor.default-dispatcher-22] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:28.071] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding BlockChange(42,66,-221,VarInt(64),2)
+[INFO] [01/10/2014 23:06:28.086] [MCProxy-akka.actor.default-dispatcher-3] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:28.134] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:28.181] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding MapChunkBulk
+[INFO] [01/10/2014 23:06:28.220] [MCProxy-akka.actor.default-dispatcher-8] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding BlockChange(148,75,-398,VarInt(3),0)
+[INFO] [01/10/2014 23:06:28.271] [MCProxy-akka.actor.default-dispatcher-22] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding BlockChange(50,67,-249,VarInt(64),6)
+[INFO] [01/10/2014 23:06:28.384] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] ------C->S Forwarding PlayerPosition(131.5,85.0,86.62000000476837,-278.5,true)
+[INFO] [01/10/2014 23:06:28.519] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding BlockChange(66,68,-209,VarInt(64),2)
+[INFO] [01/10/2014 23:06:28.670] [MCProxy-akka.actor.default-dispatcher-15] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding SoundEffect(none,1105,608,-2240,1.0,73)
+[INFO] [01/10/2014 23:06:28.719] [MCProxy-akka.actor.default-dispatcher-22] [akka://MCProxy/user/$a/proxy-2] S->C Forwarding BlockChange(58,67,-238,VarInt(64),7)
+Channel closecd [id: 0x2d84dc98, /127.0.0.1:53142 :> /127.0.0.1:25565] CLOSED
+[INFO] [01/10/2014 23:06:28.766] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2/client-stream/netty-connector] Received ConnectionClosed from Actor[akka://MCProxy/deadLetters]
+[ERROR] [01/10/2014 23:06:28.767] [MCProxy-akka.actor.default-dispatcher-18] [akka://MCProxy/user/$a/proxy-2/client-stream] Monitored actor [Actor[akka://MCProxy/user/$a/proxy-2/client-stream/netty-connector#1180516305]] terminated (akka.actor.DeathPactException)
+[ERROR] [01/10/2014 23:06:28.767] [MCProxy-akka.actor.default-dispatcher-13] [akka://MCProxy/user/$a/proxy-2] Monitored actor [Actor[akka://MCProxy/user/$a/proxy-2/client-stream#1032890288]] terminated (akka.actor.DeathPactException)
+Channel closecd [id: 0x2b0facc4, /192.168.0.102:53143 :> /192.168.0.2:25565] CLOSED
+[INFO] [01/10/2014 23:06:28.768] [MCProxy-akka.actor.default-dispatcher-6] [akka://MCProxy/user/$a/proxy-2/server-stream/netty-connector] Message [com.colingodsey.mcbot.network.TCPConnection$ConnectionClosed$] from Actor[akka://MCProxy/deadLetters] to Actor[akka://MCProxy/user/$a/proxy-2/server-stream/netty-connector#-1710421417] was not delivered. [3] dead letters encountered. This logging can be turned off or adjusted with configuration settings 'akka.log-dead-letters' and 'akka.log-dead-letters-during-shutdown'.
