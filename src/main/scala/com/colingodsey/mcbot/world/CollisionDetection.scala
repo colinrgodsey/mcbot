@@ -9,6 +9,12 @@ object CollisionDetection {
 	sealed trait SurfaceHit extends TraceResult {
 		def normal: Point3D
 	}
+	object SurfaceHit {
+		def unapply(x: TraceResult) = x match {
+			case x: SurfaceHit => Some(x.dist, x.normal)
+			case _ => None
+		}
+	}
 
 	case class TraceHit(dist: Double, normal: Point3D) extends SurfaceHit
 	case class StartHit(normal: Point3D) extends SurfaceHit {
@@ -55,9 +61,13 @@ trait CollisionDetection { world: World =>
 	import CollisionDetection._
 
 	val colIncr = 0.15
+	val colIncrMax = 0.2
 	val sphereColIncr = 0.9
 	val traceEp = 0 //0.00000000001
-	val startSolidSecEp = 0.0000001
+	val startSolidSecEp = 0.0//0.000000001
+
+
+	val bbScaleBack = 0.00001
 
 	//from a point along a vector, what distance along the vector can we move
 	//returns < 0 if we started solid
@@ -67,6 +77,13 @@ trait CollisionDetection { world: World =>
 		val vl = vec.length
 
 		body.points.map { point =>
+			/*val adjustedPoint = point * (1 - bbScaleBack)
+			val deltaL = point.length - adjustedPoint.length
+			traceRay(from + adjustedPoint, vec, from) match {
+				case StartSolid => StartSolid
+				case NoHit(l) => NoHit(l + deltaL)
+				case TraceHit(dist, n) => TraceHit(dist + deltaL, n)
+			}*/
 			traceRay(from + point, vec, from)
 		}.sortBy(_.dist)
 	}
@@ -137,23 +154,20 @@ trait CollisionDetection { world: World =>
 			centerPoint: Point3D): TraceResult = {
 		//always reference the block from the point pulled a bit closer to us
 		val centerVec = (from - centerPoint).normal //vector from center to point
-		val closerPoint = from - centerVec * startSolidSecEp
+		val startSolidVec = centerVec * startSolidSecEp
+		val closerStart = from - startSolidVec
 		val startBlock =
-			if(closerPoint.y < 0 || closerPoint.y > 255)
-				NoBlock(closerPoint.x.toInt, closerPoint.y.toInt, closerPoint.z.toInt)
-			else getBlock(closerPoint)
-		val isSeg = vec.length <= (colIncr + startSolidSecEp)
+			if(closerStart.y < 0 || closerStart.y > 255)
+				NoBlock(closerStart.x.toInt, closerStart.y.toInt, closerStart.z.toInt)
+			else getBlock(closerStart)
+		val isSeg = vec.length <= colIncrMax
 
 		require(vec.length > 0)
 
-		if(!startBlock.btyp.isPassable) {
+		/*if(!startBlock.btyp.isPassable) {
 			StartSolid
-		} else if(isSeg) {
+		} else */if(isSeg) {
 			def checkSubComponent(surfaceNormal: Point3D): TraceResult = {
-				//val blockCenter = startBlock.globalPos.toPoint3D + Block.halfBlockVec
-				//require(directionNormal.isAxisAligned)
-
-				//val sDist = 0.5
 				val directionNormal = -surfaceNormal
 				val directionLength = directionNormal * vec
 
@@ -164,34 +178,23 @@ trait CollisionDetection { world: World =>
 
 				require(directionVec != Point3D.zero)
 
-				val adjustedStart = from - centerVec * startSolidSecEp
-
-				//val innerStartBlock = getBlock(adjustedStart)
 				val innerStartBlock = startBlock
-				val adjustedEnd = from + directionVec - centerVec * startSolidSecEp
+				val adjustedEnd = from + directionVec - startSolidVec
 				val innerEndBlock = getBlock(adjustedEnd)
-
-				if(innerStartBlock == innerEndBlock) return NoHit(vec.length)
 
 				val blockCenter = innerStartBlock.globalPos.toPoint3D + Block.halfBlockVec
 				val faceCenter = blockCenter + directionNormal / 2
 
-				val sDist = faceCenter * surfaceNormal
-				val pDist = (from * surfaceNormal) - sDist
-				val vDot = surfaceNormal * vec.normal
-				val hitDist = -(pDist / vDot)
+				val surfaceVector = faceCenter - from
+				val hitDist = (surfaceVector * surfaceNormal) / (vec * surfaceNormal)
 
 				require(!hitDist.isNaN)
 
-				//println(surfaceNormal, directionLength, hitDist)
-
-				//println(hitDist, vec.length, from, vec)
-
 				//only start solid if we're not on the 0 boundry
 				if(/*!startBlock.btyp.isPassable && */!innerStartBlock.btyp.isPassable/* && dist == 0*/)
-					StartSolid
+					StartHit(surfaceNormal)
 				else if(!innerEndBlock.btyp.isPassable && hitDist <= vec.length) {
-					require(hitDist >= 0)
+					require(hitDist >= 0, s"hitDist $hitDist ")
 					TraceHit(hitDist, surfaceNormal)
 				} else NoHit(vec.length)
 			}
@@ -216,9 +219,13 @@ trait CollisionDetection { world: World =>
 
 				traceRay(a, vec.normal * segLen, centerPoint + vec.normal * startD) match {
 					case StartSolid if i == 0 => return StartSolid
-					case StartSolid => sys.error("Not fucking right")
+					case StartSolid =>
+						sys.error("Not fucking right")
 					case TraceHit(d, norm) =>
+						require((startD + d) < vec.length)
 						return TraceHit(startD + d, norm)
+					case StartHit(norm) =>
+						return TraceHit(startD, norm)
 					case NoHit(_) =>
 				}
 

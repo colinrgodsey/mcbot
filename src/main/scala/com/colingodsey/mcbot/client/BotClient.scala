@@ -315,7 +315,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 				ent.copy(pitch = ent.pitch + math.random * 40 - 20, vel = ent.vel + Point3D(0, jumpSpeed, 0))
 			}
 
-			//if(math.random < 0.3) direction = Point3D(math.random, 0, math.random).normal
+			if(math.random < 0.3) direction = Point3D(math.random, 0, math.random).normal
+			//direction = Point3D(1, 0, 0)
 
 			if(dead) {
 				//sendPosition

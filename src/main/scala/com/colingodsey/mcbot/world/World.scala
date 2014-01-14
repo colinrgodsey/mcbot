@@ -103,17 +103,18 @@ trait WorldClient extends World with CollisionDetection {
 					hitGround = true
 				case _ =>
 			}
-			val realHits = res.filter(!_.isInstanceOf[StartHit])
+			val realHits = res//res.filter(!_.isInstanceOf[StartHit])
 
 			realHits.headOption.getOrElse(NoHit(vec.length)) match {
 				case NoHit(_) => (pos + vec, vec)
 				case StartSolid =>
 					log.warning("Start solid!")
-					(ent.pos + Point3D(0, 1, 0) * dt, Point3D.zero)
-				case TraceHit(d, norm) if d == vec.length => //rare, but could cause errors
+					//(ent.pos + Point3D(0, 1, 0) * dt, Point3D.zero)
+					(ent.pos, Point3D.zero)
+				case SurfaceHit(d, norm) if d == vec.length => //rare, but could cause errors
 					if(norm == Point3D(0, 1, 0)) hitGround = true
 					(pos, vec)
-				case TraceHit(d, norm)/* if d > 0*/ =>
+				case SurfaceHit(d, norm)/* if d > 0*/ =>
 					if(norm == Point3D(0, 1, 0)) hitGround = true
 
 					/*val vecNormal = vec.normal
