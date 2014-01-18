@@ -11,7 +11,7 @@ trait ClientProtocol extends Protocol {
 	private val bitMasks = for(i <- 0.until(64).toIndexedSeq) yield if(i == 0) 0 else (1 << i) - 1
 
 	case class BlockRecord(metaData: Byte, blockId: Int, y: Int, z: Int, x: Int) {
-		require(y > 0 && x > 0 && z > 0, "negative BlockRecord changes ")
+		require(y >= 0 && x >= 0 && z >= 0, "negative BlockRecord changes ")
 	}
 	implicit object BlockRecord extends FieldCodec[BlockRecord] {
 		def read(src: DataSource): BlockRecord = {

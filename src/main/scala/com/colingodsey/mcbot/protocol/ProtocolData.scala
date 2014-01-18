@@ -3,14 +3,12 @@ package com.colingodsey.mcbot.protocol
 import java.io.{ByteArrayOutputStream, DataOutputStream, ByteArrayInputStream, DataInputStream}
 import com.google.protobuf.{CodedOutputStream, CodedInputStream}
 import com.colingodsey.mcbot.protocol
-import com.colingodsey.logos.collections.Cord
+import com.colingodsey.logos.collections._
 
 object DataSource {
 	def apply(seq: Seq[Byte]): DataSource = new DataSource {
 		//TODO:  use our own Seq-based input stream
-		val is = new ByteArrayInputStream(seq.toArray) {
-			def position = pos
-		}
+		val is = new SeqInputStream(seq)
 
 		def position = {
 			//println("xxx", seq.length, is.available, is.position)

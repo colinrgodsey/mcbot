@@ -81,7 +81,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 
 	val tickDelta = 50.millis//50.millis
 	val pingTimer = context.system.scheduler.schedule(
-			tickDelta, tickDelta, self, PhysicsTick)
+		tickDelta, tickDelta, self, PhysicsTick)
 	val posTimer = context.system.scheduler.schedule(
 		2.seconds, 1.second, self, LongTick)
 
@@ -129,8 +129,6 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 
 		stream ! login.server.EncryptionResponse(encryptedSecret, verifyToken)
 	}
-
-
 
 	def connecting: Receive = {
 		case TCPConnection.Connected =>
@@ -196,6 +194,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 			val pos = try Point(x, y, z) catch {
 				case x: Throwable =>
 					log.error("Got bad position!!")
+					throw x
 					Point3D.zero
 			}
 			guaranteePlayer()
@@ -301,21 +300,20 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 			else if(posChanged) sendPosition
 			else if(lookChanged) sendLook
 			else sendOnGround
-
 		case PhysicsTick => //not joined... ignore
 		case Respawn => respawn
 		case LongTick if joined =>
 			//sendPosition
 
-			val jumpSpeed = 10
-			//val jumpSpeed = 40
+			//val jumpSpeed = 10
+			val jumpSpeed = 40
 
 			//jump!
-			if(selfEnt.onGround && math.random < 0.4) updateEntity(selfId) { case ent: Player =>
+			if(selfEnt.onGround && math.random < 0.4 && false) updateEntity(selfId) { case ent: Player =>
 				ent.copy(pitch = ent.pitch + math.random * 40 - 20, vel = ent.vel + Point3D(0, jumpSpeed, 0))
 			}
 
-			if(math.random < 0.3) direction = Point3D(math.random, 0, math.random).normal
+			if(math.random < 0.3) direction = Point3D(math.random - 0.5, 0, math.random - 0.5).normal
 			//direction = Point3D(1, 0, 0)
 
 			if(dead) {

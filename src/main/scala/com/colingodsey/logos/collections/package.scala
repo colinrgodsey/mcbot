@@ -6,11 +6,18 @@ import scala.collection.{IndexedSeqOptimized, immutable}
 import java.nio.ByteBuffer
 import akka.actor.ActorLogging
 import akka.event.LoggingAdapter
+import java.io.InputStream
 
 package object collections {
+	object IPoint3D {
+		def apply(point: Point3D) = Point3D(point.x.toInt, point.y.toInt, point.z.toInt)
+	}
+
 	final case class IPoint3D(x: Int, y: Int, z: Int) {
 		def toPoint3D = Point3D(x, y, z)
 	}
+
+	implicit def IPoint3DToPoint3D(x: IPoint3D) = x.toPoint3D
 
 	implicit final class ChannelBufferSeq(buf: ChannelBuffer) extends
 	immutable.IndexedSeq[Byte] with IndexedSeqOptimized[Byte, immutable.IndexedSeq[Byte]] {
@@ -35,6 +42,22 @@ package object collections {
 	implicit class ActorLoggingExt(val ac: LoggingAdapter) extends AnyVal {
 		def ifdebug(msg: => String) {
 			if(ac.isDebugEnabled) ac.debug(msg)
+		}
+	}
+
+	implicit class SeqInputStream(seq: Seq[Byte]) extends InputStream {
+		private val iterator = seq.iterator
+
+		private var _position = 0
+
+		def position = _position
+
+		def read: Int = {
+			if(!iterator.hasNext) return -1
+
+			_position += 1
+
+			iterator.next & 0xFF
 		}
 	}
 }

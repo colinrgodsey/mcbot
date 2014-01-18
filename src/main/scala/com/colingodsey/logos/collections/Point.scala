@@ -10,7 +10,12 @@ trait PointLike[PointType <: PointLike[_]] {
     //def / (scale: Double): PointType
     def * (scale: PointType): Double
 
+	def clamp(l: Double): PointType = (if(length > l) normal * l else this).asInstanceOf[PointType]
+
     def toPoint: PointType
+
+
+	//TODO: add isNormal, effecient normals
 
     //def map(f: Double => Double): PointType
 
@@ -40,6 +45,9 @@ trait PointLike[PointType <: PointLike[_]] {
 
         sub.isOrigin || math.abs(sub.length) < epsilon.e
     }
+
+	def !~~(other: PointType)(implicit epsilon: Epsilon): Boolean =
+		!this.~~(other)
 }
 
 trait PointCompanion[PointType <: Point] {
@@ -52,7 +60,7 @@ trait PointCompanion[PointType <: Point] {
 case class Epsilon(e: Double)
 
 object Epsilon {
-    implicit val default = Epsilon(0.001)
+    implicit val default = Epsilon(1e-7)
 }
 
 object Point2D extends PointCompanion[Point2D] {

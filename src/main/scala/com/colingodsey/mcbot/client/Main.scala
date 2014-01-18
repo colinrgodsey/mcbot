@@ -6,10 +6,12 @@ import akka.util.Timeout
 import com.colingodsey.mcbot.network.ProtocolStream
 
 object Main extends App {
-	val host = "localhost" // "192.168.0.2"
+	val host = "192.168.0.2"
 	val port = 25565
 
 	val botSettings = BotClient.Settings(host, port)
+
+	java.lang.Math.random()
 
 	// we need an ActorSystem to host our application in
 	implicit val system = ActorSystem("MCBotClient")

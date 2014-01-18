@@ -1,6 +1,6 @@
 package com.colingodsey.mcbot.world
 
-import com.colingodsey.logos.collections.Point3D
+import com.colingodsey.logos.collections.{IPoint3D, Epsilon, Point3D}
 
 object CollisionDetection {
 	sealed trait TraceResult {
@@ -54,20 +54,19 @@ object CollisionDetection {
 	))*/
 
 	def playerBody(eyeHeight: Double) =
-		BoxBody(Point3D(-0.5, -eyeHeight, -0.5), Point3D(0.5, 2 - eyeHeight, 0.5)) //eye origin
+		BoxBody(Point3D(-0.5, -eyeHeight, -0.5), Point3D(0.5, 1.9 - eyeHeight, 0.5)) //eye origin
 }
 
 trait CollisionDetection { world: World =>
 	import CollisionDetection._
 
-	val colIncr = 0.15
-	val colIncrMax = 0.2
+	val colIncr = 0.6
+	val colIncrMax = 0.7
 	val sphereColIncr = 0.9
-	val traceEp = 0 //0.00000000001
-	val startSolidSecEp = 0.0//0.000000001
-
 
 	val bbScaleBack = 0.00001
+
+	def epsilon = Epsilon.default.e
 
 	//from a point along a vector, what distance along the vector can we move
 	//returns < 0 if we started solid
@@ -96,8 +95,8 @@ trait CollisionDetection { world: World =>
 		}.sortBy(_.dist)
 
 	val axisNorms = Set(
-		Point3D(1, 0, 0),
 		Point3D(0, 1, 0),
+		Point3D(1, 0, 0),
 		Point3D(0, 0, 1)
 	)
 
@@ -120,18 +119,7 @@ trait CollisionDetection { world: World =>
 		val dy = end.globalPos.y - start.globalPos.y
 		val dz = end.globalPos.z - start.globalPos.z
 
-		//require(math.abs(dx + dy + dz) == 1, "bad block normal? " + (dx, dy, dz))
-//blockceter also not valid for this, replace this thing!!! all
-//asfasfasfasf mak negatives too!!!
-		//if((math.abs(dx) + math.abs(dy) + math.abs(dz)) != 1) {
-			//just pick one normal...
-			var outSet = Set[Point3D]()
-			/*if(dy > 0) outSet += Point3D(0, -1, 0)
-			if(dz > 0) outSet += Point3D(0, 0, -1)
-			if(dx > 0) outSet += Point3D(-1, 0, 0)
-			if(dy < 0) outSet += Point3D(0, 1, 0)
-			if(dz < 0) outSet += Point3D(0, 0, 1)
-			if(dx < 0) outSet += Point3D(1, 0, 0)*/
+		var outSet = Set[Point3D]()
 
 		if(dy > 0) outSet += Point3D(0, -1, 0)
 		if(dz > 0) outSet += Point3D(0, 0, -1)
@@ -140,29 +128,42 @@ trait CollisionDetection { world: World =>
 		if(dz < 0) outSet += Point3D(0, 0, 1)
 		if(dx < 0) outSet += Point3D(1, 0, 0)
 
-			outSet
-		//} else Set(Point3D(-dx, -dy, -dz).normal)
+		outSet
+	}
+	
+	def blockSelect(point: Point3D, centerPoint: Point3D) = {
+		val centerVec = point - centerPoint
+
+		var centerCorVec = Point3D.zero
+		if((point.x == 0 || point.x == -0) && centerVec.x < 0) centerCorVec += Point3D(-1, 0, 0)
+		if((point.y == 0 || point.y == -0) && centerVec.y < 0) centerCorVec += Point3D(0, -1, 0)
+		if((point.z == 0 || point.y == -0) && centerVec.z < 0) centerCorVec += Point3D(0, 0, -1)
+
+		val bl = centerCorVec + point
+		
+		getBlock(bl)
+
+		if(bl.y < 0 || bl.y > 255)
+			NoBlock(bl.x.toInt, bl.y.toInt, bl.z.toInt)
+		else getBlock(bl)
 	}
 
 	//consider replacing with 'block' based ray
 	//center vec (from - center) can be 0
-	//TODO: for the most part, this is broken because of the 0-boundry test
+	//TODO: for the most part, this is broken because of the 0-boundry test... maybe?
 	//which might not even be a thing? but its still awkward to do this
 	//with bounding boxes that specify mins/maxes, and maxes dont really have
 	//a finite position on the maxes, just a comparator
 	def traceRay(from: Point3D, vec: Point3D,
 			centerPoint: Point3D): TraceResult = {
-		//always reference the block from the point pulled a bit closer to us
-		val centerVec = (from - centerPoint).normal //vector from center to point
-		val startSolidVec = centerVec * startSolidSecEp
-		val closerStart = from - startSolidVec
-		val startBlock =
-			if(closerStart.y < 0 || closerStart.y > 255)
-				NoBlock(closerStart.x.toInt, closerStart.y.toInt, closerStart.z.toInt)
-			else getBlock(closerStart)
+
+		//val startSolidVec = centerVec * epsilon
+		//val centerBlock = getBlock(centerPoint)
 		val isSeg = vec.length <= colIncrMax
 
 		require(vec.length > 0)
+
+		//if(!startBlock.btyp.isPassable) return StartSolid
 
 		/*if(!startBlock.btyp.isPassable) {
 			StartSolid
@@ -171,30 +172,59 @@ trait CollisionDetection { world: World =>
 				val directionNormal = -surfaceNormal
 				val directionLength = directionNormal * vec
 
-				if(directionLength <= 0) return NoHit(vec.length)
+
+				if(directionLength <= epsilon) return NoHit(vec.length)
+
+				//println(directionNormal, directionLength, vec)
+
+				//println("super sdfsdf " + directionLength, surfaceNormal)
 
 				//val directionLenPerVecLength = directionLength / vec.length
-				val directionVec = directionNormal * directionLength
+				val subVec = directionNormal * directionLength
 
-				require(directionVec != Point3D.zero)
+				//println(subVec, vec)
+				
+				require(subVec != Point3D.zero)
 
-				val innerStartBlock = startBlock
-				val adjustedEnd = from + directionVec - startSolidVec
-				val innerEndBlock = getBlock(adjustedEnd)
+				val innerStart = from
+				val innerStartBlock = blockSelect(innerStart, centerPoint)
 
+				val adjustedEnd = from + subVec// - startSolidVec
+				val innerEndBlock = blockSelect(adjustedEnd, centerPoint)
+//println(innerStartBlock, innerEndBlock)
 				val blockCenter = innerStartBlock.globalPos.toPoint3D + Block.halfBlockVec
 				val faceCenter = blockCenter + directionNormal / 2
 
-				val surfaceVector = faceCenter - from
-				val hitDist = (surfaceVector * surfaceNormal) / (vec * surfaceNormal)
+				//val centerOffset = (from - blockCenter) * surfaceNormal
+				val centerOffset = (from - innerStartBlock.globalPos.toPoint3D) * surfaceNormal
+
+				//println(faceCenter - from, surfaceNormal)
+
+				//if((innerStart - from).length != 0) println((innerStart - from).length)
+
+				//TODO: why does the normal stuff below not work?
+				//val hitDist = ((faceCenter - from) * surfaceNormal) / (vec * surfaceNormal)
+
+				val subVecToVecRatio = vec.length / directionLength
+				val hitDist = centerOffset / subVecToVecRatio
 
 				require(!hitDist.isNaN)
+				require(subVecToVecRatio > 0)
+
+				//if(hitDist == 0) println(directionVec, surfaceNormal)
+
+				require((innerStartBlock.globalPos - innerEndBlock.globalPos).length <= 1, innerStartBlock.globalPos + " " + innerEndBlock.globalPos)
 
 				//only start solid if we're not on the 0 boundry
-				if(/*!startBlock.btyp.isPassable && */!innerStartBlock.btyp.isPassable/* && dist == 0*/)
+				if(!innerStartBlock.btyp.isPassable) StartSolid
+				else if(innerEndBlock.btyp.isPassable) NoHit(vec.length)
+				else if(hitDist <= 0) {
+					//println(innerStartBlock.globalPos, innerEndBlock.globalPos,  from, subVec, hitDist)
 					StartHit(surfaceNormal)
-				else if(!innerEndBlock.btyp.isPassable && hitDist <= vec.length) {
+				} else if(!innerEndBlock.btyp.isPassable && hitDist <= vec.length) {
 					require(hitDist >= 0, s"hitDist $hitDist ")
+					val blockDelta = innerEndBlock.globalPos.toPoint3D - innerStartBlock.globalPos.toPoint3D
+					//println(innerStartBlock.globalPos, blockDelta, from, hitDist, vec.length, from + vec.normal * hitDist, subVec)
 					TraceHit(hitDist, surfaceNormal)
 				} else NoHit(vec.length)
 			}
@@ -202,6 +232,7 @@ trait CollisionDetection { world: World =>
 			blockNormals.toSeq.map(checkSubComponent).sortBy(_.dist).head
 		} else { //break into segments
 			var i = 0
+			var lastHit: TraceResult = StartSolid
 
 			while(i * colIncr < vec.length) {
 				val startD = i * colIncr
@@ -217,13 +248,18 @@ trait CollisionDetection { world: World =>
 
 				//println(a, vec.normal, segLen)
 
-				traceRay(a, vec.normal * segLen, centerPoint + vec.normal * startD) match {
+				lastHit = traceRay(a, vec.normal * segLen, centerPoint + vec.normal * startD)
+//println(lastHit)
+				lastHit match {
 					case StartSolid if i == 0 => return StartSolid
 					case StartSolid =>
-						sys.error("Not fucking right")
+						//sys.error("Not fucking right")
+						lastHit
 					case TraceHit(d, norm) =>
 						require((startD + d) < vec.length)
 						return TraceHit(startD + d, norm)
+					case StartHit(norm) if startD == 0 =>
+						return StartHit(norm)
 					case StartHit(norm) =>
 						return TraceHit(startD, norm)
 					case NoHit(_) =>

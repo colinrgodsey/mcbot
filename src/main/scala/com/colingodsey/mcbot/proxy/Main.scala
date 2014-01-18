@@ -21,7 +21,7 @@ object Main extends App {
 
 		val port = 25565
 		def newReceiver(pipeline: ChannelPipeline): ActorRef = {
-			val props = Props(classOf[Proxy], pipeline, "192.168.0.2", port)
+			val props = Props(classOf[Proxy], pipeline, "localhost", port)
 			clientId += 1
 			context.actorOf(props, name = "proxy-" + clientId)
 		}

@@ -25,6 +25,7 @@ trait World {
 			math.floor(x.toDouble / Chunk.dims.x).toInt,
 			math.floor(y.toDouble / Chunk.dims.y).toInt,
 			math.floor(z.toDouble / Chunk.dims.z).toInt)
+
 		chunks.getOrElse(point,
 			throw FindChunkError(x, y, z, point))
 	}
@@ -87,33 +88,32 @@ trait WorldClient extends World with CollisionDetection {
 
 		var hitGround = false
 
-		val evalVel = ent.vel + gravAcc * dt
-		val terminalVel = if(evalVel.length > terminal)
-			evalVel.normal * terminal
-		else evalVel
+		val evalVel = ent.vel.clamp(terminal) + gravAcc * dt
+		val terminalVel = evalVel clamp terminal
 
 		//TODO: add real start solid detection
-
+//println("start trymkove")
 		def tryMove(pos: Point3D, vec: Point3D): (Point3D, Point3D) = {
 			if(vec == Point3D.zero) return (pos, vec)
 
 			val res = traceFunc(pos, vec)
+			//println(res)
 			res foreach {
-				case h: SurfaceHit if h.normal == Point3D(0, 1, 0) =>
+				case SurfaceHit(_, norm) if norm == Point3D(0, 1, 0) =>
 					hitGround = true
 				case _ =>
 			}
 			val realHits = res//res.filter(!_.isInstanceOf[StartHit])
-
+//println(realHits.head, vec)
 			realHits.headOption.getOrElse(NoHit(vec.length)) match {
 				case NoHit(_) => (pos + vec, vec)
 				case StartSolid =>
 					log.warning("Start solid!")
-					//(ent.pos + Point3D(0, 1, 0) * dt, Point3D.zero)
+					//(ent.pos + Point3D(0, 0.01, 0) * dt, Point3D.zero)
 					(ent.pos, Point3D.zero)
-				case SurfaceHit(d, norm) if d == vec.length => //rare, but could cause errors
+				/*case SurfaceHit(d, norm) if d == vec.length => //rare, but could cause errors
 					if(norm == Point3D(0, 1, 0)) hitGround = true
-					(pos, vec)
+					(pos, vec)*/
 				case SurfaceHit(d, norm)/* if d > 0*/ =>
 					if(norm == Point3D(0, 1, 0)) hitGround = true
 
@@ -127,12 +127,13 @@ trait WorldClient extends World with CollisionDetection {
 
 					val remainingVec = vec.normal * (vec.length - d)
 					val remainingNormalD = remainingVec * norm
-					val nextVec = remainingVec - norm * remainingNormalD
+					val subVector = norm * remainingNormalD
+					val nextVec = remainingVec - subVector
 					val nextPos = pos + vec.normal * d
 
 					if(nextVec ~~ Point3D.zero) (nextPos, Point3D.zero)
 					else {
-						//println(s"vec ${vec.normal} just clipped to ${nextVec.normal} on normal $norm")
+						//println(s"vec ${vec} just clipped to ${nextVec} on normal $norm moved $d of ${vec.length}")
 						tryMove(nextPos, nextVec)
 					}
 				/*case TraceHit(d, norm) => //if d == 0
@@ -145,21 +146,29 @@ trait WorldClient extends World with CollisionDetection {
 			}
 		}
 
-		log.debug(s"tracing from ${ent.pos} along vel ${terminalVel * dt}")
+		val moveVec = terminalVel * dt
 
-		val (newPos, postMoveVec) = try tryMove(ent.pos, terminalVel * dt) catch {
+		//log.debug(s"tracing from ${ent.pos} along vel $moveVec")
+
+		val (newPos, postMoveVec) = try tryMove(ent.pos, moveVec) catch {
 			case x: FindChunkError =>
 				log.error(s"failed tracing from ${ent.pos}: ${x.getMessage}")
 				//(ent.pos, Point3D.zero)
 				(ent.pos + terminalVel * dt, terminalVel * dt)
 		}
 
+		require(postMoveVec.length <= moveVec.length)
+
+		val movedVec = newPos - ent.pos
+
+		//if(movedVec !~~ Point3D.zero) println(s"moved $movedVec to $newPos")
+
 		//val newVec = newPos - ent.pos
 		val newVec = postMoveVec
 
 		val dragFac = (1 - drag * dt)
 		val resVel = (newVec / dt) * dragFac// + gravAcc * dt
-
+//if(newVec !~~ Point3D.zero) println(newVec)
 		//require(resVel.length <= tryVel.length, s"$resVel > $tryVel")
 		//val finalVel = if(resVel.length > terminal) resVel.normal * terminal else resVel
 
@@ -213,7 +222,7 @@ trait WorldClient extends World with CollisionDetection {
 		case cpr.DestroyEntities(entIds) =>
 			entIds.foreach(entities -= _)
 		case x: cpr.EntityEquipment => //TODO: will need this later maybe
-		case cpr.SpawnMob(eid, typ, x, y, z, pitch, headPitch, yaw, //TODO: FOXXX
+		case cpr.SpawnMob(eid, typ, x, y, z, pitch, headPitch, yaw, //TODO: FIXXX
 				dx, dy, dz, metadata) =>
 			val pos = Point3D(x, y, z)
 			val vel = Point3D(dx, dy, dz) * velocityFactor
