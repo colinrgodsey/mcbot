@@ -55,13 +55,15 @@ object CollisionDetection {
 
 	def playerBody(eyeHeight: Double) =
 		BoxBody(Point3D(-0.5, -eyeHeight, -0.5), Point3D(0.5, 1.9 - eyeHeight, 0.5)) //eye origin
+
+	val UnitBox = BoxBody(Point3D.one * -0.5, Point3D.one * 0.5)
 }
 
 trait CollisionDetection { world: World =>
 	import CollisionDetection._
 
-	val colIncr = 0.6
-	val colIncrMax = 0.7
+	val colIncr = 0.2
+	val colIncrMax = 0.3
 	val sphereColIncr = 0.9
 
 	val bbScaleBack = 0.00001
@@ -135,9 +137,9 @@ trait CollisionDetection { world: World =>
 		val centerVec = point - centerPoint
 
 		var centerCorVec = Point3D.zero
-		if((point.x == 0 || point.x == -0) && centerVec.x < 0) centerCorVec += Point3D(-1, 0, 0)
-		if((point.y == 0 || point.y == -0) && centerVec.y < 0) centerCorVec += Point3D(0, -1, 0)
-		if((point.z == 0 || point.y == -0) && centerVec.z < 0) centerCorVec += Point3D(0, 0, -1)
+		if((point.x == 0 || point.x == -0) && centerVec.x > 0) centerCorVec += Point3D(-1, 0, 0)
+		if((point.y == 0 || point.y == -0) && centerVec.y > 0) centerCorVec += Point3D(0, -1, 0)
+		if((point.z == 0 || point.y == -0) && centerVec.z > 0) centerCorVec += Point3D(0, 0, -1)
 
 		val bl = centerCorVec + point
 		

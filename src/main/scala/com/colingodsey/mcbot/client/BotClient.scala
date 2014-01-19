@@ -62,7 +62,7 @@ object BotClient {
 		def read(value: JsValue) = value.asInstanceOf[JsArray]
 	}
 
-
+	val jumpSpeed = 8
 }
 
 class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging with WorldClient {
@@ -114,6 +114,19 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 	def dead = selfEnt.health <= 0
 	def movementSpeed = selfEnt.prop("generic.movementSpeed") * movementSpeedModifier
 	def maxHealth = selfEnt.prop("generic.maxHealth")
+
+	def lookAt(vec: Point3D) {
+		val alpha1 = -math.asin(vec.normal.x) / math.Pi * 180
+		val alpha2 =  math.acos(vec.normal.z) / math.Pi * 180
+		val yaw = if(alpha2 > 90) 180 - alpha1
+		else alpha1
+
+		val pitch = -math.asin(vec.normal.y) / math.Pi * 180
+
+		updateEntity(selfId) { case ent: Player =>
+			ent.copy(yaw = yaw, pitch = pitch)
+		}
+	}
 
 	def generateClientHash(req: login.client.EncryptionRequest) = {
 		implicit def ec = context.dispatcher
@@ -176,6 +189,10 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 		case Some(x) =>
 	}
 
+	def jump(): Unit = if(selfEnt.onGround) updateEntity(selfId) { case ent: Player =>
+		ent.copy(vel = ent.vel + Point3D(0, jumpSpeed, 0))
+	}
+
 	def normal: Receive = worldClientReceive orElse {
 		case cpr.EntityStatus(eid, 2) if eid == selfId => //we died??
 			/*updateEntity(selfId) { e =>
@@ -235,7 +252,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 		case cpr.PluginMessage(chan, data) =>
 			pluginMessage = Some(spr.PluginMessage(chan, data))
 			//stream ! spr.ClientSettings("en_GB", 0, 0, false, 2, false)
-			stream ! spr.ClientSettings("en_US",16,0,true,3,true)
+			stream ! spr.ClientSettings("en_US", 16, 0, true, 3, true)
 			sendPluginMessage
 		case cpr.ChatMessage(msg) => try {
 			val js = msg.asJson
@@ -282,8 +299,22 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 			}
 
 			if(dt > 0) {
+				val theta = System.currentTimeMillis * 0.0003
 
+				//direction = Point3D(math.cos(theta), 0, math.sin(theta))
 				move(selfId, dt, CollisionDetection.playerBody(stanceDelta))
+
+				if(direction !~~ Point3D.zero) lookAt(direction)
+			}
+
+			val follow = playerOpt("colinrgodsey")
+			if(follow.isDefined) {
+				val f = follow.get
+
+				direction = (f.pos - selfEnt.pos)
+				direction = Point3D(direction.x, 0, direction.z).normal
+				//lookAt(direction)
+				//println(direction)
 			}
 
 			val posChanged = !lastPosEnt.isDefined ||
@@ -303,23 +334,23 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 		case PhysicsTick => //not joined... ignore
 		case Respawn => respawn
 		case LongTick if joined =>
-			//sendPosition
-
-			//val jumpSpeed = 10
-			val jumpSpeed = 40
-
 			//jump!
-			if(selfEnt.onGround && math.random < 0.4 && false) updateEntity(selfId) { case ent: Player =>
-				ent.copy(pitch = ent.pitch + math.random * 40 - 20, vel = ent.vel + Point3D(0, jumpSpeed, 0))
-			}
+			if(selfEnt.onGround && math.random < 0.4) jump()
 
-			if(math.random < 0.3) direction = Point3D(math.random - 0.5, 0, math.random - 0.5).normal
+			//if(math.random < 0.3) direction = Point3D(math.random - 0.5, 0, math.random - 0.5).normal
 			//direction = Point3D(1, 0, 0)
 
 			if(dead) {
-				//sendPosition
 				context.system.scheduler.scheduleOnce(2.5.seconds, self, Respawn)
 				joined = false
+			}
+
+			if(direction !~~ Point3D.zero) {
+				val l = 0.5
+				val res = traceBody(CollisionDetection.UnitBox,
+					selfEnt.pos + Point3D(0, -stanceDelta + 1, 0), direction * l)
+
+				if(res.head.dist < l) jump()
 			}
 
 			log.info(s"health = ${selfEnt.health}, pos = ${selfEnt.pos},  ground = ${selfEnt.onGround}, velL = ${selfEnt.vel.length}")

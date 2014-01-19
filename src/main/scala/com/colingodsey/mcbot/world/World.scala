@@ -19,6 +19,10 @@ trait World {
 
 	var entities = Map[Int, Entity]()
 	var chunks = Map[IPoint3D, Chunk]()
+	var players = Map[String, Int]()
+
+	def player(name: String) = entities(players(name)).asInstanceOf[Player]
+	def playerOpt(name: String) = players.get(name).flatMap(entities.get(_).map(_.asInstanceOf[Player]))
 
 	def getChunk(x: Int, y: Int, z: Int): Chunk = {
 		val point = IPoint3D(
@@ -88,8 +92,10 @@ trait WorldClient extends World with CollisionDetection {
 
 		var hitGround = false
 
+		val dragFac = (1 - drag * dt)
+
 		val evalVel = ent.vel.clamp(terminal) + gravAcc * dt
-		val terminalVel = evalVel clamp terminal
+		val terminalVel = (evalVel * dragFac) clamp terminal
 
 		//TODO: add real start solid detection
 //println("start trymkove")
@@ -110,7 +116,8 @@ trait WorldClient extends World with CollisionDetection {
 				case StartSolid =>
 					log.warning("Start solid!")
 					//(ent.pos + Point3D(0, 0.01, 0) * dt, Point3D.zero)
-					(ent.pos, Point3D.zero)
+					//(ent.pos, Point3D.zero)
+					(ent.pos, vec.normal * 0.01 * dt)
 				/*case SurfaceHit(d, norm) if d == vec.length => //rare, but could cause errors
 					if(norm == Point3D(0, 1, 0)) hitGround = true
 					(pos, vec)*/
@@ -166,8 +173,14 @@ trait WorldClient extends World with CollisionDetection {
 		//val newVec = newPos - ent.pos
 		val newVec = postMoveVec
 
-		val dragFac = (1 - drag * dt)
-		val resVel = (newVec / dt) * dragFac// + gravAcc * dt
+
+		val resVel = (newVec / dt)// * dragFac// + gravAcc * dt
+
+		val arggggVel = if(resVel.length > terminalVel.length) {
+			log.error("wbad res length!!!")
+			terminalVel
+		} else resVel
+
 //if(newVec !~~ Point3D.zero) println(newVec)
 		//require(resVel.length <= tryVel.length, s"$resVel > $tryVel")
 		//val finalVel = if(resVel.length > terminal) resVel.normal * terminal else resVel
@@ -175,12 +188,12 @@ trait WorldClient extends World with CollisionDetection {
 
 		//val newVel = finalVel + gravAcc * dt
 
-		ent.entityCopy(pos = newPos, vel = resVel, onGround = hitGround)
+		ent.entityCopy(pos = newPos, vel = arggggVel, onGround = hitGround)
 	}
 
 	val worldClientReceive: PartialFunction[Any, Unit] = {
 		case cpr.EntityRelativeMove(eid, dx, dy, dz) => updateEntity(eid) { e =>
-			val vec = Point3D(dx, dy, dz)
+			val vec = Point3D(dx, dy, dz) / 32.0
 			e.entityCopy(pos = e.pos + vec)
 		}
 		case cpr.EntityVelocity(eid, dx, dy, dz) => updateEntity(eid) { e =>
@@ -190,7 +203,7 @@ trait WorldClient extends World with CollisionDetection {
 			updateEntity(eid)(_.entityCopy(status = status))
 		case cpr.EntityLookandRelativeMove(eid, dx, dy,
 				dz, yaw, pitch) => updateEntity(eid) { e =>
-			val vec = Point3D(dx, dy, dz)
+			val vec = Point3D(dx, dy, dz) / 32.0
 			e.entityCopy(yaw = yaw, pitch = pitch, pos = e.pos + vec)
 		}
 		case cpr.EntityLook(eid, yaw, pitch) => updateEntity(eid) { e =>
@@ -200,7 +213,7 @@ trait WorldClient extends World with CollisionDetection {
 			e.entityCopy(props = props.map(x => x.key -> x).toMap)
 		}
 		case cpr.EntityTeleport(eid, x, y, z, yaw, pitch) => updateEntity(eid) { e =>
-			val vec = Point3D(x, y, z)
+			val vec = Point3D(x, y, z) / 32.0
 			e.entityCopy(yaw = yaw, pitch = pitch, pos = vec)
 		}
 		case cpr.EntityMetadata(eid, data) => updateEntity(eid) { e =>
@@ -224,7 +237,7 @@ trait WorldClient extends World with CollisionDetection {
 		case x: cpr.EntityEquipment => //TODO: will need this later maybe
 		case cpr.SpawnMob(eid, typ, x, y, z, pitch, headPitch, yaw, //TODO: FIXXX
 				dx, dy, dz, metadata) =>
-			val pos = Point3D(x, y, z)
+			val pos = Point3D(x, y, z) / 32.0
 			val vel = Point3D(dx, dy, dz) * velocityFactor
 
 			///new Entity(eid, )
@@ -233,7 +246,7 @@ trait WorldClient extends World with CollisionDetection {
 
 			entities += eid.x -> ent
 		case cpr.SpawnObject(VarInt(eid), typ, x, y, z, pitch, yaw, metaData, dx, dy, dz) =>
-			val pos = Point3D(x, y, z)
+			val pos = Point3D(x, y, z) / 32.0
 			val vel = Point3D(dx, dy, dz) * velocityFactor
 
 			///new Entity(eid, )
@@ -242,10 +255,12 @@ trait WorldClient extends World with CollisionDetection {
 
 			entities += eid -> ent
 		case cpr.SpawnPlayer(VarInt(eid), uuid, name, x, y, z, yaw, pitch, item, mdata) =>
-			val pos = Point3D(x, y, z)
+			val pos = Point3D(x, y, z) / 32.0
 			val ent = Player(eid, pos = pos, yaw = yaw, pitch = pitch)
 
 			entities += eid -> ent
+
+			players += name -> eid
 
 			worldClientReceive(cpr.EntityMetadata(eid, mdata))
 		case cpr.ChunkData(chunkX, chunkZ, groundUp, bitmask, addBitmask, data) =>
