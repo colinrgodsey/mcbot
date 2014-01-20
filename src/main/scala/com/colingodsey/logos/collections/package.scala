@@ -45,7 +45,7 @@ package object collections {
 		}
 	}
 
-	implicit class SeqInputStream(seq: Seq[Byte]) extends InputStream {
+	implicit class SeqInputStream(seq: Iterable[Byte]) extends InputStream {
 		private val iterator = seq.iterator
 
 		private var _position = 0

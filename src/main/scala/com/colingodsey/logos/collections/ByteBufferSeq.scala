@@ -2,6 +2,7 @@ package com.colingodsey.logos.collections
 
 import java.nio.ByteBuffer
 import scala.collection.IndexedSeqOptimized
+import com.mediamath.vad.collections.Cord
 
 final class ByteBufferSeq(buf: ByteBuffer) extends IndexedSeq[Byte]
 		with IndexedSeqOptimized[Byte, IndexedSeq[Byte]] {

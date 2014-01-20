@@ -1,8 +1,8 @@
 package com.colingodsey.mcbot.world
 
 import com.colingodsey.mcbot.protocol
-import com.colingodsey.logos.collections.{IPoint3D, Point3D}
-import java.util.zip.Inflater
+import com.colingodsey.logos.collections._
+import java.util.zip.{InflaterInputStream, Inflater}
 import scala.collection.immutable.VectorBuilder
 
 object Chunk {
@@ -102,8 +102,8 @@ object Chunk {
 		n
 	}
 
-	def inflateData(bytes: Array[Byte]) = {
-		val inflater = new Inflater
+	def inflateData(bytes: Iterable[Byte]) = {
+		/*val inflater = new Inflater
 
 		inflater.setInput(bytes)
 
@@ -123,7 +123,20 @@ object Chunk {
 
 		inflater.end
 
-		builder.result
+		builder.result*/
+
+		val is = new InflaterInputStream(bytes)
+		val builder = new VectorBuilder[Byte]
+
+		var byte = is.read
+
+		while(byte != -1) {
+			builder += byte.toByte
+			byte = is.read
+		}
+
+		is.close
+		builder.result()
 	}
 }
 

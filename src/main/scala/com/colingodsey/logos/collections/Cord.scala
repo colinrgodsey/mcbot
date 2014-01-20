@@ -1,4 +1,4 @@
-package com.colingodsey.logos.collections
+package com.mediamath.vad.collections
 
 import scala.collection.generic.{GenericCompanion, GenericTraversableTemplate, CanBuildFrom, SeqFactory}
 import scala.collection.immutable.VectorBuilder
@@ -70,7 +70,7 @@ final class CordBuilder[A] extends mutable.Builder[A, Cord[A]] {
 		if(xs.isEmpty) return this
 
 		xs match {
-			case x: Cord[A] if !x.isSliced =>
+			case x: Cord[A] =>
 				x.seqs.foreach(appendChunk)
 			case x: IndexedSeq[A] => appendChunk(x)
 			case x =>
@@ -134,18 +134,12 @@ final class CordBuilder[A] extends mutable.Builder[A, Cord[A]] {
 final class Cord[@specialized(Byte) +T](
 		val seqs: IndexedSeq[IndexedSeq[T]],
 		val length: Int,
-		private[collections] val isSliced: Boolean = false,
-		private val offset: Int = 0,
 		private val inTrie: Option[IntIndexTrie[T]] = None) extends IndexedSeq[T]
-			with scala.collection.immutable.IndexedSeq[T]
-			with IndexedSeqOptimized[T, Cord[T]]
-			with GenericTraversableTemplate[T, Cord]
-			with IndexedSeqLike[T, Cord[T]] {
-	require(!(!isSliced && offset != 0))
-
+with scala.collection.immutable.IndexedSeq[T]
+with IndexedSeqOptimized[T, Cord[T]]
+with GenericTraversableTemplate[T, Cord]
+with IndexedSeqLike[T, Cord[T]] {
 	private[collections] lazy val trie = inTrie.getOrElse(new IntIndexTrie(seqs))
-
-	//@inline final def isSliced = offset != 0 || lengthOpt.isDefined
 
 	override def companion = Cord
 	override def stringPrefix = "Cord"
@@ -158,7 +152,7 @@ final class Cord[@specialized(Byte) +T](
 		}
 	}
 
-	override def iterator: Iterator[T] = if(isSliced || isEmpty) super.iterator
+	override def iterator: Iterator[T] = if(isEmpty) super.iterator
 	else {
 		var seqIdx = 0
 		var curIter = seqs(seqIdx).iterator
@@ -192,26 +186,16 @@ final class Cord[@specialized(Byte) +T](
 	@inline final def +:[U >: T](x: U): Cord[U] =
 		(Cord.newBuilder[U] += x ++= this).result
 
-	@inline final override def slice(from: Int, until: Int): Cord[T] = {
-		val l = until - from
-		val o = from + offset
-
-		require(from <= length, "from > length!")
-		require(until <= length, "until > length")
-
-		new Cord(seqs, l, offset = o,
-			isSliced = true, inTrie = Some(trie))
-	}
-
+	//TODO: this is broken for some reason...
 	/*override def drop(n: Int): Cord[T] =
-		if (n <= 0) sys.error("Cant drop " + n)//super.drop(n)
+		if (n <= 0) super.drop(n)
 		else if(n == 0) this
 		else slice(n, length - n)*/
 
 	@inline final def apply(idx: Int): T = {
-		require(idx < length, s"Cannot get idx $idx of Cord len $length")
+		require(idx < length, s"Cannot get idx $idx of Cord")
 
-		val realIdx = idx + offset
+		val realIdx = idx
 
 		//up to and including idx
 		trie(realIdx)
@@ -282,6 +266,7 @@ object IntIndexTrie {
 		def length: Int = 0
 		def isEmpty: Boolean = true
 
+
 		def apply(idx: Int): Nothing = ???
 	}
 }
@@ -299,8 +284,6 @@ trait IntIndexTrieLike[+T] extends IntIndexTrie.TrieNode[T] with Iterable[T] {
 	def iterator = seqs.foldLeft(Iterator[T]())((acc, x) => acc ++ x.iterator)
 
 	def apply(idx: Int): T = headNode(idx)
-
-	//override def toString = toJSON.toString
 
 	lazy val numSigBits = {
 		var len: Int = length

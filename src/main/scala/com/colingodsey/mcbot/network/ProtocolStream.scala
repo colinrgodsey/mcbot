@@ -15,6 +15,7 @@ import scala.util.Success
 import org.jboss.netty.handler.timeout.IdleStateHandler
 import java.net.InetSocketAddress
 import com.colingodsey.logos.collections._
+import com.mediamath.vad.collections.Cord
 
 object ProtocolStream {
 	case class UnparsedData(data: IndexedSeq[Byte])
@@ -38,9 +39,11 @@ trait ProtocolStream
 		case Success((length, size)) if (length + size) <= buffer.length =>
 			require(size > 0, "bad length!")
 
-			val lengthBuf = buffer take size
-			val (packetData, tail) = buffer.drop(size) splitAt length
-			buffer = tail
+			val view = buffer.view
+
+			val lengthBuf = view take size
+			val (packetData, tail) = view.drop(size) splitAt length
+			buffer = Cord(tail.toIndexedSeq)
 
 			//println(length, size, packetData.length)
 			log.ifdebug(s"Recved packet of length $length (size $size. Remaining: ${buffer.length}")
@@ -61,7 +64,7 @@ trait ProtocolStream
 	case class PacketException(id: Int, msg: String, cause: Throwable = null)
 			extends Exception(msg, cause)
 
-	def handlePacket(data: IndexedSeq[Byte], lengthBuf: IndexedSeq[Byte]): Unit = try {
+	def handlePacket(data: Seq[Byte], lengthBuf: Seq[Byte]): Unit = try {
 		require(!data.isEmpty, "empty packet!!")
 
 		//peak at id for logging reasons
@@ -115,7 +118,7 @@ trait ProtocolStream
 
 			if(src.position != data.length) {
 				log.warning(s"Only read ${src.position} bytes of ${data.length} for $packet")
-				ref ! ProtocolStream.UnparsedData(lengthBuf ++ data)
+				ref ! ProtocolStream.UnparsedData(lengthBuf.toIndexedSeq ++ data)
 			} else {
 				ref ! packet
 			}
@@ -123,7 +126,7 @@ trait ProtocolStream
 			case t: Throwable =>
 				log.error(t,
 					s"Couldnt read packet id=$id, length=${data.length}, read=${src.position}")
-				ref ! ProtocolStream.UnparsedData(lengthBuf ++ data)
+				ref ! ProtocolStream.UnparsedData(lengthBuf.toIndexedSeq ++ data)
 				//println(data.map(b => "0x" + BigInt(b & 0xFF).toString(16)).mkString("."))
 		}
 	} catch {

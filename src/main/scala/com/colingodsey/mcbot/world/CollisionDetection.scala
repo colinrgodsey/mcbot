@@ -142,12 +142,10 @@ trait CollisionDetection { world: World =>
 		if((point.z == 0 || point.y == -0) && centerVec.z > 0) centerCorVec += Point3D(0, 0, -1)
 
 		val bl = centerCorVec + point
-		
-		getBlock(bl)
 
-		if(bl.y < 0 || bl.y > 255)
+		(if(bl.y < 0 || bl.y > 255)
 			NoBlock(bl.x.toInt, bl.y.toInt, bl.z.toInt)
-		else getBlock(bl)
+		else getBlock(bl), centerCorVec)
 	}
 
 	//consider replacing with 'block' based ray
@@ -175,7 +173,7 @@ trait CollisionDetection { world: World =>
 				val directionLength = directionNormal * vec
 
 
-				if(directionLength <= epsilon) return NoHit(vec.length)
+				if(directionLength <= 0) return NoHit(vec.length)
 
 				//println(directionNormal, directionLength, vec)
 
@@ -188,30 +186,41 @@ trait CollisionDetection { world: World =>
 				
 				require(subVec != Point3D.zero)
 
-				val innerStart = from
-				val innerStartBlock = blockSelect(innerStart, centerPoint)
+				val (innerStartBlock, startBlockCorrection) = blockSelect(from, centerPoint)
 
 				val adjustedEnd = from + subVec// - startSolidVec
-				val innerEndBlock = blockSelect(adjustedEnd, centerPoint)
+				val (innerEndBlock, _) = blockSelect(adjustedEnd, centerPoint)
 //println(innerStartBlock, innerEndBlock)
 				val blockCenter = innerStartBlock.globalPos.toPoint3D + Block.halfBlockVec
-				val faceCenter = blockCenter + directionNormal / 2
+				val faceCenter = blockCenter - surfaceNormal * 0.5
 
 				//val centerOffset = (from - blockCenter) * surfaceNormal
-				val centerOffset = (from - innerStartBlock.globalPos.toPoint3D) * surfaceNormal
+				//val isNegative = Point3D.one * surfaceNormal < 0
+
+				//i feel like this isnt right....
+				val blCenterVec = (from - innerStartBlock.globalPos.toPoint3D + startBlockCorrection)
+				val wholeBlockOffset = math.abs(blCenterVec * surfaceNormal)
+				val realCenterOffset = blCenterVec * surfaceNormal
+
+				require(wholeBlockOffset <= 1 && wholeBlockOffset >= 0, (wholeBlockOffset, from, innerStartBlock.globalPos.toPoint3D, startBlockCorrection, blCenterVec))
+
+				val centerOffset = if(realCenterOffset < 0) 1 + realCenterOffset else realCenterOffset
 
 				//println(faceCenter - from, surfaceNormal)
 
 				//if((innerStart - from).length != 0) println((innerStart - from).length)
 
 				//TODO: why does the normal stuff below not work?
-				//val hitDist = ((faceCenter - from) * surfaceNormal) / (vec * surfaceNormal)
+				val faceVec = from - faceCenter
+				//val hitDist = -(faceVec * surfaceNormal) / (vec * surfaceNormal)
 
-				val subVecToVecRatio = vec.length / directionLength
-				val hitDist = centerOffset / subVecToVecRatio
+				//val subVecToVecRatio = vec.normal * directionNormal
+				val hitDist = centerOffset / (vec * surfaceNormal)
 
 				require(!hitDist.isNaN)
-				require(subVecToVecRatio > 0)
+				//require(subVecToVecRatio > 0)
+
+				//require(hitDist > 0)
 
 				//if(hitDist == 0) println(directionVec, surfaceNormal)
 

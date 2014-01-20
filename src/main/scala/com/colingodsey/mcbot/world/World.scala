@@ -34,15 +34,16 @@ trait World {
 			throw FindChunkError(x, y, z, point))
 	}
 
-	def getChunk(pos: Point3D): Chunk = getChunk(pos.x.toInt, pos.y.toInt, pos.z.toInt)
+	def getChunk(pos: Point3D): Chunk = getChunk(math.floor(pos.x).toInt,
+		math.floor(pos.y).toInt, math.floor(pos.z).toInt)
 	def getChunk(pos: IPoint3D): Chunk = getChunk(pos.x, pos.y, pos.z)
 
 	def getBlock(pos: Point3D): Block = {
 		val chunk = getChunk(pos)
 
-		chunk(pos.x.toInt - chunk.x * Chunk.dims.x,
-			pos.y.toInt - chunk.y * Chunk.dims.y,
-			pos.z.toInt - chunk.z * Chunk.dims.z)
+		chunk(math.floor(pos.x).toInt - chunk.x * Chunk.dims.x,
+			math.floor(pos.y).toInt - chunk.y * Chunk.dims.y,
+			math.floor(pos.z).toInt - chunk.z * Chunk.dims.z)
 	}
 
 	//TODO: add extractors to convert entity types.... case Player(player) =>   will convert
@@ -177,7 +178,7 @@ trait WorldClient extends World with CollisionDetection {
 		val resVel = (newVec / dt)// * dragFac// + gravAcc * dt
 
 		val arggggVel = if(resVel.length > terminalVel.length) {
-			log.error("wbad res length!!!")
+			log.error("wbad res length!!! " + (resVel.length - terminalVel.length))
 			terminalVel
 		} else resVel
 
@@ -273,7 +274,7 @@ trait WorldClient extends World with CollisionDetection {
 			else chunks ++= cks.map(x => x.pos -> x)
 		case cpr.MapChunkBulk(chunkColumnCount, skylight, compdData, metas) =>
 			var idx = 0
-			val data = Chunk.inflateData(compdData.toArray)
+			val data = Chunk.inflateData(compdData)
 
 			//loop through mapchunkmeta for each piece array type, store None/Some
 

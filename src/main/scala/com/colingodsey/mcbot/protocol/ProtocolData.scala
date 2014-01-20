@@ -6,7 +6,7 @@ import com.colingodsey.mcbot.protocol
 import com.colingodsey.logos.collections._
 
 object DataSource {
-	def apply(seq: Seq[Byte]): DataSource = new DataSource {
+	def apply(seq: Iterable[Byte]): DataSource = new DataSource {
 		//TODO:  use our own Seq-based input stream
 		val is = new SeqInputStream(seq)
 
