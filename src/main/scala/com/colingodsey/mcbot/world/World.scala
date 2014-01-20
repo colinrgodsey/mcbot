@@ -74,6 +74,8 @@ trait WorldClient extends World with CollisionDetection {
 	def move(eid: Int, dt: Double, body: Body): Unit = updateEntity(eid) { ent =>
 		import CollisionDetection._
 
+		require(dt > epsilon)
+
 		val traceFunc = body match {
 			case x: SphereBody => traceBody(x, _: Point3D, _: Point3D)
 			case x: BoxBody =>
@@ -101,24 +103,16 @@ trait WorldClient extends World with CollisionDetection {
 		//TODO: add real start solid detection
 //println("start trymkove")
 		def tryMove(pos: Point3D, vec: Point3D): (Point3D, Point3D) = {
-			if(vec == Point3D.zero) return (pos, vec)
+			if(vec ~~ Point3D.zero) return (pos, vec)
 
 			val res = traceFunc(pos, vec)
-			//println(res)
-			res foreach {
-				case SurfaceHit(_, norm) if norm == Point3D(0, 1, 0) =>
-					hitGround = true
-				case _ =>
-			}
-			val realHits = res//res.filter(!_.isInstanceOf[StartHit])
-//println(realHits.head, vec)
-			realHits.headOption.getOrElse(NoHit(vec.length)) match {
+
+			res.headOption.getOrElse(StartSolid) match {
 				case NoHit(_) => (pos + vec, vec)
 				case StartSolid =>
-					log.warning("Start solid!")
+					log.warning("Start solid! " + pos)
 					//(ent.pos + Point3D(0, 0.01, 0) * dt, Point3D.zero)
-					//(ent.pos, Point3D.zero)
-					(ent.pos, vec.normal * 0.01 * dt)
+					(ent.pos, Point3D.zero)
 				/*case SurfaceHit(d, norm) if d == vec.length => //rare, but could cause errors
 					if(norm == Point3D(0, 1, 0)) hitGround = true
 					(pos, vec)*/
@@ -161,8 +155,8 @@ trait WorldClient extends World with CollisionDetection {
 		val (newPos, postMoveVec) = try tryMove(ent.pos, moveVec) catch {
 			case x: FindChunkError =>
 				log.error(s"failed tracing from ${ent.pos}: ${x.getMessage}")
-				//(ent.pos, Point3D.zero)
-				(ent.pos + terminalVel * dt, terminalVel * dt)
+				(ent.pos, Point3D.zero)
+				//(ent.pos + terminalVel * dt, terminalVel * dt)
 		}
 
 		require(postMoveVec.length <= moveVec.length)
@@ -173,7 +167,6 @@ trait WorldClient extends World with CollisionDetection {
 
 		//val newVec = newPos - ent.pos
 		val newVec = postMoveVec
-
 
 		val resVel = (newVec / dt)// * dragFac// + gravAcc * dt
 

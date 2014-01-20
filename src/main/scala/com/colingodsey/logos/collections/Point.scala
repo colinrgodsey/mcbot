@@ -60,7 +60,7 @@ trait PointCompanion[PointType <: Point] {
 case class Epsilon(e: Double)
 
 object Epsilon {
-    implicit val default = Epsilon(1e-7)
+    implicit val default = Epsilon(1e-13)
 }
 
 object Point2D extends PointCompanion[Point2D] {

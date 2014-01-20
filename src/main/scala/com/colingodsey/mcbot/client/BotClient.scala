@@ -281,38 +281,43 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 			val ct = curTime
 			//val dt = tickDelta.toMillis / 1000.0
 			val dt = ct - lastTime
-			lastTime = ct
 
-			if(dt > 0 && direction.length > 0) {
-				val moveVec = direction * movementSpeed
-				val moveN = moveVec.normal
-				val moveLen = moveVec.length
-
-				val existingMoveLen = selfEnt.vel * moveN
-
-				val addLen = math.max(moveLen - existingMoveLen, 0)
-
-				//println(addLen, moveVec, moveLen, movementSpeed)
-				updateEntity(selfId) { case ent: Player =>
-					ent.copy(vel = ent.vel + (moveN * addLen))
-				}
-			}
-
-			if(dt > 0) {
+			if(dt > 0.0001) {
 				val theta = System.currentTimeMillis * 0.0003
 
 				//direction = Point3D(math.cos(theta), 0, math.sin(theta))
 				move(selfId, dt, CollisionDetection.playerBody(stanceDelta))
 
 				if(direction !~~ Point3D.zero) lookAt(direction)
+
+				lastTime = ct
+
+				if(direction.length > 0) {
+					val moveVec = direction * movementSpeed
+					val moveN = moveVec.normal
+					val moveLen = moveVec.length
+
+					val existingMoveLen = selfEnt.vel * moveN
+
+					val addLen = math.max(moveLen - existingMoveLen, 0)
+
+					//println(addLen, moveVec, moveLen, movementSpeed)
+					updateEntity(selfId) { case ent: Player =>
+						ent.copy(vel = ent.vel + (moveN * addLen))
+					}
+				}
 			}
 
 			val follow = playerOpt("colinrgodsey")
 			if(follow.isDefined) {
 				val f = follow.get
 
-				direction = (f.pos - selfEnt.pos)
-				direction = Point3D(direction.x, 0, direction.z).normal
+				val vec = (f.pos - selfEnt.pos)
+				val dir = Point3D(vec.x, 0, vec.z)
+
+				if(dir.length > 9) direction = dir.normal
+				else direction = Point3D.zero
+
 				//lookAt(direction)
 				//println(direction)
 			}

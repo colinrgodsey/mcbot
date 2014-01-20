@@ -62,8 +62,8 @@ object CollisionDetection {
 trait CollisionDetection { world: World =>
 	import CollisionDetection._
 
-	val colIncr = 0.2
-	val colIncrMax = 0.3
+	val colIncr = 0.9
+	val colIncrMax = 0.9
 	val sphereColIncr = 0.9
 
 	val bbScaleBack = 0.00001
@@ -132,7 +132,9 @@ trait CollisionDetection { world: World =>
 
 		outSet
 	}
-	
+
+
+
 	def blockSelect(point: Point3D, centerPoint: Point3D) = {
 		val centerVec = point - centerPoint
 
@@ -168,19 +170,20 @@ trait CollisionDetection { world: World =>
 		/*if(!startBlock.btyp.isPassable) {
 			StartSolid
 		} else */if(isSeg) {
-			def checkSubComponent(surfaceNormal: Point3D): TraceResult = {
-				val directionNormal = -surfaceNormal
-				val directionLength = directionNormal * vec
+			//TODO: corners are now giving issues. the taxi-cabbing around is letting us clip corners
+			def checkSubComponent(surfaceNormal: Point3D, subD: Double, subStart: Point3D): TraceResult = {
+				//val svl = -(surfaceNormal * vec)
+				val svl = vec * -surfaceNormal
+
+				if(svl <= epsilon) return NoHit(vec.length)
+
+				val subVec = -surfaceNormal * svl
+
+				require(subVec.length > 0)
+				require(vec.length > 0)
 
 
-				if(directionLength <= 0) return NoHit(vec.length)
-
-				//println(directionNormal, directionLength, vec)
-
-				//println("super sdfsdf " + directionLength, surfaceNormal)
-
-				//val directionLenPerVecLength = directionLength / vec.length
-				val subVec = directionNormal * directionLength
+				//AHHHHHHHHHH dot in the length of the non normal, otherwise l1*l2
 
 				//println(subVec, vec)
 				
@@ -191,48 +194,53 @@ trait CollisionDetection { world: World =>
 				val adjustedEnd = from + subVec// - startSolidVec
 				val (innerEndBlock, _) = blockSelect(adjustedEnd, centerPoint)
 //println(innerStartBlock, innerEndBlock)
-				val blockCenter = innerStartBlock.globalPos.toPoint3D + Block.halfBlockVec
-				val faceCenter = blockCenter - surfaceNormal * 0.5
+				//val blockCenter = innerStartBlock.globalPos.toPoint3D + Block.halfBlockVec
+				//val faceCenter = blockCenter - surfaceNormal * 0.5
 
 				//val centerOffset = (from - blockCenter) * surfaceNormal
 				//val isNegative = Point3D.one * surfaceNormal < 0
 
 				//i feel like this isnt right....
-				val blCenterVec = (from - innerStartBlock.globalPos.toPoint3D + startBlockCorrection)
-				val wholeBlockOffset = math.abs(blCenterVec * surfaceNormal)
-				val realCenterOffset = blCenterVec * surfaceNormal
+				val blCornerVec = (from - innerStartBlock.globalPos.toPoint3D + startBlockCorrection)
+				val wholeBlockOffset = math.abs(blCornerVec * surfaceNormal)
+				val realCornerOffset = blCornerVec * surfaceNormal
 
-				require(wholeBlockOffset <= 1 && wholeBlockOffset >= 0, (wholeBlockOffset, from, innerStartBlock.globalPos.toPoint3D, startBlockCorrection, blCenterVec))
+				require(wholeBlockOffset <= 1 && wholeBlockOffset >= 0,
+					(wholeBlockOffset, from, innerStartBlock.globalPos.toPoint3D, startBlockCorrection, blCornerVec))
 
-				val centerOffset = if(realCenterOffset < 0) 1 + realCenterOffset else realCenterOffset
+				val faceOffset = if(realCornerOffset < 0) 1 + realCornerOffset else realCornerOffset
+
+				//if(faceOffset > subVec.length) return NoHit(vec.length)
 
 				//println(faceCenter - from, surfaceNormal)
 
 				//if((innerStart - from).length != 0) println((innerStart - from).length)
 
 				//TODO: why does the normal stuff below not work?
-				val faceVec = from - faceCenter
+				//val faceVec = from - faceCenter
 				//val hitDist = -(faceVec * surfaceNormal) / (vec * surfaceNormal)
 
 				//val subVecToVecRatio = vec.normal * directionNormal
-				val hitDist = centerOffset / (vec * surfaceNormal)
+				//val hitDist = faceOffset / (vec.normal * subVec.normal)
+				val hitDist = faceOffset * vec.length / subVec.length
 
 				require(!hitDist.isNaN)
 				//require(subVecToVecRatio > 0)
 
-				//require(hitDist > 0)
+				require(hitDist >= 0, (faceOffset, svl, subVec, surfaceNormal))
 
 				//if(hitDist == 0) println(directionVec, surfaceNormal)
 
-				require((innerStartBlock.globalPos - innerEndBlock.globalPos).length <= 1, innerStartBlock.globalPos + " " + innerEndBlock.globalPos)
+				require((innerStartBlock.globalPos - innerEndBlock.globalPos).length <= 1,
+					(subVec, innerStartBlock.globalPos, innerEndBlock.globalPos, startBlockCorrection, from, adjustedEnd))
 
 				//only start solid if we're not on the 0 boundry
 				if(!innerStartBlock.btyp.isPassable) StartSolid
 				else if(innerEndBlock.btyp.isPassable) NoHit(vec.length)
-				else if(hitDist <= 0) {
+				else if(hitDist < epsilon) {
 					//println(innerStartBlock.globalPos, innerEndBlock.globalPos,  from, subVec, hitDist)
 					StartHit(surfaceNormal)
-				} else if(!innerEndBlock.btyp.isPassable && hitDist <= vec.length) {
+				} else if(!innerEndBlock.btyp.isPassable && hitDist < vec.length) {
 					require(hitDist >= 0, s"hitDist $hitDist ")
 					val blockDelta = innerEndBlock.globalPos.toPoint3D - innerStartBlock.globalPos.toPoint3D
 					//println(innerStartBlock.globalPos, blockDelta, from, hitDist, vec.length, from + vec.normal * hitDist, subVec)
@@ -242,41 +250,41 @@ trait CollisionDetection { world: World =>
 
 			blockNormals.toSeq.map(checkSubComponent).sortBy(_.dist).head
 		} else { //break into segments
-			var i = 0
+			var i = 0.0
 			var lastHit: TraceResult = StartSolid
 
-			while(i * colIncr < vec.length) {
-				val startD = i * colIncr
-				val a = from + vec.normal * startD
+			while(i < vec.length) {
+				val a = from + vec.normal * i
 
-				require(startD < vec.length)
+				require(i < vec.length)
 
-				val segLen = if((vec.length - startD) < colIncr)
-					vec.length - startD
+				val segLen = if((vec.length - i) < colIncr)
+					vec.length - i
 				else colIncr
 
-				require(segLen > 0 && segLen <= colIncr)
+				require(segLen > 0 && segLen <= colIncrMax)
 
 				//println(a, vec.normal, segLen)
 
-				lastHit = traceRay(a, vec.normal * segLen, centerPoint + vec.normal * startD)
+				lastHit = traceRay(a, vec.normal * segLen, centerPoint + vec.normal * i)
 //println(lastHit)
 				lastHit match {
 					case StartSolid if i == 0 => return StartSolid
 					case StartSolid =>
 						//sys.error("Not fucking right")
-						lastHit
+						return StartSolid//lastHit
 					case TraceHit(d, norm) =>
-						require((startD + d) < vec.length)
-						return TraceHit(startD + d, norm)
-					case StartHit(norm) if startD == 0 =>
+						require(d <= segLen)
+						require((i + d) <= vec.length)
+						return TraceHit(i + d, norm)
+					case StartHit(norm) if i == 0 =>
 						return StartHit(norm)
 					case StartHit(norm) =>
-						return TraceHit(startD, norm)
+						return TraceHit(i, norm)
 					case NoHit(_) =>
 				}
 
-				i += 1
+				i += segLen
 			}
 
 			return NoHit(vec.length)
