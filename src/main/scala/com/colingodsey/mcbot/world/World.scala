@@ -39,6 +39,9 @@ trait World {
 	def getChunk(pos: IPoint3D): Chunk = getChunk(pos.x, pos.y, pos.z)
 
 	def getBlock(pos: Point3D): Block = {
+		if(pos.y < 0 || pos.y > 255)
+			return NoBlock(pos.x.toInt, pos.y.toInt, pos.z.toInt)
+		
 		val chunk = getChunk(pos)
 
 		chunk(math.floor(pos.x).toInt - chunk.x * Chunk.dims.x,
@@ -70,6 +73,10 @@ trait WorldClient extends World with CollisionDetection {
 	val ticksPerSecond = 20
 	val movementSpeedModifier = ticksPerSecond * 2.15
 	val velocityFactor = 1.0 / 8000 * ticksPerSecond
+
+
+
+
 
 	def move(eid: Int, dt: Double, body: Body): Unit = updateEntity(eid) { ent =>
 		import CollisionDetection._
@@ -110,7 +117,7 @@ trait WorldClient extends World with CollisionDetection {
 			res.headOption.getOrElse(StartSolid) match {
 				case NoHit(_) => (pos + vec, vec)
 				case StartSolid =>
-					log.warning("Start solid! " + pos)
+					log.warning(s"Start solid! $pos over $vec")
 					//(ent.pos + Point3D(0, 0.01, 0) * dt, Point3D.zero)
 					(ent.pos, Point3D.zero)
 				/*case SurfaceHit(d, norm) if d == vec.length => //rare, but could cause errors
@@ -157,6 +164,15 @@ trait WorldClient extends World with CollisionDetection {
 				log.error(s"failed tracing from ${ent.pos}: ${x.getMessage}")
 				(ent.pos, Point3D.zero)
 				//(ent.pos + terminalVel * dt, terminalVel * dt)
+		}
+
+		try if(traceFunc(newPos, Point3D(0, 0.07, 0)) contains StartSolid) {
+			log.warning("possible start solid")
+			ent.entityCopy(vel = Point3D.zero)
+			return
+		} catch {
+			case t: Throwable =>
+				log.warning(t.getMessage)
 		}
 
 		require(postMoveVec.length <= moveVec.length)
