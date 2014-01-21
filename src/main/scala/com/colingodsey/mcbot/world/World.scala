@@ -6,8 +6,10 @@ import com.colingodsey.mcbot.protocol._
 import com.colingodsey.mcbot.protocol.{ClientProtocol => cpr, ServerProtocol => spr, _}
 import java.util.zip.{Inflater, Deflater}
 import scala.collection.immutable.VectorBuilder
-import akka.actor.ActorLogging
+import akka.actor._
+import akka.pattern._
 import akka.event.LoggingAdapter
+import scala.concurrent.{ExecutionContext, Future}
 
 case class FindChunkError(x: Int, y: Int, z: Int, point: IPoint3D) extends Exception(
 	s"chunk not found: $point for point $x, $y, $z")
@@ -67,15 +69,66 @@ trait World {
 	}
 }
 
+object WorldClient {
+	case class RemoveChunks(poss: Set[IPoint3D])
+	case class AddChunks(chunks: Set[Chunk])
+
+	//the below can be run async!
+	val processChunks: Function[Any, Any] = {
+		case cpr.ChunkData(chunkX, chunkZ, groundUp, bitmask, addBitmask, data) =>
+			val decompdData = Chunk.inflateData(data.toArray)
+
+			val cks = Chunk(chunkX, chunkZ, bitmask, addBitmask, groundUp, true, decompdData)
+
+			if(groundUp && bitmask == 0) //empty column, remove
+				RemoveChunks(cks.map(_.pos).toSet)
+			else AddChunks(cks.toSet)
+		case cpr.MapChunkBulk(chunkColumnCount, skylight, compdData, metas) =>
+			var idx = 0
+			val data = Chunk.inflateData(compdData)
+
+			//loop through mapchunkmeta for each piece array type, store None/Some
+
+			val cSize = Chunk.chunkSize(skylight)
+			val lenArray = metas.map(meta =>
+				Chunk.num1Bits(meta.primaryBitmask) * cSize +
+						Chunk.biomeArrSize)
+
+			require(lenArray.sum == data.length,
+				s"Expected ${lenArray.sum} bytes, found ${data.length}. Lens: ${lenArray}")
+
+			val cols = metas flatMap { case cpr.MapChunkMeta(chunkX, chunkZ, bitmask, addBitmask) =>
+				val nChunks = Chunk.num1Bits(bitmask)
+
+				val totSize = cSize * nChunks + Chunk.biomeArrSize
+
+				val cks = Chunk(chunkX, chunkZ, bitmask, addBitmask,
+					true, skylight, data.slice(idx, idx + totSize))
+
+				require(nChunks == cks.count(!_.isEmpty))
+
+				idx += totSize
+				cks
+			}
+			AddChunks(cols.toSet)
+	}
+}
+
 trait WorldClient extends World with CollisionDetection {
 	import CollisionDetection._
+	import WorldClient._
 
 	val ticksPerSecond = 20
 	val movementSpeedModifier = ticksPerSecond * 2.15
 	val velocityFactor = 1.0 / 8000 * ticksPerSecond
 
+	def self: ActorRef
 
+	implicit def ec: ExecutionContext
 
+	//behaviors
+	def loadingChunk()
+	def chunkLoaded()
 
 
 	def move(eid: Int, dt: Double, body: Body): Unit = updateEntity(eid) { ent =>
@@ -84,7 +137,7 @@ trait WorldClient extends World with CollisionDetection {
 		require(dt > epsilon)
 
 		val traceFunc = body match {
-			case x: SphereBody => traceBody(x, _: Point3D, _: Point3D)
+			//case x: SphereBody => traceBody(x, _: Point3D, _: Point3D)
 			case x: BoxBody =>
 				//log.warning("box bodys dont work great yet...")
 				traceBody(x, _: Point3D, _: Point3D)
@@ -166,7 +219,7 @@ trait WorldClient extends World with CollisionDetection {
 				//(ent.pos + terminalVel * dt, terminalVel * dt)
 		}
 
-		try if(traceFunc(newPos, Point3D(0, 0.07, 0)) contains StartSolid) {
+		try if(traceFunc(newPos, Point3D(0, 0.01, 0)) contains StartSolid) {
 			log.warning("possible start solid")
 			ent.entityCopy(vel = Point3D.zero)
 			return
@@ -200,6 +253,43 @@ trait WorldClient extends World with CollisionDetection {
 
 		ent.entityCopy(pos = newPos, vel = arggggVel, onGround = hitGround)
 	}
+
+	def handleChunks(x: Any)(implicit ec: ExecutionContext) = {
+		val fut = Future(WorldClient.processChunks(x))
+
+		fut onFailure { case t: Throwable =>
+			log.error(t, "handleChunks fail!")
+		}
+
+		fut pipeTo self
+	}
+
+
+	val blockChange: Actor.Receive = {
+		case cpr.BlockChange(x, y, z, blockID, blockMeta) => try {
+			val bpos = IPoint3D(x, y & 0xFF, z)
+			val chunk = getChunk(bpos)
+
+			chunk.setTyp(bpos.x.toInt - chunk.x * Chunk.dims.x,
+				bpos.y.toInt - chunk.y * Chunk.dims.y,
+				bpos.z.toInt - chunk.z * Chunk.dims.z, blockID.x)
+			chunk.setMeta(bpos.x.toInt - chunk.x * Chunk.dims.x,
+				bpos.y.toInt - chunk.y * Chunk.dims.y,
+				bpos.z.toInt - chunk.z * Chunk.dims.z, blockMeta)
+		} catch {
+			//case t: Throwable => log.error(t, "Failed blockchange!")
+			case x: FindChunkError =>
+				log.error(s"failed blockchange: ${x.getMessage}")
+		}
+		case a @ cpr.MultiBlockChange(x, z, numRecord, _) =>
+			a.records foreach { case cpr.BlockRecord(meta, id, y, rz, rx) =>
+				val blockChange = cpr.BlockChange(
+					x + rx, y.toByte, z + rz, VarInt(id), meta)
+				self ! blockChange
+			}
+	}
+
+
 
 	val worldClientReceive: PartialFunction[Any, Unit] = {
 		case cpr.EntityRelativeMove(eid, dx, dy, dz) => updateEntity(eid) { e =>
@@ -273,64 +363,20 @@ trait WorldClient extends World with CollisionDetection {
 			players += name -> eid
 
 			worldClientReceive(cpr.EntityMetadata(eid, mdata))
-		case cpr.ChunkData(chunkX, chunkZ, groundUp, bitmask, addBitmask, data) =>
-			val decompdData = Chunk.inflateData(data.toArray)
 
-			val cks = Chunk(chunkX, chunkZ, bitmask, addBitmask, groundUp, true, decompdData)
+		case x: cpr.ChunkData =>
+			handleChunks(x)
+			loadingChunk
+		case x: cpr.MapChunkBulk =>
+			handleChunks(x)
+			loadingChunk
 
-			if(groundUp && bitmask == 0) //empty column, remove
-				chunks --= cks.map(_.pos)
-			else chunks ++= cks.map(x => x.pos -> x)
-		case cpr.MapChunkBulk(chunkColumnCount, skylight, compdData, metas) =>
-			var idx = 0
-			val data = Chunk.inflateData(compdData)
-
-			//loop through mapchunkmeta for each piece array type, store None/Some
-
-			val cSize = Chunk.chunkSize(skylight)
-			val lenArray = metas.map(meta =>
-				Chunk.num1Bits(meta.primaryBitmask) * cSize +
-					Chunk.biomeArrSize)
-
-			require(lenArray.sum == data.length,
-				s"Expected ${lenArray.sum} bytes, found ${data.length}. Lens: ${lenArray}")
-
-			val cols = metas flatMap { case cpr.MapChunkMeta(chunkX, chunkZ, bitmask, addBitmask) =>
-				val nChunks = Chunk.num1Bits(bitmask)
-
-				val totSize = cSize * nChunks + Chunk.biomeArrSize
-
-				val cks = Chunk(chunkX, chunkZ, bitmask, addBitmask,
-					true, skylight, data.slice(idx, idx + totSize))
-
-				require(nChunks == cks.count(!_.isEmpty))
-
-				idx += totSize
-				cks
-			}
-			chunks ++= cols.map(x => x.pos -> x)
-		case cpr.BlockChange(x, y, z, blockID, blockMeta) => try {
-			val bpos = IPoint3D(x, y & 0xFF, z)
-			val chunk = getChunk(bpos)
-
-			chunk.setTyp(bpos.x.toInt - chunk.x * Chunk.dims.x,
-				bpos.y.toInt - chunk.y * Chunk.dims.y,
-				bpos.z.toInt - chunk.z * Chunk.dims.z, blockID.x)
-			chunk.setMeta(bpos.x.toInt - chunk.x * Chunk.dims.x,
-				bpos.y.toInt - chunk.y * Chunk.dims.y,
-				bpos.z.toInt - chunk.z * Chunk.dims.z, blockMeta)
-		} catch {
-			//case t: Throwable => log.error(t, "Failed blockchange!")
-			case x: FindChunkError =>
-				log.error(s"failed blockchange: ${x.getMessage}")
-		}
-		case a @ cpr.MultiBlockChange(x, z, numRecord, _) =>
-			a.records foreach { case cpr.BlockRecord(meta, id, y, rz, rx) =>
-				val blockChange = cpr.BlockChange(
-					x + rx, y.toByte, z + rz, VarInt(id), meta)
-				worldClientReceive(blockChange)
-			}
-
+		case AddChunks(x) =>
+			chunkLoaded
+			chunks ++= x.map(a => a.pos -> a)
+		case RemoveChunks(x) =>
+			chunkLoaded
+			chunks --= x
 
 		case x: cpr.Animation =>
 		case x: cpr.Effect =>

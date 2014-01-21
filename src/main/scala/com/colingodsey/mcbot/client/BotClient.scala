@@ -65,11 +65,12 @@ object BotClient {
 	val jumpSpeed = 8
 }
 
-class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging with WorldClient {
+class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
+		with Stash with WorldClient {
 	import settings._
 	import BotClient._
 
-	import context.dispatcher
+	implicit def ec = context.dispatcher
 
 	val username = "funnybot1"
 
@@ -193,7 +194,26 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 		ent.copy(vel = ent.vel + Point3D(0, jumpSpeed, 0))
 	}
 
-	def normal: Receive = worldClientReceive orElse {
+	def loadingChunk() {
+		context.become(waitingChunkReceive, false)
+	}
+	def chunkLoaded() {
+		context.unbecome
+		unstashAll()
+	}
+
+	def waitingChunkReceive: Receive = worldClientReceive orElse clientThink orElse {
+		case _ => stash()
+	}
+
+	def normal: Receive = worldClientReceive orElse blockChange orElse clientThink orElse unhandled
+
+	def unhandled: Receive = {
+		case packet: Packet =>
+			log.info("Unhandled packet " + packet)
+	}
+
+	val clientThink: Receive = {
 		case cpr.EntityStatus(eid, 2) if eid == selfId => //we died??
 			/*updateEntity(selfId) { e =>
 				e.copy(health = 0)
@@ -206,7 +226,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 			food = x.food
 			log.info("Health " + x.health)
 		//case cpr.SpawnPosition(x, y, z) =>
-			//track spawn pos i guess?
+		//track spawn pos i guess?
 		case cpr.PositionAndLook(x, y, z, yaw, pitch, onGround) =>
 			val pos = try Point(x, y, z) catch {
 				case x: Throwable =>
@@ -274,8 +294,6 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 
 		case x: cpr.PlayerListItem =>
 		case x: cpr.ChangeGameState =>
-		case packet: Packet =>
-			log.info("Unhandled packet " + packet)
 
 		case PhysicsTick if joined =>
 			val ct = curTime
@@ -350,12 +368,14 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging wi
 				joined = false
 			}
 
-			if(direction !~~ Point3D.zero) {
+			if(direction !~~ Point3D.zero) try {
 				val l = 0.5
 				val res = traceBody(CollisionDetection.UnitBox,
 					selfEnt.pos + Point3D(0, -stanceDelta + 1, 0), direction * l)
 
 				if(res.head.dist < l) jump()
+			} catch {
+				case t: FindChunkError =>
 			}
 
 			log.info(s"health = ${selfEnt.health}, pos = ${selfEnt.pos},  ground = ${selfEnt.onGround}, velL = ${selfEnt.vel.length}")
