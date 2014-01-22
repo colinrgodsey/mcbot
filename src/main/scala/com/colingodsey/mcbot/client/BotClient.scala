@@ -143,7 +143,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 			val sortedNs = flatNeighbs.sortBy(_ * delta)
 			
-			val posBlocks = flatNeighbs.toStream map { x =>
+			val posBlocks = sortedNs.toStream map { x =>
 				(getBlock(state.globalPos.toPoint3D + x), x)
 			}
 			val localBottom = getBlock(state.globalPos.toPoint3D + Point3D(0, -1, 0))

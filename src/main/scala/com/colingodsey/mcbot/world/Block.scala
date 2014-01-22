@@ -43,7 +43,7 @@ object Block {
 	}
 
 	val typeSet = Set[BlockType](Air, Stone, Grass, Dirt, Bedrock, Water,
-		Lava, Sand, Gravel, GoldOre)
+		Lava, Sand, Gravel, GoldOre, Torch, RedstoneWire)
 
 	val halfBlockVec = Point3D.one / 2
 
