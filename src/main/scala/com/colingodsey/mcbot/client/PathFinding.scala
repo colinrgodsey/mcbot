@@ -1,6 +1,7 @@
 package com.colingodsey.mcbot.client
 
 import scala.collection.immutable.VectorBuilder
+import scala.concurrent.blocking
 
 trait PathFinding[State <: Equals, Move <: Equals] {
 	type Paths = Stream[(State, List[Move])]
@@ -25,14 +26,25 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 	}
 
 	def pathsFrom(initial: Paths, explored: Set[State]): Paths = {
-		val more = for {
+		/*val more = for {
 			(state, moves) <- initial
 			withHistory = neighborsWithHistory(state, moves)
 			next <- newNeighborsOnly(withHistory, explored)
 		} yield next
 
 		if(more.isEmpty) initial
-		else initial #::: pathsFrom(more, explored ++ more.iterator.map(_._1))
+		else initial #::: pathsFrom(more, explored ++ more.iterator.map(_._1))*/
+
+		val tailStream = for {
+			(state, moves) <- initial
+			withHistory = neighborsWithHistory(state, moves)
+			more = newNeighborsOnly(withHistory, explored)
+			newExplored = explored ++ more.iterator.map(_._1)
+			next @ (nextState, nextMoves) <- more
+			path <- pathsFrom(more, newExplored)
+		} yield path
+
+		initial #::: tailStream
 	}
 
 	def pathsFrom(start: State): Paths =
@@ -46,7 +58,7 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 		}
 	}*/
 
-	def pathFrom(start: State, to: State, of: Int = 1000): Option[Seq[Move]] = {
+	def pathFrom(start: State, to: State, of: Int = 1000): Option[Seq[Move]] = blocking {
 		val paths = pathsFrom(start)
 
 		val iter = paths.iterator
@@ -57,12 +69,15 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 			val (state, moves) = iter.next
 
 			if(state == to) {
-				res += moves
-				n = of //hacky
-			} //return Some(moves)
+				//res += moves
+				println(n, moves.length)
+				return Some(moves.reverse)
+			}
 
 			n += 1
 		}
+
+		println("NO PATH!!")
 
 		val totalRes = res.result
 

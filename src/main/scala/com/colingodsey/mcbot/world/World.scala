@@ -20,7 +20,7 @@ trait World {
 	def selfId: Int //remove this later
 
 	var entities = Map[Int, Entity]()
-	var chunks = Map[IPoint3D, Chunk]()
+	@volatile var chunks = Map[IPoint3D, Chunk]()
 	var players = Map[String, Int]()
 
 	def player(name: String) = entities(players(name)).asInstanceOf[Player]

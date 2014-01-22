@@ -81,7 +81,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	import settings._
 	import BotClient._
 
-	implicit def ec = context.dispatcher
+	implicit def ec = context.system.dispatcher
 
 	val username = "funnybot1"
 
@@ -137,16 +137,20 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	class PathFinder(dest: Block) extends PathFinding[Block, Point3D] {
 		def maxPathLength: Int = BotClient.this.maxPathLength
+
+		val destPost = dest.globalPos.toPoint3D
 		
 		def legalNeighbors(state: Block): Stream[(Block, Point3D)] = {
-			val delta = dest.globalPos - state.globalPos
+			val delta = destPost - state.globalPos
 
 			val sortedNs = flatNeighbs.sortBy(_ * delta)
 			
 			val posBlocks = sortedNs.toStream map { x =>
 				(getBlock(state.globalPos.toPoint3D + x), x)
 			}
-			val localBottom = getBlock(state.globalPos.toPoint3D + Point3D(0, -1, 0))
+			def localBottom = getBlock(state.globalPos.toPoint3D + Point3D(0, -1, 0))
+
+			if(localBottom.btyp.isPassable || !state.btyp.isPassable) return Stream()
 
 			// XX topBlock
 			// XX block
@@ -165,8 +169,10 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				def lowerBlock = getBlock(p + Point3D(0, -1, 0))
 				def bottomBlock = getBlock(p + Point3D(0, -2, 0))
 
-				if(block.btyp.isPassable && topBlock.btyp.isPassable &&
-						lowerBlock.btyp.isPassable && !bottomBlock.btyp.isPassable)
+				if(block.btyp.isPassable &&
+						!bottomBlock.btyp.isPassable &&
+						topBlock.btyp.isPassable &&
+						lowerBlock.btyp.isPassable)
 					Some(lowerBlock, move + Point3D(0, -1, 0))
 				else None
 			}
@@ -188,8 +194,9 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				}
 			}
 
-			if(localBottom.btyp.isPassable || !state.btyp.isPassable) Stream()
-			else flatN #::: lowerN #::: upperN
+			//do flat first..
+			//flatN #::: lowerN #::: upperN    //use this for non a*
+			(flatN #::: lowerN #::: upperN).sortBy(x => (destPost - x._1.globalPos) * delta)
 		}
 	}
 
@@ -197,7 +204,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	def getPath(): Unit = moveGoal match {
 		case Some(p) if !gettingPath =>
 			gettingPath = true
-			val fut = Future {
+			val fut = scala.concurrent.future {
 				val floorTargetBlock = getBlock(p + Point3D(0, -1, 0))
 				val endTargetBlock = getBlock(p)
 
@@ -206,8 +213,17 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 				val finder = new PathFinder(targetBlock)
 
+				val dl = Deadline.now
+
 				if(!targetBlock.btyp.isPassable) Nil
-				else blocking(finder.pathFrom(footBlock, targetBlock, 100000)) match {
+				else blocking {
+					val r = finder.pathFrom(footBlock, targetBlock, 10000)
+
+					val elapsed = -dl.timeLeft.toSeconds
+					if(elapsed > 1) log.info(s"Pathing took $elapsed seconds")
+
+					r
+				} match {
 					case Some(path) =>
 						val boff = Block.halfBlockVec
 						var start = footBlock.globalPos.toPoint3D
@@ -484,7 +500,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 				val vec = (nextStep - footBlockPos)
 
-				if(vec.length < 0.5) {
+				if(vec.length < 0.8) {
 					curPath = curPath.tail
 					//if(!curPath.isEmpty) say("Next stop, " + curPath.headOption)
 					if(curPath.isEmpty) direction = Point3D.zero
@@ -512,7 +528,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 				if(selfEnt.vel.length < 0.01)
 					direction += Point3D.random
-			} else direction = Point3D.zero
+			} //else direction = Point3D.zero
 		case PhysicsTick => //not joined... ignore
 		case Respawn => respawn
 		case PathFound(path) =>
@@ -533,14 +549,18 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				direction = dir
 			}*/
 
-			//direction = Point3D.zero
+			direction = Point3D.zero
 
 			if(path.isEmpty) curPath = Nil
 			else curPath = path.drop(startIdx)
 
 			if(!curPath.isEmpty)
 				println("curpath: " + curPath)
-			else direction += Point3D.random
+			else {
+				updateEntity(selfId) { case ent: Player =>
+					ent.copy(vel = ent.vel + Point3D.random * 0.2)
+				}
+			}
 		case LongTick if joined =>
 			//if(math.random < 0.3) direction = Point3D(math.random - 0.5, 0, math.random - 0.5).normal
 			//direction = Point3D(1, 0, 0)
