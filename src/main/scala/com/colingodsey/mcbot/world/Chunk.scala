@@ -140,7 +140,7 @@ object Chunk {
 	}
 }
 
-trait Chunk { chunk =>
+trait Chunk extends Equals { chunk =>
 	import Chunk._
 
 	def x: Int
@@ -165,6 +165,16 @@ trait Chunk { chunk =>
 	//def setBiome(x: Int, y: Int, z: Int, value: Int): Chunk
 
 	lazy val pos: IPoint3D = IPoint3D(x, y, z)
+
+	override def equals(that: Any) = that match {
+		case x: Chunk => pos == x.pos
+		case _ => false
+	}
+
+	override def canEqual(that: Any) = that match {
+		case x: Chunk => true
+		case _ => false
+	}
 }
 
 class MutableChunk(val x: Int, val y: Int, val z: Int,

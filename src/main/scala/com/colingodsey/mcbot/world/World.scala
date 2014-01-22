@@ -177,7 +177,7 @@ trait WorldClient extends World with CollisionDetection {
 					if(norm == Point3D(0, 1, 0)) hitGround = true
 					(pos, vec)*/
 				case SurfaceHit(d, norm)/* if d > 0*/ =>
-					if(norm == Point3D(0, 1, 0)) hitGround = true
+					if((norm * Point3D(0, 1, 0)) == 1) hitGround = true
 
 					/*val vecNormal = vec.normal
 					val remainingD = vec.length - d
@@ -266,7 +266,7 @@ trait WorldClient extends World with CollisionDetection {
 
 
 	val blockChange: Actor.Receive = {
-		case cpr.BlockChange(x, y, z, blockID, blockMeta) => try {
+		case a @ cpr.BlockChange(x, y, z, blockID, blockMeta) => try {
 			val bpos = IPoint3D(x, y & 0xFF, z)
 			val chunk = getChunk(bpos)
 
@@ -280,11 +280,13 @@ trait WorldClient extends World with CollisionDetection {
 			//case t: Throwable => log.error(t, "Failed blockchange!")
 			case x: FindChunkError =>
 				log.error(s"failed blockchange: ${x.getMessage}")
+				//schedule retry here!
 		}
 		case a @ cpr.MultiBlockChange(x, z, numRecord, _) =>
 			a.records foreach { case cpr.BlockRecord(meta, id, y, rz, rx) =>
 				val blockChange = cpr.BlockChange(
-					x + rx, y.toByte, z + rz, VarInt(id), meta)
+					x * Chunk.dims.x + rx, y.toByte,
+					z * Chunk.dims.z + rz, VarInt(id), meta)
 				self ! blockChange
 			}
 	}

@@ -56,10 +56,12 @@ object CollisionDetection {
 		(Point3D(0, -eyeHeight + 1.5, 0), 0.5)
 	))*/
 
+	val playerHalfWidth = 0.4
 	def playerBody(eyeHeight: Double) =
-		BoxBody(Point3D(-0.5, -eyeHeight, -0.5), Point3D(0.5, 1.9 - eyeHeight, 0.5)) //eye origin
+		BoxBody(Point3D(-playerHalfWidth, -eyeHeight, -playerHalfWidth),
+			Point3D(playerHalfWidth, 1.9 - eyeHeight, playerHalfWidth)) //eye origin
 
-	val UnitBox = BoxBody(Point3D.one * -0.5, Point3D.one * 0.5)
+	val UnitBox = BoxBody(Point3D.one * -playerHalfWidth, Point3D.one * playerHalfWidth)
 }
 
 trait CollisionDetection { world: World =>

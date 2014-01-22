@@ -21,7 +21,12 @@ object Block {
 
 	case class Unknown(typ: Int) extends BlockType {
 		//plant block IDs
-		val isPassable: Boolean = if(typ >= 31 && typ <= 40) true else false
+		//val isPassable: Boolean = if(typ >= 31 && typ <= 40) true else false
+		val isPassable: Boolean = typ match {
+			case _ if typ >= 31 && typ <= 40 => true
+			case 59 => true
+			case _ => false
+		}
 	}
 
 	trait BlockType {
@@ -73,7 +78,7 @@ final case class ChunkBlock private[world] (
 		y + chunk.y * dims.y, z + chunk.z * dims.z)
 }
 
-trait Block {
+trait Block extends Equals {
 	import Chunk._
 
 	def typ: Int
