@@ -92,6 +92,9 @@ object Point3D extends PointCompanion[Point3D] {
 
 	def zero = origin
 
+	def random = (Point3D(math.random, math.random,
+		math.random) * 2 - Point3D.one).normal
+
 	def dimensions: Dimensions = Dimensions.Two
 }
 

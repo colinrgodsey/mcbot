@@ -6,6 +6,7 @@ import com.colingodsey.mcbot.protocol
 import com.colingodsey.mcbot.protocol._
 import com.colingodsey.mcbot.protocol.ClientProtocol.Metadata
 import scala.concurrent.duration._
+import scala.concurrent.blocking
 import spray.client.pipelining._
 import spray.json._
 import scala.util.{Success, Failure}
@@ -76,7 +77,7 @@ object BotClient {
 }
 
 class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
-		with Stash with WorldClient with PathFinding[Block, Point3D] {
+		with Stash with WorldClient {
 	import settings._
 	import BotClient._
 
@@ -120,6 +121,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	context watch stream
 
+	def maxPathLength: Int = 300
+
 	def curTime = System.currentTimeMillis / 1000.0
 
 	def selfEnt = entities(selfId).asInstanceOf[Player]
@@ -132,54 +135,62 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	def movementSpeed = selfEnt.prop("generic.movementSpeed") * movementSpeedModifier
 	def maxHealth = selfEnt.prop("generic.maxHealth")
 
-	def legalNeighbors(state: Block): Stream[(Block, Point3D)] = {
-		val posBlocks = flatNeighbs.toStream map { x =>
-			(getBlock(state.globalPos.toPoint3D + x), x)
-		}
-		val localBottom = getBlock(state.globalPos.toPoint3D + Point3D(0, -1, 0))
+	class PathFinder(dest: Block) extends PathFinding[Block, Point3D] {
+		def maxPathLength: Int = BotClient.this.maxPathLength
+		
+		def legalNeighbors(state: Block): Stream[(Block, Point3D)] = {
+			val delta = dest.globalPos - state.globalPos
 
-		// XX topBlock
-		// XX block
-		// == bottomBlock
-		val flatN = posBlocks filter { case (block, move) =>
-			val p = block.globalPos.toPoint3D
-			def topBlock = getBlock(p + Point3D(0, 1, 0))
-			def bottomBlock = getBlock(p + Point3D(0, -1, 0))
+			val sortedNs = flatNeighbs.sortBy(_ * delta)
+			
+			val posBlocks = flatNeighbs.toStream map { x =>
+				(getBlock(state.globalPos.toPoint3D + x), x)
+			}
+			val localBottom = getBlock(state.globalPos.toPoint3D + Point3D(0, -1, 0))
 
-			block.btyp.isPassable && topBlock.btyp.isPassable && !bottomBlock.btyp.isPassable
-		}
-
-		val lowerN = posBlocks flatMap { case (block, move) =>
-			val p = block.globalPos.toPoint3D
-			def topBlock = getBlock(p + Point3D(0, 1, 0))
-			def lowerBlock = getBlock(p + Point3D(0, -1, 0))
-			def bottomBlock = getBlock(p + Point3D(0, -2, 0))
-
-			if(block.btyp.isPassable && topBlock.btyp.isPassable &&
-					lowerBlock.btyp.isPassable && !bottomBlock.btyp.isPassable)
-				Some(lowerBlock, move + Point3D(0, -1, 0))
-			else None
-		}
-
-		lazy val upperPossible = getBlock(
-			state.globalPos.toPoint3D + Point3D(0, 2, 0)).btyp.isPassable
-		val upperN = posBlocks flatMap { case (block, move) =>
-			if(!upperPossible) Nil
-			else {
+			// XX topBlock
+			// XX block
+			// == bottomBlock
+			val flatN = posBlocks filter { case (block, move) =>
 				val p = block.globalPos.toPoint3D
-				def topBlock = getBlock(p + Point3D(0, 2, 0))
-				def midBlock = getBlock(p + Point3D(0, 1, 0))
-				//val bottomBlock = block
+				def topBlock = getBlock(p + Point3D(0, 1, 0))
+				def bottomBlock = getBlock(p + Point3D(0, -1, 0))
 
-				if(!block.btyp.isPassable && topBlock.btyp.isPassable &&
-						midBlock.btyp.isPassable)
-					Some(midBlock, move + Point3D(0, 1, 0))
+				block.btyp.isPassable && topBlock.btyp.isPassable && !bottomBlock.btyp.isPassable
+			}
+
+			val lowerN = posBlocks flatMap { case (block, move) =>
+				val p = block.globalPos.toPoint3D
+				def topBlock = getBlock(p + Point3D(0, 1, 0))
+				def lowerBlock = getBlock(p + Point3D(0, -1, 0))
+				def bottomBlock = getBlock(p + Point3D(0, -2, 0))
+
+				if(block.btyp.isPassable && topBlock.btyp.isPassable &&
+						lowerBlock.btyp.isPassable && !bottomBlock.btyp.isPassable)
+					Some(lowerBlock, move + Point3D(0, -1, 0))
 				else None
 			}
-		}
 
-		if(localBottom.btyp.isPassable || !state.btyp.isPassable) Stream()
-		else flatN #::: lowerN #::: upperN
+			lazy val upperPossible = getBlock(
+				state.globalPos.toPoint3D + Point3D(0, 2, 0)).btyp.isPassable
+			val upperN = posBlocks flatMap { case (block, move) =>
+				if(!upperPossible) Nil
+				else {
+					val p = block.globalPos.toPoint3D
+					def topBlock = getBlock(p + Point3D(0, 2, 0))
+					def midBlock = getBlock(p + Point3D(0, 1, 0))
+					//val bottomBlock = block
+
+					if(!block.btyp.isPassable && topBlock.btyp.isPassable &&
+							midBlock.btyp.isPassable)
+						Some(midBlock, move + Point3D(0, 1, 0))
+					else None
+				}
+			}
+
+			if(localBottom.btyp.isPassable || !state.btyp.isPassable) Stream()
+			else flatN #::: lowerN #::: upperN
+		}
 	}
 
 	//this accesses local state in another thread... dangerous
@@ -193,8 +204,10 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				val targetBlock = if(floorTargetBlock.btyp.isPassable) floorTargetBlock
 				else endTargetBlock
 
+				val finder = new PathFinder(targetBlock)
+
 				if(!targetBlock.btyp.isPassable) Nil
-				else pathFrom(footBlock, targetBlock, 10000) match {
+				else blocking(finder.pathFrom(footBlock, targetBlock, 100000)) match {
 					case Some(path) =>
 						val boff = Block.halfBlockVec
 						var start = footBlock.globalPos.toPoint3D
@@ -423,10 +436,10 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 				lastTime = ct
 
-				if(direction.length > 0) {
-					if(direction.length > 1) direction = direction.normal
+				val walkDir = Point3D(direction.x, 0, direction.z)
 
-					val moveVec = direction * movementSpeed * dt
+				if(walkDir.length > 0) {
+					val moveVec = walkDir.normal * movementSpeed * dt
 
 					//println(addLen, moveVec, moveLen, movementSpeed)
 					updateEntity(selfId) { case ent: Player =>
@@ -474,6 +487,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				if(vec.length < 0.5) {
 					curPath = curPath.tail
 					//if(!curPath.isEmpty) say("Next stop, " + curPath.headOption)
+					if(curPath.isEmpty) direction = Point3D.zero
 				}
 			}
 
@@ -494,14 +508,11 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 				//val dir = (nextStep - footBlockPos)
 
-				direction = Point3D(dir.x, 0, dir.z)
-				val dl = direction.length
+				direction = dir
 
-				direction = if(dl < 0.05) Point3D.zero
-				else direction.normal
-			} else {
-				direction = Point3D.zero
-			}
+				if(selfEnt.vel.length < 0.01)
+					direction += Point3D.random
+			} else direction = Point3D.zero
 		case PhysicsTick => //not joined... ignore
 		case Respawn => respawn
 		case PathFound(path) =>
@@ -510,16 +521,26 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			path.zipWithIndex foreach { case (x, idx) =>
 				val pos = x + Point3D(0.5, 0, 0.5)
 				val vec = footPos - pos
-				if(vec.length < closest) {
+				if(vec.length < closest && idx < 4) {
 					closest = vec.length
 					startIdx = idx
 				}
 			}
+
+			/*if(moveGoal.isDefined && path.isEmpty) {
+				val dir = moveGoal.get - selfEnt.pos
+
+				direction = dir
+			}*/
+
+			//direction = Point3D.zero
+
 			if(path.isEmpty) curPath = Nil
 			else curPath = path.drop(startIdx)
 
 			if(!curPath.isEmpty)
 				println("curpath: " + curPath)
+			else direction += Point3D.random
 		case LongTick if joined =>
 			//if(math.random < 0.3) direction = Point3D(math.random - 0.5, 0, math.random - 0.5).normal
 			//direction = Point3D(1, 0, 0)

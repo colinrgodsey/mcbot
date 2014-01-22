@@ -18,6 +18,10 @@ object Block {
 	case object Sand extends ASolidBlockType(12)
 	case object Gravel extends ASolidBlockType(13)
 	case object GoldOre extends ASolidBlockType(14)
+	//
+	case object Torch extends ABlockType(50)
+	//
+	case object RedstoneWire extends ABlockType(55)
 
 	case class Unknown(typ: Int) extends BlockType {
 		//plant block IDs

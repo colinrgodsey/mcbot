@@ -9,7 +9,7 @@ import scala.collection.immutable.VectorBuilder
 import akka.actor._
 import akka.pattern._
 import akka.event.LoggingAdapter
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, blocking}
 
 case class FindChunkError(x: Int, y: Int, z: Int, point: IPoint3D) extends Exception(
 	s"chunk not found: $point for point $x, $y, $z")
@@ -74,7 +74,7 @@ object WorldClient {
 	case class AddChunks(chunks: Set[Chunk])
 
 	//the below can be run async!
-	val processChunks: Function[Any, Any] = {
+	val processChunks: Function[Any, Any] = blocking {
 		case cpr.ChunkData(chunkX, chunkZ, groundUp, bitmask, addBitmask, data) =>
 			val decompdData = Chunk.inflateData(data.toArray)
 
@@ -221,7 +221,8 @@ trait WorldClient extends World with CollisionDetection {
 
 		try if(traceFunc(newPos, Point3D(0, 0.01, 0)) contains StartSolid) {
 			log.warning("possible start solid")
-			ent.entityCopy(vel = Point3D.zero)
+			ent.entityCopy(vel = Point3D(math.random - 0.5,
+				math.random - 0.5, math.random - 0.5).normal)
 			return
 		} catch {
 			case t: Throwable =>
@@ -244,6 +245,11 @@ trait WorldClient extends World with CollisionDetection {
 			terminalVel
 		} else resVel
 
+		val xzOnly = Point3D(arggggVel.x, 0, arggggVel.z)
+
+		val finalVel = if(xzOnly.length < 0.1) Point3D(0, arggggVel.y, 0)
+		else arggggVel
+
 //if(newVec !~~ Point3D.zero) println(newVec)
 		//require(resVel.length <= tryVel.length, s"$resVel > $tryVel")
 		//val finalVel = if(resVel.length > terminal) resVel.normal * terminal else resVel
@@ -251,7 +257,7 @@ trait WorldClient extends World with CollisionDetection {
 
 		//val newVel = finalVel + gravAcc * dt
 
-		ent.entityCopy(pos = newPos, vel = arggggVel, onGround = hitGround)
+		ent.entityCopy(pos = newPos, vel = finalVel, onGround = hitGround)
 	}
 
 	def handleChunks(x: Any)(implicit ec: ExecutionContext) = {

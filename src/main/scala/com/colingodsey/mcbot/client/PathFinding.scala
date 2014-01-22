@@ -5,7 +5,9 @@ import scala.collection.immutable.VectorBuilder
 trait PathFinding[State <: Equals, Move <: Equals] {
 	type Paths = Stream[(State, List[Move])]
 
-	def maxMoves = 40
+	def maxPathLength: Int
+
+	private def maxMoves = maxPathLength
 	
 	def legalNeighbors(state: State): Stream[(State, Move)]
 
