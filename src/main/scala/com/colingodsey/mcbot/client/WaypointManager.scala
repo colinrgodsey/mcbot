@@ -40,7 +40,7 @@ object WaypointManager extends Protocol {
 trait WaypointManager {
 	import WaypointManager._
 
-	def getPath(from: Point3D, to: Point3D): Seq[Point3D]
+	def getShortPath(from: Point3D, to: Point3D): Seq[Point3D]
 	def log: LoggingAdapter
 	implicit def ec: ExecutionContext
 
@@ -148,15 +148,23 @@ trait WaypointManager {
 		val to = waypoints(toId)
 
 		if(from.connections.get(toId) == None) {
-			val path = getPath(from.pos, to.pos)
+			val path = getShortPath(from.pos, to.pos)
 
-			if(path.isEmpty) println("Bad connect!")
+			if(path.isEmpty) log.warning("Bad connect!")
 			else {
 				val conn = toId -> Connection(toId, path.length)
 				addWaypoint(from.copy(connections = from.connections + conn))
-				println("New connection!")
+				log.info("New connection!")
 			}
 		}
+	}
+
+	def disconnectWaypoints(fromId: Int, toId: Int) {
+		val from = waypoints(fromId)
+
+		log.info("Removed connection!")
+
+		from.copy(connections = from.connections - toId)
 	}
 
 	def getNearWaypoints(pos: Point3D,
@@ -209,7 +217,7 @@ trait WaypointBot extends WaypointManager { bot: BotClient =>
 
 	var lastWaypoint: Option[Waypoint] = None
 
-	def getPath(from: Point3D, to: Point3D): Seq[Point3D] = {
+	def getShortPath(from: Point3D, to: Point3D): Seq[Point3D] = {
 		val floorTargetBlock = getBlock(to + Point3D(0, -1, 0))
 		val endTargetBlock = getBlock(to)
 		val targetBlock = if(floorTargetBlock.btyp.isPassable) floorTargetBlock
@@ -220,9 +228,9 @@ trait WaypointBot extends WaypointManager { bot: BotClient =>
 		val startBlock = if(floorStartBlock.btyp.isPassable) floorStartBlock
 		else endStartBlock
 
-		val finder = new PathFinder(targetBlock, 256)
+		val finder = new PathFinder(targetBlock, 128)
 
-		finder.pathFrom(startBlock, targetBlock, 4000).toSeq.flatten
+		finder.pathFrom(startBlock, targetBlock, 900).toSeq.flatten
 	}
 
 	def checkWaypoints: Unit = try {
@@ -240,16 +248,14 @@ trait WaypointBot extends WaypointManager { bot: BotClient =>
 				if(lastWaypoint.isDefined)
 					connectWaypoints(lastWaypoint.get.id, w.id)
 
-				lastWaypoint = Some(w)
 			case a @ Some(x) if a != lastWaypoint && lastWaypoint.isDefined =>
 
 				connectWaypoints(lastWaypoint.get.id, x.id)
 				connectWaypoints(x.id, lastWaypoint.get.id)
-
-				lastWaypoint = Some(x)
-			case Some(x) => lastWaypoint = Some(x)
 			case _ =>
 		}
+
+		lastWaypoint = closest.headOption
 	}catch {
 		case x: FindChunkError =>
 			log.info("waypoint stop " + x)

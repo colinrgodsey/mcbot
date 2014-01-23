@@ -576,17 +576,19 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 				log.info("Polling for closest waypoint to target")
 
-				val targetClosest = getNearWaypoints(target.pos).toStream.filter { wp =>
-					try !getPath(wp.pos, target.pos).isEmpty catch {
+				val targetClosest = getNearWaypoints(target.pos, maxNum = 6, radius = 300).toStream/*.filter { wp =>
+					try !getShortPath(wp.pos, target.pos).isEmpty catch {
 						case x: FindChunkError => false
 					}
-				}
+				}*/
 
 				targetClosest.headOption match {
 					case Some(x) if x.id != curWp.id =>
 						val waypointPath = finder(target.pos).pathFrom(curWp, x).toSeq.flatten
-						if(waypointPath.isEmpty) moveGoal = None
-						else {
+						if(waypointPath.isEmpty) {
+							moveGoal = None
+							log.info("No wp path to closest wp by entw")
+						} else {
 							val nextWp = waypoints(waypointPath.head.destId)
 
 							log.info("Tracking wp " + nextWp)
@@ -601,8 +603,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case PathTick if !dead && joined =>
 			if(targetingEnt.isDefined) {
 				val ent = entities(targetingEnt.get)
-				/*if(!moveGoal.isDefined)*/ moveGoal = Some(ent.pos)
-				getPath(ent.pos)
+				if(!moveGoal.isDefined || math.random < 0.15) moveGoal = Some(ent.pos)
+				getPath(moveGoal.get)
 			}
 			checkWaypoints
 		case LongTick if joined =>
