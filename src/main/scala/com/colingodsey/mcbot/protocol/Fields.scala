@@ -30,6 +30,27 @@ trait Fields {
 		}
 	}
 
+	implicit def mapCodec[T, U](implicit codec: FieldCodec[T],
+			codec2: FieldCodec[U],
+			lcodec: LengthCodec[_]): FieldCodec[Map[T, U]] = new FieldCodec[Map[T, U]] {
+		def read(src: DataSource): Map[T, U] = {
+
+			val len = lcodec.readLength(src)
+
+			Vector.fill(len) {
+				src.read[T] -> src.read[U]
+			}.toMap
+		}
+
+		def write(obj: Map[T, U], dest: DataDest): Unit = {
+			lcodec.writeLength(obj.size, dest)
+			obj foreach { case (k, v) =>
+				dest write k
+				dest write v
+			}
+		}
+	}
+
 	implicit object VarIntCodec extends FieldCodec[VarInt] {
 		def read(src: DataSource): VarInt =
 			VarInt(src.readRawVarint32(ByteCodec))

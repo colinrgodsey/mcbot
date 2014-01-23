@@ -5,20 +5,45 @@ import com.colingodsey.logos.collections.Point3D
 import com.infomatiq.jsi.{Point, Rectangle}
 import gnu.trove.TIntProcedure
 import scala.collection.immutable.VectorBuilder
+import com.colingodsey.mcbot.protocol._
+import java.io.{DataOutputStream, FileOutputStream, FileInputStream, File}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Failure
+import akka.actor.ActorLogging
+import akka.event.LoggingAdapter
+import java.nio.file.{Paths, Path, StandardCopyOption, Files}
+import com.colingodsey.mcbot.world.FindChunkError
 
-case class Connection(destId: Int, distance: Double, weights: Map[Any, Double] = Map())
+object WaypointManager extends Protocol {
+	case class Connection(destId: Int, distance: Double, weights: Map[String, Double] = Map())
 
-case class Waypoint(id: Int, pos: Point3D,
-		connections: Map[Int, Connection] = Map()) {
-	val rect = new Rectangle(pos.x.toFloat, pos.z.toFloat, 1, 1)
+	case class Waypoint(id: Int, pos: Point3D,
+			connections: Map[Int, Connection] = Map()) {
+		val rect = new Rectangle(pos.x.toFloat, pos.z.toFloat, 1, 1)
+	}
+
+	implicit object WaypointSnapshot extends LocalPacketCompanion[WaypointSnapshot](0) {
+		import LengthCodec.IntLengthCodec
+		implicit val pointCodec = codecFrom3(Point3D.apply)
+		implicit val connCodec = codecFrom3(Connection.apply)
+		implicit val wpCodec = codecFrom3(Waypoint.apply)
+
+		val codec = codecFrom1(WaypointSnapshot.apply)
+	}
+	case class WaypointSnapshot(waypoints: Seq[Waypoint]) extends Packet {
+		def comp = WaypointSnapshot.asInstanceOf[PacketCompanion[this.type]]
+	}
+
+	val packets = Set[PacketCompanion[_]](WaypointSnapshot)
 }
 
-case class WaypointSnapshot(
-		ids: Set[Int],
-		positions: Map[Int, (Double, Double, Double)]
-)
-
 trait WaypointManager {
+	import WaypointManager._
+
+	def getPath(from: Point3D, to: Point3D): Seq[Point3D]
+	def log: LoggingAdapter
+	implicit def ec: ExecutionContext
+
 	private val rTree = {
 		val t = new RTree
 
@@ -30,7 +55,10 @@ trait WaypointManager {
 	private var _waypoints = Map[Int, Waypoint]()
 	private var _nextWaypointId = 1
 
-	def getPath(from: Point3D, to: Point3D): Seq[Point3D]
+	var savingWaypoints = false
+
+	val waypointFile = new File("./waypoints.dat")
+	val waypointSwapFile = new File("./waypoints.tmp.dat")
 
 	def finder(dest: Point3D) = new PathFinding[Waypoint, Connection] {
 		def maxPathLength: Int = 256
@@ -53,19 +81,48 @@ trait WaypointManager {
 	def waypoints = _waypoints
 	def nextWaypointId = _nextWaypointId
 
+	def makeWaypointSnapshot =
+		WaypointSnapshot(waypoints.values.toSeq)
 
-	def makeWaypointSnapshot = {
-		WaypointSnapshot(
-			_waypoints.keySet,
-			_waypoints.values.map { w =>
-				w.id -> (w.pos.x, w.pos.y, w.pos.z)
-			}.toMap
-		)
+	def loadWaypointSnapshot(snapshot: WaypointSnapshot) =
+		snapshot.waypoints.foreach(addWaypoint)
+
+	def loadWaypoints() {
+		if(!waypointFile.canRead) {
+			log.info("No waypoint file!")
+			return
+		}
+
+		val src = DataSource(new FileInputStream(waypointFile))
+
+		try loadWaypointSnapshot(src.read[WaypointSnapshot](
+			WaypointSnapshot.codec)) finally src.close
 	}
 
-	def loadWaypointSnapshot(snapshot: WaypointSnapshot) = {
-		snapshot.positions foreach { case (id, (x, y, z)) =>
-			addWaypoint(Waypoint(id, Point3D(x, y, z)))
+	def saveWaypoints() {
+		if(savingWaypoints) return
+		savingWaypoints = true
+
+		val dest = new DataDest {
+			val stream = new DataOutputStream(
+				new FileOutputStream(waypointSwapFile))
+		}
+
+		val snapshot = makeWaypointSnapshot
+
+		Future(dest.write(snapshot)(WaypointSnapshot.codec)) onComplete {
+			case Failure(t) =>
+				log.error(t,  "failed to save waypoints!")
+				dest.stream.close
+				savingWaypoints = false
+			case _ =>
+				log.info("saved waypoints")
+
+				Files.move(Paths.get(waypointSwapFile.toString),
+					Paths.get(waypointFile.toString),
+					StandardCopyOption.REPLACE_EXISTING)
+				dest.stream.close
+				savingWaypoints = false
 		}
 	}
 
@@ -91,7 +148,7 @@ trait WaypointManager {
 		val to = waypoints(toId)
 
 		if(from.connections.get(toId) == None) {
-			val path = getPath(from.pos, to.posw)
+			val path = getPath(from.pos, to.pos)
 
 			if(path.isEmpty) println("Bad connect!")
 			else {
@@ -146,6 +203,8 @@ trait WaypointManager {
 }
 
 trait WaypointBot extends WaypointManager { bot: BotClient =>
+	import WaypointManager._
+
 	def waypointMinDistance = 10.0
 
 	var lastWaypoint: Option[Waypoint] = None
@@ -166,7 +225,7 @@ trait WaypointBot extends WaypointManager { bot: BotClient =>
 		finder.pathFrom(startBlock, targetBlock, 4000).toSeq.flatten
 	}
 
-	def checkWaypoints {
+	def checkWaypoints: Unit = try {
 		val closest = getNearWaypoints(bot.selfEnt.pos, waypointMinDistance)
 
 		closest.headOption match {
@@ -191,5 +250,8 @@ trait WaypointBot extends WaypointManager { bot: BotClient =>
 			case Some(x) => lastWaypoint = Some(x)
 			case _ =>
 		}
+	}catch {
+		case x: FindChunkError =>
+			log.info("waypoint stop " + x)
 	}
 }

@@ -52,6 +52,7 @@ object BotClient {
 	case object Respawn
 	case object LongTick
 	case object PathTick
+	case object SaveWaypoints
 	case class PathFound(path: Seq[Point3D])
 
 	def props(settings: BotClient.Settings) = Props(classOf[BotClient], settings)
@@ -99,7 +100,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		2.seconds, 1.second, self, LongTick)
 	val pathTimer = context.system.scheduler.schedule(
 		2.seconds, 1.second, self, PathTick)
-
+	val waypointSaveTimer = context.system.scheduler.schedule(
+		15.seconds, 10.second, self, SaveWaypoints)
 
 	//context.system.scheduler.scheduleOnce(5.seconds, stream, spr.ChatMessage("/kill"))
 
@@ -125,7 +127,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	context watch stream
 
-	def maxPathLength: Int = 300
+	def maxPathLength: Int = 100
 
 	def curTime = System.currentTimeMillis / 1000.0
 
@@ -220,9 +222,11 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 				val dl = Deadline.now
 
+				val startBlock = footBlock
+
 				if(!targetBlock.btyp.isPassable) Nil
 				else blocking {
-					val r = finder.pathFrom(footBlock, targetBlock, 4000)
+					val r = finder.pathFrom(startBlock, targetBlock, 1500)
 
 					val elapsed = -dl.timeLeft.toSeconds
 					if(elapsed > 1) log.info(s"Pathing took $elapsed seconds")
@@ -231,7 +235,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				} match {
 					case Some(path) =>
 						val boff = Block.halfBlockVec
-						var start = footBlock.globalPos.toPoint3D
+						var start = startBlock.globalPos.toPoint3D
 						val res = path.toVector.map { v =>
 							start += v
 
@@ -249,7 +253,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				res match {
 					case Failure(t) =>
 						log.error(t, "getPath failed")
-					case _ =>
+					case _ => log.info("Path finished")
 				}
 			}
 
@@ -457,7 +461,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 				val walkDir = Point3D(direction.x, 0, direction.z)
 
-				if(walkDir.length > 0) {
+				if(walkDir.length > 0.01) {
 					val moveVec = walkDir.normal * movementSpeed * dt
 
 					//println(addLen, moveVec, moveLen, movementSpeed)
@@ -532,6 +536,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			} //else direction = Point3D.zero
 		case PhysicsTick => //not joined... ignore
 		case Respawn => respawn
+		case SaveWaypoints =>
+			saveWaypoints()
 		case PathFound(path) =>
 			var startIdx = 0
 			var closest = 10000.0
@@ -559,14 +565,19 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 			if(!curPath.isEmpty)
 				println("curpath: " + curPath)
-			else if(targetingEnt.isDefined && curPath.isEmpty && lastWaypoint.isDefined) {
+			else if(targetingEnt.isDefined && curPath.isEmpty
+					&& lastWaypoint.isDefined && !moveGoal.isDefined) {
 				val target = entities(targetingEnt.get)
 				val curWp = lastWaypoint.get
 
 				//if closer to target then closest waypoint is to target
 
-				val targetClosest = getNearWaypoints(target.pos).filter { wp =>
-					!getPath(wp.pos, target.pos).isEmpty
+				log.info("Polling for closest waypoint to target")
+
+				val targetClosest = getNearWaypoints(target.pos).toStream.filter { wp =>
+					try !getPath(wp.pos, target.pos).isEmpty catch {
+						case x: FindChunkError => false
+					}
 				}
 
 				targetClosest.headOption match {
@@ -623,6 +634,11 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case x if x.startsWith("echo ") =>
 			stream ! spr.ChatMessage(x.substring(5))
 		case x => log.info("chat: " + x)
+	}
+
+	override def preStart {
+		loadWaypoints()
+		super.preStart
 	}
 
 	override def postStop {

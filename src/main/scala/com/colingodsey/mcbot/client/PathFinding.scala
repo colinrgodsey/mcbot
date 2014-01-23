@@ -78,7 +78,7 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 			n += 1
 		}
 
-		println("NO PATH!!")
+		//println("NO PATH!!")
 
 		//val totalRes = res.result
 

@@ -1,9 +1,10 @@
 package com.colingodsey.mcbot.protocol
 
-import java.io.{ByteArrayOutputStream, DataOutputStream, ByteArrayInputStream, DataInputStream}
+import java.io._
 import com.google.protobuf.{CodedOutputStream, CodedInputStream}
 import com.colingodsey.mcbot.protocol
 import com.colingodsey.logos.collections._
+import com.colingodsey.logos.collections.SeqInputStream
 
 object DataSource {
 	def apply(seq: Iterable[Byte]): DataSource = new DataSource {
@@ -17,6 +18,23 @@ object DataSource {
 		}
 
 		val stream: DataInputStream = new DataInputStream(is)
+	}
+
+	def apply(str: InputStream): DataSource = new DataSource {
+		val is = new InputStream {
+			var pos = 0
+			def read(): Int = {
+				val x = str.read()
+
+				if(x >= 0) {
+					pos += 1
+					x
+				} else x
+			}
+		}
+		val stream = new DataInputStream(is)
+
+		def position = is.pos
 	}
 }
 
