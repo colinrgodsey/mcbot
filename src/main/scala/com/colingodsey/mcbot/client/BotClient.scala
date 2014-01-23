@@ -78,7 +78,7 @@ object BotClient {
 }
 
 class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
-		with Stash with WorldClient {
+		with Stash with WorldClient with WaypointBot {
 	import settings._
 	import BotClient._
 
@@ -114,6 +114,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	var lastPosEnt: Option[Player] = None
 	var heldItem = 0
 	var lastTime = curTime
+	var targetingEnt: Option[Int] = None
 	var moveGoal: Option[Point3D] = None
 	var curPath: Seq[Point3D] = Nil
 	var direction = Point3D.zero//(math.random, 0, math.random).normal
@@ -138,13 +139,12 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	def movementSpeed = selfEnt.prop("generic.movementSpeed") * movementSpeedModifier
 	def maxHealth = selfEnt.prop("generic.maxHealth")
 
-	class PathFinder(dest: Block) extends PathFinding[Block, Point3D] {
-		def maxPathLength: Int = BotClient.this.maxPathLength
+	class PathFinder(dest: Block, val maxPathLength: Int = BotClient.this.maxPathLength) extends PathFinding[Block, Point3D] {
 
-		val destPost = dest.globalPos.toPoint3D
+		val destPos = dest.globalPos.toPoint3D
 		
 		def legalNeighbors(state: Block): Stream[(Block, Point3D)] = {
-			val delta = destPost - state.globalPos
+			val delta = destPos - state.globalPos
 
 			val sortedNs = flatNeighbs.sortBy(_ * delta)
 			
@@ -201,18 +201,17 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			//flatN #::: lowerN #::: upperN    //use this for non a*
 			(flatN #::: lowerN #::: upperN).sortBy { case (block, moves) =>
 				val moveVec = block.globalPos - state.globalPos
-				((destPost - block.globalPos) * delta) - moveVec.length
+				-(moveVec * delta)// - moveVec.length
 			}
 		}
 	}
 
 	//this accesses local state in another thread... dangerous
-	def getPath(): Unit = moveGoal match {
-		case Some(p) if !gettingPath =>
+	def getPath(goal: Point3D): Unit = if(!gettingPath) {
 			gettingPath = true
 			val fut = scala.concurrent.future {
-				val floorTargetBlock = getBlock(p + Point3D(0, -1, 0))
-				val endTargetBlock = getBlock(p)
+				val floorTargetBlock = getBlock(goal + Point3D(0, -1, 0))
+				val endTargetBlock = getBlock(goal)
 
 				val targetBlock = if(floorTargetBlock.btyp.isPassable) floorTargetBlock
 				else endTargetBlock
@@ -255,9 +254,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			}
 
 			fut.map(PathFound) pipeTo self
-		case _ if gettingPath =>
-		case None => self ! PathFound(Nil)
-	}
+	} else self ! PathFound(Nil)
 
 	def lookAt(vec: Point3D) {
 		val alpha1 = -math.asin(vec.normal.x) / math.Pi * 180
@@ -474,16 +471,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			if(follow.isDefined) {
 				val f = follow.get
 
-				val vec = (f.pos - selfEnt.pos)
-				val dir = Point3D(vec.x, 0, vec.z)
-
-				//if(dir.length > 9) direction = dir.normal
-				//else direction = Point3D.zero
-
-				moveGoal = Some(f.pos)
-
-				//lookAt(direction)
-				//println(direction)
+				targetingEnt = Some(f.id)
 			}
 
 			val posChanged = !lastPosEnt.isDefined ||
@@ -515,7 +503,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				if(vec.length > 2) {
 					direction = Point3D.zero
 					curPath = Nil
-					getPath()
+					//getPath()
+					self ! PathTick
 				}
 			}
 
@@ -570,13 +559,39 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 			if(!curPath.isEmpty)
 				println("curpath: " + curPath)
-			else {
-				updateEntity(selfId) { case ent: Player =>
-					ent.copy(vel = ent.vel + Point3D.random * 0.2)
+			else if(targetingEnt.isDefined && curPath.isEmpty && lastWaypoint.isDefined) {
+				val target = entities(targetingEnt.get)
+				val curWp = lastWaypoint.get
+
+				//if closer to target then closest waypoint is to target
+
+				val targetClosest = getNearWaypoints(target.pos).filter { wp =>
+					!getPath(wp.pos, target.pos).isEmpty
 				}
+
+				targetClosest.headOption match {
+					case Some(x) if x.id != curWp.id =>
+						val waypointPath = finder(target.pos).pathFrom(curWp, x).toSeq.flatten
+						if(waypointPath.isEmpty) moveGoal = None
+						else {
+							val nextWp = waypoints(waypointPath.head.destId)
+
+							log.info("Tracking wp " + nextWp)
+							moveGoal = Some(nextWp.pos)
+						}
+						//getPath(target.pos)
+					case _ => moveGoal = None
+				}
+			} else updateEntity(selfId) { case ent: Player =>
+				ent.copy(vel = ent.vel + Point3D.random * 0.2)
 			}
-		case PathTick =>
-			if(!dead && joined) getPath()
+		case PathTick if !dead && joined =>
+			if(targetingEnt.isDefined) {
+				val ent = entities(targetingEnt.get)
+				if(!moveGoal.isDefined) moveGoal = Some(ent.pos)
+				getPath(ent.pos)
+			}
+			checkWaypoints
 		case LongTick if joined =>
 			//if(math.random < 0.3) direction = Point3D(math.random - 0.5, 0, math.random - 0.5).normal
 			//direction = Point3D(1, 0, 0)

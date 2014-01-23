@@ -82,7 +82,9 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 
 		//val totalRes = res.result
 
-		paths.headOption.map(_._2)
+		None
+
+		//paths.headOption.map(_._2)
 		//else Some(totalRes.sortBy(_.length).head)
 	}
 }

@@ -31,12 +31,16 @@ object General {
 			"org.bouncycastle"      %   "bcprov-jdk15on"            % "1.50",
 			"org.bouncycastle"      %   "bcpkix-jdk15on"            % "1.50",
 
+
+			"net.sourceforge.jsi"   %   "jsi"                       % "1.0.0",
+
 			"org.scalatest" 		%%  "scalatest"                 % "1.9"  % "test",
 			"junit" 				%   "junit"					    % "4.10" % "test"
 		),
 
 		resolvers ++= Seq(
-			"spray repo" at "http://repo.spray.io/"
+			"spray repo" at "http://repo.spray.io/",
+			"jsi repo" at "http://sourceforge.net/projects/jsi/files/m2_repo"
 		)
 	) ++ assemblySettings ++ Revolver.settings
 
