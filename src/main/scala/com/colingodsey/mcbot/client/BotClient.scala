@@ -51,6 +51,7 @@ object BotClient {
 	case object PhysicsTick
 	case object Respawn
 	case object LongTick
+	case object PathTick
 	case class PathFound(path: Seq[Point3D])
 
 	def props(settings: BotClient.Settings) = Props(classOf[BotClient], settings)
@@ -96,6 +97,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		tickDelta, tickDelta, self, PhysicsTick)
 	val posTimer = context.system.scheduler.schedule(
 		2.seconds, 1.second, self, LongTick)
+	val pathTimer = context.system.scheduler.schedule(
+		2.seconds, 1.second, self, PathTick)
 
 
 	//context.system.scheduler.scheduleOnce(5.seconds, stream, spr.ChatMessage("/kill"))
@@ -196,7 +199,10 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 			//do flat first..
 			//flatN #::: lowerN #::: upperN    //use this for non a*
-			(flatN #::: lowerN #::: upperN).sortBy(x => (destPost - x._1.globalPos) * delta)
+			(flatN #::: lowerN #::: upperN).sortBy { case (block, moves) =>
+				val moveVec = block.globalPos - state.globalPos
+				((destPost - block.globalPos) * delta) - moveVec.length
+			}
 		}
 	}
 
@@ -217,7 +223,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 				if(!targetBlock.btyp.isPassable) Nil
 				else blocking {
-					val r = finder.pathFrom(footBlock, targetBlock, 10000)
+					val r = finder.pathFrom(footBlock, targetBlock, 4000)
 
 					val elapsed = -dl.timeLeft.toSeconds
 					if(elapsed > 1) log.info(s"Pathing took $elapsed seconds")
@@ -503,7 +509,13 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				if(vec.length < 0.8) {
 					curPath = curPath.tail
 					//if(!curPath.isEmpty) say("Next stop, " + curPath.headOption)
-					if(curPath.isEmpty) direction = Point3D.zero
+					/*if(curPath.isEmpty) */direction = Point3D.zero
+				}
+
+				if(vec.length > 2) {
+					direction = Point3D.zero
+					curPath = Nil
+					getPath()
 				}
 			}
 
@@ -517,7 +529,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 					if i < curPath.length
 					step = curPath(i) + Block.halfBlockVec
 					dir = step - footBlockPos
-					len = dir.length / math.pow(i + 1, 2)
+					len = dir.length / math.pow(i + 1, 6)
 				} yield dir.normal * len
 
 				val dir = dirs.reduce(_ + _)
@@ -551,7 +563,9 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 			direction = Point3D.zero
 
-			if(path.isEmpty) curPath = Nil
+			if(startIdx > 0) println(startIdx)
+
+			if(path.isEmpty) direction = Point3D.zero//curPath = Nil
 			else curPath = path.drop(startIdx)
 
 			if(!curPath.isEmpty)
@@ -561,6 +575,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 					ent.copy(vel = ent.vel + Point3D.random * 0.2)
 				}
 			}
+		case PathTick =>
+			if(!dead && joined) getPath()
 		case LongTick if joined =>
 			//if(math.random < 0.3) direction = Point3D(math.random - 0.5, 0, math.random - 0.5).normal
 			//direction = Point3D(1, 0, 0)
@@ -568,8 +584,6 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			if(dead) {
 				context.system.scheduler.scheduleOnce(2.5.seconds, self, Respawn)
 				joined = false
-			} else {
-				getPath()
 			}
 
 			//if(math.random < 0.2) jump()

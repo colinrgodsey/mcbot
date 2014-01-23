@@ -42,6 +42,7 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 			newExplored = explored ++ more.iterator.map(_._1)
 			next @ (nextState, nextMoves) <- more
 			path <- pathsFrom(more, newExplored)
+			//add some kind of secondary sorting herew
 		} yield path
 
 		initial #::: tailStream
@@ -63,7 +64,7 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 
 		val iter = paths.iterator
 		var n = 0
-		val res = new VectorBuilder[Seq[Move]]
+		//val res = new VectorBuilder[Seq[Move]]
 
 		while(iter.hasNext && n < of) {
 			val (state, moves) = iter.next
@@ -79,10 +80,9 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 
 		println("NO PATH!!")
 
-		val totalRes = res.result
+		//val totalRes = res.result
 
-		if(totalRes.isEmpty) None
-		else Some(totalRes.head.reverse)
+		paths.headOption.map(_._2)
 		//else Some(totalRes.sortBy(_.length).head)
 	}
 }

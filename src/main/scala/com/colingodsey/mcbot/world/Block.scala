@@ -78,7 +78,7 @@ final case class ChunkBlock private[world] (
 	def skyLight: Int = chunk.skyLight(x, y, z)
 	def biome: Int = chunk.biome(x, y, z)
 
-	def globalPos: IPoint3D = IPoint3D(x + chunk.x * dims.x,
+	lazy val globalPos: IPoint3D = IPoint3D(x + chunk.x * dims.x,
 		y + chunk.y * dims.y, z + chunk.z * dims.z)
 }
 
