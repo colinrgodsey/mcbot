@@ -560,8 +560,10 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 			if(startIdx > 0) println(startIdx)
 
-			if(path.isEmpty) direction = Point3D.zero//curPath = Nil
-			else curPath = path.drop(startIdx)
+			if(path.isEmpty) {
+				direction = Point3D.zero//curPath = Nil
+				moveGoal = None
+			} else curPath = path.drop(startIdx)
 
 			if(!curPath.isEmpty)
 				println("curpath: " + curPath)
@@ -599,7 +601,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case PathTick if !dead && joined =>
 			if(targetingEnt.isDefined) {
 				val ent = entities(targetingEnt.get)
-				if(!moveGoal.isDefined) moveGoal = Some(ent.pos)
+				/*if(!moveGoal.isDefined)*/ moveGoal = Some(ent.pos)
 				getPath(ent.pos)
 			}
 			checkWaypoints
