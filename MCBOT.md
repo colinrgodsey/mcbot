@@ -20,4 +20,4 @@
 
 
 Fixed Goals/Behaviors
-*
+*Dead-End - Exploration goal that results

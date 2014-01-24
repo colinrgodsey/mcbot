@@ -13,6 +13,7 @@ import akka.actor.ActorLogging
 import akka.event.LoggingAdapter
 import java.nio.file.{Paths, Path, StandardCopyOption, Files}
 import com.colingodsey.mcbot.world.FindChunkError
+import com.colingodsey.collections.PathFinding
 
 object WaypointManager extends Protocol {
 	case class Connection(destId: Int, distance: Double, weights: Map[String, Double] = Map())
@@ -20,6 +21,8 @@ object WaypointManager extends Protocol {
 	case class Waypoint(id: Int, pos: Point3D,
 			connections: Map[Int, Connection] = Map()) {
 		val rect = new Rectangle(pos.x.toFloat, pos.z.toFloat, 1, 1)
+
+		def property(name: String) = connections.get(id).flatMap(_.weights.get(name)).getOrElse(0.0)
 	}
 
 	implicit object WaypointSnapshot extends LocalPacketCompanion[WaypointSnapshot](0) {

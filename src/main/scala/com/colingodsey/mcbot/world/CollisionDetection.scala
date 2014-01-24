@@ -59,9 +59,10 @@ object CollisionDetection {
 	val playerHalfWidth = 0.4
 	def playerBody(eyeHeight: Double) =
 		BoxBody(Point3D(-playerHalfWidth, -eyeHeight, -playerHalfWidth),
-			Point3D(playerHalfWidth, 1.9 - eyeHeight, playerHalfWidth)) //eye origin
+			Point3D(playerHalfWidth, 1.8 - eyeHeight, playerHalfWidth)) //eye origin
 
 	val UnitBox = BoxBody(Point3D.one * -playerHalfWidth, Point3D.one * playerHalfWidth)
+	val SmallBox = BoxBody(Point3D.one * -playerHalfWidth / 4, Point3D.one * playerHalfWidth / 4)
 }
 
 trait CollisionDetection { world: World =>
@@ -163,7 +164,7 @@ trait CollisionDetection { world: World =>
 			startBlock: Block, distAcc: Double = 0): TraceResult = {
 		//val (startBlock, _) = blockSelect(from, centerPoint)
 
-		require(vec.length > epsilon)
+		require(vec.length > 0)
 
 		if(!startBlock.btyp.isPassable) {
 			require(distAcc == 0)
@@ -200,10 +201,12 @@ trait CollisionDetection { world: World =>
 			case (SurfaceHit(d, norm), endBlock) if !endBlock.btyp.isPassable =>
 				if(d == 0 && distAcc == 0) StartHit(norm)
 				else TraceHit(d + distAcc, norm)
-			case (SurfaceHit(d, _), endBlock) =>
+			case (SurfaceHit(d, _), endBlock) if d > 0 =>
 				require(endBlock.btyp.isPassable)
 				traceRay(from + vec.normal * d,
 					vec.normal * (vec.length - d), endBlock, d + distAcc)
+			case (SurfaceHit(d, norm), endBlock) if d <= 0 =>
+				StartHit(norm)
 		}
 
 	}

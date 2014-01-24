@@ -1,7 +1,6 @@
 package com.colingodsey.mcbot.protocol
 
 import java.io._
-import com.google.protobuf.{CodedOutputStream, CodedInputStream}
 import com.colingodsey.mcbot.protocol
 import com.colingodsey.logos.collections._
 import com.colingodsey.logos.collections.SeqInputStream

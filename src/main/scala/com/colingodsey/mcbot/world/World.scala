@@ -14,17 +14,10 @@ import scala.concurrent.{ExecutionContext, Future, blocking}
 case class FindChunkError(x: Int, y: Int, z: Int, point: IPoint3D) extends Exception(
 	s"chunk not found: $point for point $x, $y, $z")
 
-trait World {
-	def log: LoggingAdapter
-
-	def selfId: Int //remove this later
-
-	var entities = Map[Int, Entity]()
-	@volatile var chunks = Map[IPoint3D, Chunk]()
-	var players = Map[String, Int]()
-
-	def player(name: String) = entities(players(name)).asInstanceOf[Player]
-	def playerOpt(name: String) = players.get(name).flatMap(entities.get(_).map(_.asInstanceOf[Player]))
+trait WorldView {
+	def entities: Map[Int, Entity]
+	def chunks: Map[IPoint3D, Chunk]
+	def players: Map[String, Int]
 
 	def getChunk(x: Int, y: Int, z: Int): Chunk = {
 		val point = IPoint3D(
@@ -43,13 +36,24 @@ trait World {
 	def getBlock(pos: Point3D): Block = {
 		if(pos.y < 0 || pos.y > 255)
 			return NoBlock(pos.x.toInt, pos.y.toInt, pos.z.toInt)
-		
+
 		val chunk = getChunk(pos)
 
 		chunk(math.floor(pos.x).toInt - chunk.x * Chunk.dims.x,
 			math.floor(pos.y).toInt - chunk.y * Chunk.dims.y,
 			math.floor(pos.z).toInt - chunk.z * Chunk.dims.z)
 	}
+}
+
+trait World { wv: WorldView =>
+	def log: LoggingAdapter
+
+	var entities = Map[Int, Entity]()
+	@volatile var chunks = Map[IPoint3D, Chunk]()
+	var players = Map[String, Int]()
+
+	def player(name: String) = entities(players(name)).asInstanceOf[Player]
+	def playerOpt(name: String) = players.get(name).flatMap(entities.get(_).map(_.asInstanceOf[Player]))
 
 	//TODO: add extractors to convert entity types.... case Player(player) =>   will convert
 	def updateEntity(id: Int)(f: Entity => Entity) {
@@ -58,11 +62,6 @@ trait World {
 			case Some(x) =>
 				val updated = f(x)
 				entities += id -> updated
-				//if(x != updated && id == selfId) log.info("Player change: " + updated)
-
-				/*if((updated.pos - x.pos).length > 1000 && id == selfId)
-					sys.error("Tried to move reaallly far!")*/
-				//if(id == selfId) println(entities(id).onGround)
 			case None =>
 				log.warning(s"Update for ent $id that doesnt exist yet")
 		}
@@ -114,7 +113,7 @@ object WorldClient {
 	}
 }
 
-trait WorldClient extends World with CollisionDetection {
+trait WorldClient extends World with WorldView with CollisionDetection {
 	import CollisionDetection._
 	import WorldClient._
 

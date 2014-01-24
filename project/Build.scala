@@ -1,9 +1,13 @@
 import sbt._
 
 import Keys._
+
 import sbtassembly.Plugin.AssemblyKeys._
 import sbtassembly.Plugin.assemblySettings
+
 import spray.revolver.RevolverPlugin.Revolver
+
+import com.typesafe.sbt.SbtAtmos.{ Atmos, atmosSettings }
 
 object General {
 	val settings = Defaults.defaultSettings ++ Seq (
@@ -12,6 +16,7 @@ object General {
 		scalaVersion := scalaV,
 		organization  := "com.colingodsey",
 		javacOptions ++= Seq("-encoding", "UTF-8", "-source", "1.6", "-target", "1.6"),
+		//javaOptions += " -javaagent:lib/aspectj-1.7.4.jar ",
 
 		libraryDependencies ++= Seq(
 			"io.spray"              %   "spray-can"                 % sprayV,
@@ -26,13 +31,13 @@ object General {
 
 			"com.couchbase.client"  %   "couchbase-client"          % "1.2.3",
 
-			"com.google.protobuf"   %   "protobuf-java"             % "2.5.0",
-
 			"org.bouncycastle"      %   "bcprov-jdk15on"            % "1.50",
 			"org.bouncycastle"      %   "bcpkix-jdk15on"            % "1.50",
 
 
 			"net.sourceforge.jsi"   %   "jsi"                       % "1.0.0",
+
+			//"com.typesafe.atmos"    %   "trace-akka-2.2.1_2.10"     % "1.3.0",
 
 			"org.scalatest" 		%%  "scalatest"                 % "1.9"  % "test",
 			"junit" 				%   "junit"					    % "4.10" % "test"
@@ -42,7 +47,7 @@ object General {
 			"spray repo" at "http://repo.spray.io/",
 			"jsi repo" at "http://sourceforge.net/projects/jsi/files/m2_repo"
 		)
-	) ++ assemblySettings ++ Revolver.settings
+	) ++ assemblySettings ++ Revolver.settings ++ atmosSettings
 
 	val akkaV = "2.2.3"
 	val sprayV = "1.2.0"
@@ -54,5 +59,5 @@ object MCBot extends Build {
 		"mcbot",
 		file("."),
 		settings = General.settings
-	)
+	).configs(Atmos)
 }

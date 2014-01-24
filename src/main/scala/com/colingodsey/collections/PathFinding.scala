@@ -1,4 +1,4 @@
-package com.colingodsey.mcbot.client
+package com.colingodsey.collections
 
 import scala.collection.immutable.VectorBuilder
 import scala.concurrent.blocking

@@ -45,6 +45,7 @@ import protocol.{ServerProtocol => spr}
 import com.colingodsey.mcbot.world._
 import scala.Some
 import com.colingodsey.mcbot.world.Player
+import akka.event.LoggingReceive
 
 object BotClient {
 	case class Settings(host: String, port: Int)
@@ -67,7 +68,7 @@ object BotClient {
 		def read(value: JsValue) = value.asInstanceOf[JsArray]
 	}
 
-	val jumpSpeed = 10
+	val jumpSpeed = 11
 
 	val flatNeighbs = Seq(
 		Point3D(-1, 0, 0),
@@ -79,7 +80,7 @@ object BotClient {
 }
 
 class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
-		with Stash with WorldClient with WaypointBot {
+		with Stash with WorldClient with WaypointBot with BotNavigation {
 	import settings._
 	import BotClient._
 
@@ -112,7 +113,6 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	var stanceDelta = 1.62
 	var joined = false
 	var food = 1.0
-	var gettingPath = false
 	var lastPosEnt: Option[Player] = None
 	var heldItem = 0
 	var lastTime = curTime
@@ -141,124 +141,10 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	def movementSpeed = selfEnt.prop("generic.movementSpeed") * movementSpeedModifier
 	def maxHealth = selfEnt.prop("generic.maxHealth")
 
-	class PathFinder(dest: Block, val maxPathLength: Int = BotClient.this.maxPathLength) extends PathFinding[Block, Point3D] {
 
-		val destPos = dest.globalPos.toPoint3D
-		
-		def legalNeighbors(state: Block): Stream[(Block, Point3D)] = {
-			val delta = destPos - state.globalPos
-
-			val sortedNs = flatNeighbs.sortBy(_ * delta)
-			
-			val posBlocks = sortedNs.toStream map { x =>
-				(getBlock(state.globalPos.toPoint3D + x), x)
-			}
-			def localBottom = getBlock(state.globalPos.toPoint3D + Point3D(0, -1, 0))
-
-			if(localBottom.btyp.isPassable || !state.btyp.isPassable) return Stream()
-
-			// XX topBlock
-			// XX block
-			// == bottomBlock
-			val flatN = posBlocks filter { case (block, move) =>
-				val p = block.globalPos.toPoint3D
-				def topBlock = getBlock(p + Point3D(0, 1, 0))
-				def bottomBlock = getBlock(p + Point3D(0, -1, 0))
-
-				block.btyp.isPassable && topBlock.btyp.isPassable && !bottomBlock.btyp.isPassable
-			}
-
-			val lowerN = posBlocks flatMap { case (block, move) =>
-				val p = block.globalPos.toPoint3D
-				def topBlock = getBlock(p + Point3D(0, 1, 0))
-				def lowerBlock = getBlock(p + Point3D(0, -1, 0))
-				def bottomBlock = getBlock(p + Point3D(0, -2, 0))
-
-				if(block.btyp.isPassable &&
-						!bottomBlock.btyp.isPassable &&
-						topBlock.btyp.isPassable &&
-						lowerBlock.btyp.isPassable)
-					Some(lowerBlock, move + Point3D(0, -1, 0))
-				else None
-			}
-
-			lazy val upperPossible = getBlock(
-				state.globalPos.toPoint3D + Point3D(0, 2, 0)).btyp.isPassable
-			val upperN = posBlocks flatMap { case (block, move) =>
-				if(!upperPossible) Nil
-				else {
-					val p = block.globalPos.toPoint3D
-					def topBlock = getBlock(p + Point3D(0, 2, 0))
-					def midBlock = getBlock(p + Point3D(0, 1, 0))
-					//val bottomBlock = block
-
-					if(!block.btyp.isPassable && topBlock.btyp.isPassable &&
-							midBlock.btyp.isPassable)
-						Some(midBlock, move + Point3D(0, 1, 0))
-					else None
-				}
-			}
-
-			//do flat first..
-			//flatN #::: lowerN #::: upperN    //use this for non a*
-			(flatN #::: lowerN #::: upperN).sortBy { case (block, moves) =>
-				val moveVec = block.globalPos - state.globalPos
-				-(moveVec * delta)// - moveVec.length
-			}
-		}
-	}
 
 	//this accesses local state in another thread... dangerous
-	def getPath(goal: Point3D): Unit = if(!gettingPath) {
-			gettingPath = true
-			val fut = scala.concurrent.future {
-				val floorTargetBlock = getBlock(goal + Point3D(0, -1, 0))
-				val endTargetBlock = getBlock(goal)
 
-				val targetBlock = if(floorTargetBlock.btyp.isPassable) floorTargetBlock
-				else endTargetBlock
-
-				val finder = new PathFinder(targetBlock)
-
-				val dl = Deadline.now
-
-				val startBlock = footBlock
-
-				if(!targetBlock.btyp.isPassable) Nil
-				else blocking {
-					val r = finder.pathFrom(startBlock, targetBlock, 1500)
-
-					val elapsed = -dl.timeLeft.toSeconds
-					if(elapsed > 1) log.info(s"Pathing took $elapsed seconds")
-
-					r
-				} match {
-					case Some(path) =>
-						val boff = Block.halfBlockVec
-						var start = startBlock.globalPos.toPoint3D
-						val res = path.toVector.map { v =>
-							start += v
-
-							start
-						}
-
-						res
-					case _ => Nil
-				}
-			}
-
-			fut onComplete { res =>
-				gettingPath = false
-
-				res match {
-					case Failure(t) =>
-						log.error(t, "getPath failed")
-					case _ => log.info("Path finished")
-				}
-			}
-
-			fut.map(PathFound) pipeTo self
-	} else self ! PathFound(Nil)
 
 	def lookAt(vec: Point3D) {
 		val alpha1 = -math.asin(vec.normal.x) / math.Pi * 180
@@ -406,6 +292,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				lastTime = curTime
 
 				joined = true
+
 			} else
 				log.info(s"Correction packet: ${selfEnt.pos - lastPos}. $lastPos -> ${selfEnt.pos}")
 		case cpr.HeldItemChange(item) =>
@@ -415,6 +302,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case cpr.KeepAlive(id) =>
 			//println(spr.KeepAlive(id))
 			stream ! spr.KeepAlive(id)
+			Thread.sleep(2000)
 		case cpr.JoinGame(eid, gamemode, dim, difficulty, maxPlayers, level) =>
 			log.info(s"Joined game: $level")
 			selfId = eid
@@ -475,7 +363,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			if(follow.isDefined) {
 				val f = follow.get
 
-				targetingEnt = Some(f.id)
+				//targetingEnt = Some(f.id)
 			}
 
 			val posChanged = !lastPosEnt.isDefined ||
@@ -584,7 +472,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 				targetClosest.headOption match {
 					case Some(x) if x.id != curWp.id =>
-						val waypointPath = finder(target.pos).pathFrom(curWp, x).toSeq.flatten
+						val waypointPath = finder(target.pos).pathFrom(curWp, x, of = 2000).toSeq.flatten
 						if(waypointPath.isEmpty) {
 							moveGoal = None
 							log.info("No wp path to closest wp by entw")
@@ -604,8 +492,37 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			if(targetingEnt.isDefined) {
 				val ent = entities(targetingEnt.get)
 				if(!moveGoal.isDefined || math.random < 0.15) moveGoal = Some(ent.pos)
-				getPath(moveGoal.get)
 			}
+
+			if(moveGoal.isDefined) getPath(moveGoal.get)
+
+			if(!targetingEnt.isDefined && !moveGoal.isDefined && curPath.isEmpty) try {
+				//pick a random place...
+
+				val wps = getNearWaypoints(selfEnt.pos, maxNum = 5).map(_.pos)
+				val wpAvg = if(wps.isEmpty) selfEnt.pos else wps.reduceLeft(_ + _) / wps.length
+
+				val wpVec = selfEnt.pos - wpAvg
+				val flatIshRandom = Point3D(math.random * 2 - 1, math.random * 0.2 - 0.1,
+					math.random * 2 - 1).normal
+				val vec = flatIshRandom * 70 + wpVec.normal * 50
+				val hit = traceBody(CollisionDetection.SmallBox, footPos + Point3D(0, 1.5, 0), vec)
+
+				log.info(s"random target $vec.normal res ${hit.headOption}")
+
+				hit.headOption match {
+					case Some(x) if x.dist > 1.2 =>
+						var pos = vec.normal * (x.dist - 0.2) + selfEnt.pos
+						while(getBlock(pos).btyp.isPassable && pos.y > 0)
+							pos -= Point3D(0, 1, 0)
+
+						moveGoal = Some(pos + Point3D(0, 1, 0))
+					case _ =>
+				}
+			} catch {
+				case x: FindChunkError => Nil
+			}
+
 			checkWaypoints
 		case LongTick if joined =>
 			//if(math.random < 0.3) direction = Point3D(math.random - 0.5, 0, math.random - 0.5).normal
@@ -616,9 +533,16 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				joined = false
 			}
 
+			if(math.random < 0.03) {
+				curPath = Nil
+				updateEntity(selfId) { case ent: Player =>
+					ent.copy(vel = ent.vel + Point3D.random * 0.2)
+				}
+			}
+
 			//if(math.random < 0.2) jump()
 
-			if(direction !~~ Point3D.zero) try {
+			if(direction !~~ Point3D.zero && direction.length > 0.01) try {
 				val l = 0.5
 				val res = traceBody(CollisionDetection.UnitBox,
 					selfEnt.pos + Point3D(0, -stanceDelta + 1, 0), direction * l)

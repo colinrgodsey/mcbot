@@ -1,7 +1,6 @@
 package com.colingodsey.mcbot
 
 import java.io.{ByteArrayInputStream, DataOutputStream, DataInputStream}
-import com.google.protobuf.{CodedOutputStream, CodedInputStream}
 
 package object protocol extends Fields with CodecFrom {
 	case class VarInt(x: Int) extends AnyVal

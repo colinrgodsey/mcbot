@@ -1,7 +1,6 @@
 package com.colingodsey.mcbot.protocol
 
 import scala.annotation.tailrec
-import com.google.protobuf.{CodedOutputStream, CodedInputStream}
 import scala.collection.immutable.VectorBuilder
 
 trait Fields {
