@@ -371,7 +371,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			//direction = Point3D(1, 0, 0)
 
 			val follow = playerOpt("colinrgodsey")
-			targetingEnt = follow.map(_.id)
+			//targetingEnt = follow.map(_.id)
 
 			if(dead) {
 				context.system.scheduler.scheduleOnce(2.5.seconds, self, Respawn)

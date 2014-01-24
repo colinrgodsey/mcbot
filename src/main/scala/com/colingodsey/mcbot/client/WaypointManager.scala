@@ -7,12 +7,12 @@ import gnu.trove.TIntProcedure
 import scala.collection.immutable.VectorBuilder
 import com.colingodsey.mcbot.protocol._
 import java.io.{DataOutputStream, FileOutputStream, FileInputStream, File}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.util.Failure
 import akka.actor.ActorLogging
 import akka.event.LoggingAdapter
 import java.nio.file.{Paths, Path, StandardCopyOption, Files}
-import com.colingodsey.mcbot.world.FindChunkError
+import com.colingodsey.mcbot.world.{CollisionDetection, FindChunkError}
 import com.colingodsey.collections.PathFinding
 
 object WaypointManager extends Protocol {
@@ -22,7 +22,16 @@ object WaypointManager extends Protocol {
 			connections: Map[Int, Connection] = Map()) {
 		val rect = new Rectangle(pos.x.toFloat, pos.z.toFloat, 1, 1)
 
-		def property(name: String) = connections.get(id).flatMap(_.weights.get(name)).getOrElse(0.0)
+		//hacky storin this in here...
+		def property(name: String) =
+			connections.get(id).flatMap(_.weights.get(name)).getOrElse(0.0)
+
+		def updateProperty(name: String, value: Double) = {
+			val conn = connections.get(id).getOrElse(Connection(id, 0))
+			val newConn = conn.copy(weights = conn.weights + (name -> value))
+
+			copy(connections = connections + (id -> newConn))
+		}
 	}
 
 	implicit object WaypointSnapshot extends LocalPacketCompanion[WaypointSnapshot](0) {
@@ -113,7 +122,7 @@ trait WaypointManager {
 
 		val snapshot = makeWaypointSnapshot
 
-		Future(dest.write(snapshot)(WaypointSnapshot.codec)) onComplete {
+		Future(blocking(dest.write(snapshot)(WaypointSnapshot.codec))) onComplete {
 			case Failure(t) =>
 				log.error(t,  "failed to save waypoints!")
 				dest.stream.close

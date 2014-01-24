@@ -49,7 +49,9 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 	def maxPathLength: Int = 100
 
-	def waypointMinDistance = 10.0
+	def waypointMinDistance = 20.0
+
+	private def curTime = System.currentTimeMillis / 1000.0
 
 	def getPath(goal: Point3D): Unit = if(!gettingPath) {
 		gettingPath = true
@@ -118,6 +120,12 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		finder.pathFrom(startBlock, targetBlock, 900).toSeq.flatten
 	}
 
+	def visitWaypoint(id: Int) = {
+		waypoints(id).updateProperty("visited", curTime)
+		waypoints(id).updateProperty("nvisits",
+			waypoints(id).property("nvisits") + 1)
+	}
+
 	def checkWaypoints: Unit = try blocking {
 		val closest = getNearWaypoints(selfEnt.pos, waypointMinDistance)
 
@@ -133,10 +141,13 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				if(lastWaypoint.isDefined)
 					connectWaypoints(lastWaypoint.get.id, w.id)
 
+				visitWaypoint(w.id)
 			case a @ Some(x) if a != lastWaypoint && lastWaypoint.isDefined =>
 
 				connectWaypoints(lastWaypoint.get.id, x.id)
 				connectWaypoints(x.id, lastWaypoint.get.id)
+				visitWaypoint(x.id)
+			case Some(x) => visitWaypoint(x.id)
 			case _ =>
 		}
 
@@ -283,23 +294,73 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 			if(moveGoal.isDefined) getPath(moveGoal.get)
 
-			if(!targetingEnt.isDefined && !moveGoal.isDefined && curPath.isEmpty) try {
+			if(!targetingEnt.isDefined && !moveGoal.isDefined &&
+					curPath.isEmpty && lastWaypoint.isDefined) try {
 				//pick a random place...
 
-				val wps = getNearWaypoints(selfEnt.pos, maxNum = 5).map(_.pos)
-				val wpAvg = if(wps.isEmpty) selfEnt.pos else wps.reduceLeft(_ + _) / wps.length
+				val curWp = lastWaypoint.get
+				val nearWps = getNearWaypoints(selfEnt.pos, maxNum = 10) filter { x =>
+					val vec = x.pos - selfEnt.pos
+					val trace = traceRay(selfEnt.pos, vec, footPos)
+					x.id != curWp.id && trace.dist >= vec.length
+				}
 
-				val wpVec = selfEnt.pos - wpAvg
-				val flatIshRandom = Point3D(math.random * 2 - 1, math.random * 0.2 - 0.1,
-					math.random * 2 - 1).normal
-				val vec = flatIshRandom * 70 + wpVec.normal * 50
-				val hit = traceBody(CollisionDetection.SmallBox, footPos + Point3D(0, 1.5, 0), vec)
+				//smaller is detracting
+				def wpWeight(wp: Waypoint) = {
+					val old = curTime - wp.property("visited")
+					//young nodes are favorable (that sounds terrible)
+					val timeWeight = math.max(20 - old, 20) * 0.5
+					//tend towards newer. 1 visit a second
+					val visitWeight = (curWp.property("nvisits") -
+							wp.property("nvisits")) * 1.0
 
-				log.info(s"random target $vec.normal res ${hit.headOption}")
+					timeWeight + visitWeight
+				}
 
-				hit.headOption match {
-					case Some(x) if x.dist > 1.2 =>
-						var pos = vec.normal * (x.dist - 0.2) + selfEnt.pos
+				/*val wps = getNearWaypoints(selfEnt.pos, maxNum = 5) map { wp =>
+					val old = curTime - wp.property("visited")
+					val times = wp.property("nvisits")
+					val dir = wp.pos - selfEnt.pos
+
+					if(Some(wp.id) == lastWaypoint.map(_.id))
+						Point3D.zero
+					else if(old > 0) dir.normal / old * times
+					else dir
+				}*/
+
+				val hintDir = nearWps.map { wp =>
+					val weight = wpWeight(wp)
+					val vec = wp.pos - selfEnt.pos
+
+					vec.normal * weight
+				}.foldLeft(Point3D.zero)(_ + _)
+
+				val wpAvg = Point3D(hintDir.x, 0.01, hintDir.z).normal
+
+				def getRandomVec = {
+					val flatIshRandom = Point3D(math.random * 2 - 1, math.random * 0.8 - 0.4,
+						math.random * 2 - 1).normal
+					val vec = flatIshRandom * 20 - wpAvg.normal * 10
+					val hit = traceRay(selfEnt.pos, vec, footPos)
+
+					hit match {
+						case x if x.dist > 1.2 =>
+							Some(vec.normal * (x.dist - 0.2))
+						case _ => None
+					}
+				}
+
+				val rVecs = Vector.fill(30)(getRandomVec).flatten.sortBy { x =>
+					val hintFac = hintDir * x
+					hintFac * -x.length
+				}
+
+				log.info(s"random target res ${rVecs}")
+
+				rVecs.headOption match {
+					case Some(x) if x.length > 1.2 =>
+						var pos = x+ selfEnt.pos
+						pos = getBlock(pos).globalPos.toPoint3D + Block.halfBlockVec
 						while(getBlock(pos).btyp.isPassable && pos.y > 0)
 							pos -= Point3D(0, 1, 0)
 
