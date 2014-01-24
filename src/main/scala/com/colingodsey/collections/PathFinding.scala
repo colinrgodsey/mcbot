@@ -51,13 +51,13 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 	def pathsFrom(start: State): Paths =
 		pathsFrom(Stream((start, Nil)), Set(start))
 
-	/*def pathsFrom(start: State, to: State): Paths = {
+	def infinitePathsFrom(start: State, to: State): Paths = {
 		val fromStart = pathsFrom(start)
 
 		fromStart.filter {
 			case (state, _) => state == to
 		}
-	}*/
+	}
 
 	def pathFrom(start: State, to: State, of: Int = 1000): Option[Seq[Move]] = blocking {
 		val paths = pathsFrom(start)

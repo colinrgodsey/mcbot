@@ -141,9 +141,10 @@ trait CollisionDetection {
 		val centerVec = point - centerPoint
 
 		var centerCorVec = Point3D.zero
-		if((math.floor(point.x) == point.x) && centerVec.x > 0) centerCorVec += Point3D(-1, 0, 0)
-		if((math.floor(point.y) == point.y) && centerVec.y > 0) centerCorVec += Point3D(0, -1, 0)
-		if((math.floor(point.z) == point.z) && centerVec.z > 0) centerCorVec += Point3D(0, 0, -1)
+		if((point.x.toInt == point.x) && centerVec.x > 0) centerCorVec += Point3D(-1, 0, 0)
+		if((point.y.toInt == point.y) && centerVec.y > 0) centerCorVec += Point3D(0, -1, 0)
+		if((point.z.toInt == point.z) && centerVec.z > 0) centerCorVec += Point3D(0, 0, -1)
+
 
 		//below makes no sense
 		/*if((point.x == 1) && centerVec.x < 0) centerCorVec += Point3D(1, 0, 0)
@@ -201,15 +202,15 @@ trait CollisionDetection {
 		if(hits.isEmpty) return NoHit(distAcc + vec.length)
 
 		hits.sortBy(_._1.dist).head match {
+			//actual hit
 			case (SurfaceHit(d, norm), endBlock) if !endBlock.btyp.isPassable =>
 				if(d == 0 && distAcc == 0) StartHit(norm)
 				else TraceHit(d + distAcc, norm)
-			case (SurfaceHit(d, _), endBlock) if d > 0 =>
+			//invis hit
+			case (SurfaceHit(d, _), endBlock) =>
 				require(endBlock.btyp.isPassable)
 				traceRay(from + vec.normal * d,
 					vec.normal * (vec.length - d), endBlock, d + distAcc)
-			case (SurfaceHit(d, norm), endBlock) if d <= 0 =>
-				StartHit(norm)
 		}
 
 	}

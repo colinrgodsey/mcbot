@@ -230,11 +230,6 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 
 		require(postMoveVec.length <= moveVec.length)
 
-		val movedVec = newPos - ent.pos
-
-		//if(movedVec !~~ Point3D.zero) println(s"moved $movedVec to $newPos")
-
-		//val newVec = newPos - ent.pos
 		val newVec = postMoveVec
 
 		val resVel = (newVec / dt)// * dragFac// + gravAcc * dt
@@ -248,13 +243,6 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 
 		val finalVel = if(xzOnly.length < 0.1) Point3D(0, arggggVel.y, 0)
 		else arggggVel
-
-//if(newVec !~~ Point3D.zero) println(newVec)
-		//require(resVel.length <= tryVel.length, s"$resVel > $tryVel")
-		//val finalVel = if(resVel.length > terminal) resVel.normal * terminal else resVel
-
-
-		//val newVel = finalVel + gravAcc * dt
 
 		ent.entityCopy(pos = newPos, vel = finalVel, onGround = hitGround)
 	}

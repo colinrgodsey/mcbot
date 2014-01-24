@@ -193,9 +193,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	}
 
 	def respawn = {
-		//sendPositionAndLook
 		stream ! spr.ClientStatus.Respawn
-		//joined = false
 
 		log.info("Respawning...")
 	}
@@ -241,7 +239,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			log.info("Unhandled packet " + packet)
 	}
 
-	val clientThink: Receive = {
+	val clientThink: Receive = pathReceive orElse {
 		case cpr.EntityStatus(eid, 2) if eid == selfId => //we died??
 			/*updateEntity(selfId) { e =>
 				e.copy(health = 0)
@@ -295,7 +293,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case cpr.KeepAlive(id) =>
 			//println(spr.KeepAlive(id))
 			stream ! spr.KeepAlive(id)
-			Thread.sleep(2000)
+			//Thread.sleep(2000)
 		case cpr.JoinGame(eid, gamemode, dim, difficulty, maxPlayers, level) =>
 			log.info(s"Joined game: $level")
 			selfId = eid
@@ -350,13 +348,6 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				}
 			}
 
-			val follow = playerOpt("colinrgodsey")
-			if(follow.isDefined) {
-				val f = follow.get
-
-				//targetingEnt = Some(f.id)
-			}
-
 			val posChanged = !lastPosEnt.isDefined ||
 					(selfEnt.pos != lastPosEnt.get.pos)
 			val lookChanged = !lastPosEnt.isDefined ||
@@ -373,11 +364,14 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			else sendOnGround
 
 			pathPhysicsTick(dt)
-		case PhysicsTick => log.info("dropped physics tick!")
+		case PhysicsTick => //log.info("dropped physics tick!")
 		case Respawn => respawn
 		case LongTick if joined =>
 			//if(math.random < 0.3) direction = Point3D(math.random - 0.5, 0, math.random - 0.5).normal
 			//direction = Point3D(1, 0, 0)
+
+			val follow = playerOpt("colinrgodsey")
+			targetingEnt = follow.map(_.id)
 
 			if(dead) {
 				context.system.scheduler.scheduleOnce(2.5.seconds, self, Respawn)

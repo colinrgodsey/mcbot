@@ -3,7 +3,7 @@ package com.colingodsey.mcbot.client
 import com.colingodsey.logos.collections.Point3D
 import com.colingodsey.mcbot.world._
 import scala.concurrent.duration.Deadline
-import scala.concurrent.{ExecutionContext, blocking}
+import scala.concurrent.{Future, ExecutionContext, blocking}
 import akka.event.LoggingAdapter
 import scala.util.Failure
 import akka.actor.{Actor, ActorRef}
@@ -14,6 +14,7 @@ import com.colingodsey.mcbot.world.Player
 
 object BotNavigation {
 	case class PathFound(path: Seq[Point3D])
+	case class MoveFound(move: Option[Point3D])
 }
 
 trait BotNavigation extends WaypointManager with CollisionDetection {
@@ -101,7 +102,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		fut.map(PathFound) pipeTo self
 	} else self ! PathFound(Nil)
 
-	def getShortPath(from: Point3D, to: Point3D): Seq[Point3D] = {
+	def getShortPath(from: Point3D, to: Point3D): Seq[Point3D] = blocking {
 		val floorTargetBlock = getBlock(to + Point3D(0, -1, 0))
 		val endTargetBlock = getBlock(to)
 		val targetBlock = if(floorTargetBlock.btyp.isPassable) floorTargetBlock
@@ -117,7 +118,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		finder.pathFrom(startBlock, targetBlock, 900).toSeq.flatten
 	}
 
-	def checkWaypoints: Unit = try {
+	def checkWaypoints: Unit = try blocking {
 		val closest = getNearWaypoints(selfEnt.pos, waypointMinDistance)
 
 		closest.headOption match {
@@ -146,6 +147,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 	}
 
 	def pathPhysicsTick(dt: Double) = {
+		//drop head node if we're close
 		if(!curPath.isEmpty) {
 			val nextStep = curPath.head + Block.halfBlockVec
 
@@ -160,11 +162,10 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			if(vec.length > 2) {
 				direction = Point3D.zero
 				curPath = Nil
-				//getPath()
-				self ! PathTick
 			}
 		}
 
+		//if we still have a path
 		if(!curPath.isEmpty) {
 			val nextStep = curPath.head
 
@@ -189,20 +190,69 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		} //else direction = Point3D.zero
 	}
 
+	var findingMove = false
+	def findMove() {
+		if(findingMove) return
+		findingMove = true
+
+		val target = entities(targetingEnt.get)
+		val closestWps = getNearWaypoints(target.pos, maxNum = 6,
+			radius = 300)
+
+		_innerPollForGoal(closestWps).map(MoveFound) recover { case x: Throwable =>
+			log.error(x, "Failed poll for goal!")
+			MoveFound(None)
+		} pipeTo self
+	}
+
+	def _innerPollForGoal(closestWps: Seq[Waypoint]) = Future(blocking {
+		val target = entities(targetingEnt.get)
+		val curWp = lastWaypoint.get
+
+		//if closer to target then closest waypoint is to target
+
+		log.info("Polling for closest waypoint to target")
+
+		val targetClosest = closestWps.toStream.filter { wp =>
+				try !getShortPath(wp.pos, target.pos).isEmpty catch {
+					case x: FindChunkError => false
+				}
+			}
+
+		targetClosest.headOption match {
+			case Some(x) if x.id != curWp.id =>
+				val waypointPath = finder(target.pos).pathFrom(curWp, x, of = 2000).toSeq.flatten
+				if(waypointPath.isEmpty) {
+					log.info("No wp path to closest wp by entw")
+					None
+				} else {
+					val nextWp = waypoints(waypointPath.head.destId)
+
+					log.info("Tracking wp " + nextWp)
+					Some(nextWp.pos)
+				}
+			//getPath(target.pos)
+			case _ => None
+		}
+	})
+
 	def pathReceive: Actor.Receive = {
+		case MoveFound(x) =>
+			moveGoal = x
+			findingMove = false
 		case SaveWaypoints =>
 			saveWaypoints()
 		case PathFound(path) =>
 			var startIdx = 0
 			var closest = 10000.0
-			path.zipWithIndex foreach { case (x, idx) =>
+			/*path.zipWithIndex foreach { case (x, idx) =>
 				val pos = x + Point3D(0.5, 0, 0.5)
 				val vec = footPos - pos
 				if(vec.length < closest && idx < 4) {
 					closest = vec.length
 					startIdx = idx
 				}
-			}
+			}*/
 
 			/*if(moveGoal.isDefined && path.isEmpty) {
 				val dir = moveGoal.get - selfEnt.pos
@@ -212,7 +262,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 			direction = Point3D.zero
 
-			if(startIdx > 0) println(startIdx)
+			if(startIdx > 0) println("SKIPPED " + startIdx)
 
 			if(path.isEmpty) {
 				direction = Point3D.zero//curPath = Nil
@@ -223,34 +273,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				println("curpath: " + curPath)
 			else if(targetingEnt.isDefined && curPath.isEmpty
 					&& lastWaypoint.isDefined && !moveGoal.isDefined) {
-				val target = entities(targetingEnt.get)
-				val curWp = lastWaypoint.get
-
-				//if closer to target then closest waypoint is to target
-
-				log.info("Polling for closest waypoint to target")
-
-				val targetClosest = getNearWaypoints(target.pos, maxNum = 6, radius = 300).toStream/*.filter { wp =>
-					try !getShortPath(wp.pos, target.pos).isEmpty catch {
-						case x: FindChunkError => false
-					}
-				}*/
-
-				targetClosest.headOption match {
-					case Some(x) if x.id != curWp.id =>
-						val waypointPath = finder(target.pos).pathFrom(curWp, x, of = 2000).toSeq.flatten
-						if(waypointPath.isEmpty) {
-							moveGoal = None
-							log.info("No wp path to closest wp by entw")
-						} else {
-							val nextWp = waypoints(waypointPath.head.destId)
-
-							log.info("Tracking wp " + nextWp)
-							moveGoal = Some(nextWp.pos)
-						}
-					//getPath(target.pos)
-					case _ => moveGoal = None
-				}
+				findMove()
 			} else randomPushSelf()
 		case PathTick if !dead && joined =>
 			if(targetingEnt.isDefined) {
