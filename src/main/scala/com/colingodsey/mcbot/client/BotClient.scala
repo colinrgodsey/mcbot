@@ -54,7 +54,7 @@ object BotClient {
 	case object LongTick
 	case object PathTick
 	case object SaveWaypoints
-	case class PathFound(path: Seq[Point3D])
+
 
 	def props(settings: BotClient.Settings) = Props(classOf[BotClient], settings)
 
@@ -69,20 +69,13 @@ object BotClient {
 	}
 
 	val jumpSpeed = 11
-
-	val flatNeighbs = Seq(
-		Point3D(-1, 0, 0),
-		Point3D(0, 0, -1),
-		Point3D(1, 0, 0),
-		Point3D(0, 0, 1)
-	)
-
 }
 
 class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
-		with Stash with WorldClient with WaypointBot with BotNavigation {
+		with Stash with WorldClient with BotNavigation {
 	import settings._
 	import BotClient._
+	import BotNavigation._
 
 	implicit def ec = context.system.dispatcher
 
@@ -116,18 +109,12 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	var lastPosEnt: Option[Player] = None
 	var heldItem = 0
 	var lastTime = curTime
-	var targetingEnt: Option[Int] = None
-	var moveGoal: Option[Point3D] = None
-	var curPath: Seq[Point3D] = Nil
-	var direction = Point3D.zero//(math.random, 0, math.random).normal
 
 	var pluginMessage: Option[spr.PluginMessage] = None
 
 	implicit val to = Timeout(30.seconds)
 
 	context watch stream
-
-	def maxPathLength: Int = 100
 
 	def curTime = System.currentTimeMillis / 1000.0
 
@@ -137,11 +124,11 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	def footBlockPos = footPos + Point3D(0, 0.5, 0)
 	def footBlock = getBlock(footBlockPos)
 
+	val worldView: WorldView = this
+
 	def dead = selfEnt.health <= 0
 	def movementSpeed = selfEnt.prop("generic.movementSpeed") * movementSpeedModifier
 	def maxHealth = selfEnt.prop("generic.maxHealth")
-
-
 
 	//this accesses local state in another thread... dangerous
 
@@ -156,6 +143,12 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 		updateEntity(selfId) { case ent: Player =>
 			ent.copy(yaw = yaw, pitch = pitch)
+		}
+	}
+
+	def randomPushSelf() {
+		updateEntity(selfId) { case ent: Player =>
+			ent.copy(vel = ent.vel + Point3D.random * 0.2)
 		}
 	}
 
@@ -332,30 +325,28 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case x: cpr.PlayerListItem =>
 		case x: cpr.ChangeGameState =>
 
-		case PhysicsTick if joined =>
+		case PhysicsTick if joined && (curTime - lastTime) > 0.01 =>
 			val ct = curTime
 			//val dt = tickDelta.toMillis / 1000.0
 			val dt = ct - lastTime
 
-			if(dt > 0.01) {
-				val theta = System.currentTimeMillis * 0.0003
+			val theta = System.currentTimeMillis * 0.0003
 
-				//direction = Point3D(math.cos(theta), 0, math.sin(theta))
-				move(selfId, dt, CollisionDetection.playerBody(stanceDelta))
+			//direction = Point3D(math.cos(theta), 0, math.sin(theta))
+			move(selfId, dt, CollisionDetection.playerBody(stanceDelta))
 
-				if(direction !~~ Point3D.zero) lookAt(direction)
+			if(direction !~~ Point3D.zero) lookAt(direction)
 
-				lastTime = ct
+			lastTime = ct
 
-				val walkDir = Point3D(direction.x, 0, direction.z)
+			val walkDir = Point3D(direction.x, 0, direction.z)
 
-				if(walkDir.length > 0.01) {
-					val moveVec = walkDir.normal * movementSpeed * dt
+			if(walkDir.length > 0.01) {
+				val moveVec = walkDir.normal * movementSpeed * dt
 
-					//println(addLen, moveVec, moveLen, movementSpeed)
-					updateEntity(selfId) { case ent: Player =>
-						ent.copy(vel = ent.vel + moveVec)
-					}
+				//println(addLen, moveVec, moveLen, movementSpeed)
+				updateEntity(selfId) { case ent: Player =>
+					ent.copy(vel = ent.vel + moveVec)
 				}
 			}
 
@@ -381,149 +372,9 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			else if(lookChanged) sendLook
 			else sendOnGround
 
-			if(!curPath.isEmpty) {
-				val nextStep = curPath.head + Block.halfBlockVec
-
-				val vec = (nextStep - footBlockPos)
-
-				if(vec.length < 0.8) {
-					curPath = curPath.tail
-					//if(!curPath.isEmpty) say("Next stop, " + curPath.headOption)
-					/*if(curPath.isEmpty) */direction = Point3D.zero
-				}
-
-				if(vec.length > 2) {
-					direction = Point3D.zero
-					curPath = Nil
-					//getPath()
-					self ! PathTick
-				}
-			}
-
-			if(!curPath.isEmpty) {
-				val nextStep = curPath.head
-
-				if(nextStep.y > footPos.y) jump()
-
-				val dirs = for {
-					i <- 0 until 3
-					if i < curPath.length
-					step = curPath(i) + Block.halfBlockVec
-					dir = step - footBlockPos
-					len = dir.length / math.pow(i + 1, 6)
-				} yield dir.normal * len
-
-				val dir = dirs.reduce(_ + _)
-
-				//val dir = (nextStep - footBlockPos)
-
-				direction = dir
-
-				if(selfEnt.vel.length < 0.01)
-					direction += Point3D.random
-			} //else direction = Point3D.zero
-		case PhysicsTick => //not joined... ignore
+			pathPhysicsTick(dt)
+		case PhysicsTick => log.info("dropped physics tick!")
 		case Respawn => respawn
-		case SaveWaypoints =>
-			saveWaypoints()
-		case PathFound(path) =>
-			var startIdx = 0
-			var closest = 10000.0
-			path.zipWithIndex foreach { case (x, idx) =>
-				val pos = x + Point3D(0.5, 0, 0.5)
-				val vec = footPos - pos
-				if(vec.length < closest && idx < 4) {
-					closest = vec.length
-					startIdx = idx
-				}
-			}
-
-			/*if(moveGoal.isDefined && path.isEmpty) {
-				val dir = moveGoal.get - selfEnt.pos
-
-				direction = dir
-			}*/
-
-			direction = Point3D.zero
-
-			if(startIdx > 0) println(startIdx)
-
-			if(path.isEmpty) {
-				direction = Point3D.zero//curPath = Nil
-				moveGoal = None
-			} else curPath = path.drop(startIdx)
-
-			if(!curPath.isEmpty)
-				println("curpath: " + curPath)
-			else if(targetingEnt.isDefined && curPath.isEmpty
-					&& lastWaypoint.isDefined && !moveGoal.isDefined) {
-				val target = entities(targetingEnt.get)
-				val curWp = lastWaypoint.get
-
-				//if closer to target then closest waypoint is to target
-
-				log.info("Polling for closest waypoint to target")
-
-				val targetClosest = getNearWaypoints(target.pos, maxNum = 6, radius = 300).toStream/*.filter { wp =>
-					try !getShortPath(wp.pos, target.pos).isEmpty catch {
-						case x: FindChunkError => false
-					}
-				}*/
-
-				targetClosest.headOption match {
-					case Some(x) if x.id != curWp.id =>
-						val waypointPath = finder(target.pos).pathFrom(curWp, x, of = 2000).toSeq.flatten
-						if(waypointPath.isEmpty) {
-							moveGoal = None
-							log.info("No wp path to closest wp by entw")
-						} else {
-							val nextWp = waypoints(waypointPath.head.destId)
-
-							log.info("Tracking wp " + nextWp)
-							moveGoal = Some(nextWp.pos)
-						}
-						//getPath(target.pos)
-					case _ => moveGoal = None
-				}
-			} else updateEntity(selfId) { case ent: Player =>
-				ent.copy(vel = ent.vel + Point3D.random * 0.2)
-			}
-		case PathTick if !dead && joined =>
-			if(targetingEnt.isDefined) {
-				val ent = entities(targetingEnt.get)
-				if(!moveGoal.isDefined || math.random < 0.15) moveGoal = Some(ent.pos)
-			}
-
-			if(moveGoal.isDefined) getPath(moveGoal.get)
-
-			if(!targetingEnt.isDefined && !moveGoal.isDefined && curPath.isEmpty) try {
-				//pick a random place...
-
-				val wps = getNearWaypoints(selfEnt.pos, maxNum = 5).map(_.pos)
-				val wpAvg = if(wps.isEmpty) selfEnt.pos else wps.reduceLeft(_ + _) / wps.length
-
-				val wpVec = selfEnt.pos - wpAvg
-				val flatIshRandom = Point3D(math.random * 2 - 1, math.random * 0.2 - 0.1,
-					math.random * 2 - 1).normal
-				val vec = flatIshRandom * 70 + wpVec.normal * 50
-				val hit = traceBody(CollisionDetection.SmallBox, footPos + Point3D(0, 1.5, 0), vec)
-
-				log.info(s"random target $vec.normal res ${hit.headOption}")
-
-				hit.headOption match {
-					case Some(x) if x.dist > 1.2 =>
-						var pos = vec.normal * (x.dist - 0.2) + selfEnt.pos
-						while(getBlock(pos).btyp.isPassable && pos.y > 0)
-							pos -= Point3D(0, 1, 0)
-
-						moveGoal = Some(pos + Point3D(0, 1, 0))
-					case _ =>
-				}
-			} catch {
-				case x: FindChunkError => Nil
-			}
-
-			checkWaypoints
 		case LongTick if joined =>
 			//if(math.random < 0.3) direction = Point3D(math.random - 0.5, 0, math.random - 0.5).normal
 			//direction = Point3D(1, 0, 0)

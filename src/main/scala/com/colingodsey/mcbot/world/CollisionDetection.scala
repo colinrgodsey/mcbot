@@ -65,8 +65,11 @@ object CollisionDetection {
 	val SmallBox = BoxBody(Point3D.one * -playerHalfWidth / 4, Point3D.one * playerHalfWidth / 4)
 }
 
-trait CollisionDetection { world: World =>
+trait CollisionDetection {
 	import CollisionDetection._
+
+	val worldView: WorldView
+	import worldView._
 
 	val colIncr = 0.9
 	val colIncrMax = 0.9
