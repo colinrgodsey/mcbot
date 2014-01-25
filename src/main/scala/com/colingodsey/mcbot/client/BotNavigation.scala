@@ -12,6 +12,7 @@ import scala.util.Failure
 import scala.Some
 import com.colingodsey.mcbot.world.Player
 import com.colingodsey.ai.{QLPolicy, QLearning}
+import com.colingodsey.collections.MapVector
 
 object BotNavigation {
 	case class PathFound(path: Seq[Vec3D])
@@ -127,7 +128,9 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			waypoints(id).property("nvisits") + 1)
 	}
 
-	def checkWaypoints: Unit = try blocking {
+	var lastTransition: Option[WaypointTransition] = None
+
+	def checkWaypoints(): Unit = try blocking {
 		val closest = getNearWaypoints(selfEnt.pos, waypointMinDistance)
 
 		closest.headOption match {
@@ -148,6 +151,9 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				connectWaypoints(lastWaypoint.get.id, x.id)
 				connectWaypoints(x.id, lastWaypoint.get.id)
 				visitWaypoint(x.id)
+				lastTransition = Some(WaypointTransition(lastWaypoint.get.id, x.id))
+
+				reinforce(lastTransition.get, MapVector.zero)
 			case Some(x) => visitWaypoint(x.id)
 			case _ =>
 		}
@@ -248,6 +254,123 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		}
 	})
 
+	def findNewRandomWp: Unit = try {
+		//pick a random place...
+
+		val curWp = lastWaypoint.get
+		val nearWps = getNearWaypoints(selfEnt.pos, maxNum = 10) filter { x =>
+			val vec = x.pos - selfEnt.pos
+			val trace = traceRay(selfEnt.pos, vec, footPos)
+			x.id != curWp.id && trace.dist >= vec.length
+		}
+
+		val wpCenter = if(nearWps.isEmpty) selfEnt.pos
+		else nearWps.foldLeft(Vec3D.zero)(_ + _.pos) / nearWps.length
+
+		//smaller is detracting
+		def wpWeight(wp: Waypoint) = {
+			val old = curTime - wp.property("visited")
+			//young nodes are favorable (that sounds terrible)
+			val timeWeight = math.max(20 - old, 20) * 0.5
+			//tend towards newer. 1 visit a second
+			val visitWeight = (curWp.property("nvisits") -
+					wp.property("nvisits")) * 1.0
+
+			timeWeight + visitWeight
+		}
+
+		/*val wps = getNearWaypoints(selfEnt.pos, maxNum = 5) map { wp =>
+			val old = curTime - wp.property("visited")
+			val times = wp.property("nvisits")
+			val dir = wp.pos - selfEnt.pos
+
+			if(Some(wp.id) == lastWaypoint.map(_.id))
+				Point3D.zero
+			else if(old > 0) dir.normal / old * times
+			else dir
+		}*/
+
+		//TODO: redo this with more specific properties added to the node
+		//visiting often adds a 'familiar' property, etc.
+
+		//cast out rays when you get to the most unfamilar node
+
+		val hintDir = nearWps.map { wp =>
+			val weight = wpWeight(wp)
+			val vec = wp.pos - selfEnt.pos
+
+			vec.normal * weight
+		}.foldLeft(Vec3D.zero)(_ + _)
+
+		val wpAvg = Vec3D(hintDir.x, 0.01, hintDir.z).normal
+
+		def getRandomVec = {
+			val flatIshRandom = Vec3D(math.random * 2 - 1, math.random * 0.8 - 0.4,
+				math.random * 2 - 1).normal
+			val vec = flatIshRandom * 50 + wpAvg.normal * 10
+			val hit = traceRay(selfEnt.pos, vec, footPos)
+
+			hit match {
+				case x if x.dist > 1.2 =>
+					val hitPos = vec.normal * (x.dist - 0.2)
+
+					var pos = getBlock(hitPos).globalPos.toPoint3D + Block.halfBlockVec
+					while(getBlock(pos).btyp.isPassable && pos.y > 0)
+						pos -= Vec3D(0, 1, 0)
+
+					Some(pos + Vec3D(0, 1, 0))
+				case _ => None
+			}
+		}
+
+		val rVecs = Vector.fill(30)(getRandomVec).flatten.sortBy { x =>
+			val hintFac = hintDir * x
+			val endPos = selfEnt.pos + x
+			val unexploredWeight = math.min((wpCenter - endPos).length, 10)
+
+			val nearbyWps = getNearWaypoints(endPos,
+				maxNum = 20, radius = waypointMinDistance)
+
+			val brandNewFac = if(nearbyWps.isEmpty) 30 else 1
+
+			brandNewFac * hintFac * -x.length// - unexploredWeight * 0.5
+		}
+
+		val filtered = rVecs.toStream filter { vec =>
+			val p = getShortPath(footBlockPos, footBlockPos + vec)
+
+			!p.isEmpty
+		}
+
+		log.info(s"random target res ${filtered.headOption}")
+
+		filtered.headOption match {
+			case Some(x) if x.length > 1.2 =>
+				moveGoal = Some(footBlockPos + x)
+			case _ =>
+		}
+	} catch {
+		case x: FindChunkError =>
+	}
+
+	def selectWaypoint: Boolean = {
+		if(!lastWaypoint.isDefined) return false
+
+		val trans = transFrom(lastWaypoint.get.id)
+
+		if(trans.isEmpty) false
+		else {
+			val selTrans = policy(trans)
+			val sel = waypoints(selTrans.destId)
+
+			moveGoal = Some(sel.pos)
+
+			println("selected node w q-value " + qValue(selTrans))
+
+			true
+		}
+	}
+
 	def pathReceive: Actor.Receive = {
 		case MoveFound(x) =>
 			moveGoal = x
@@ -283,10 +406,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 			if(!curPath.isEmpty)
 				println("curpath: " + curPath)
-			else if(targetingEnt.isDefined && curPath.isEmpty
-					&& lastWaypoint.isDefined && !moveGoal.isDefined) {
-				findMove()
-			} else randomPushSelf()
+			else randomPushSelf()
 		case PathTick if !dead && joined =>
 			if(targetingEnt.isDefined) {
 				val ent = entities(targetingEnt.get)
@@ -295,107 +415,16 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 			if(moveGoal.isDefined) getPath(moveGoal.get)
 
-			if(!targetingEnt.isDefined && !moveGoal.isDefined &&
-					curPath.isEmpty && lastWaypoint.isDefined) try {
-				//pick a random place...
-
-				val curWp = lastWaypoint.get
-				val nearWps = getNearWaypoints(selfEnt.pos, maxNum = 10) filter { x =>
-					val vec = x.pos - selfEnt.pos
-					val trace = traceRay(selfEnt.pos, vec, footPos)
-					x.id != curWp.id && trace.dist >= vec.length
-				}
-
-				val wpCenter = if(nearWps.isEmpty) selfEnt.pos
-				else nearWps.foldLeft(Vec3D.zero)(_ + _.pos) / nearWps.length
-
-				//smaller is detracting
-				def wpWeight(wp: Waypoint) = {
-					val old = curTime - wp.property("visited")
-					//young nodes are favorable (that sounds terrible)
-					val timeWeight = math.max(20 - old, 20) * 0.5
-					//tend towards newer. 1 visit a second
-					val visitWeight = (curWp.property("nvisits") -
-							wp.property("nvisits")) * 1.0
-
-					timeWeight + visitWeight
-				}
-
-				/*val wps = getNearWaypoints(selfEnt.pos, maxNum = 5) map { wp =>
-					val old = curTime - wp.property("visited")
-					val times = wp.property("nvisits")
-					val dir = wp.pos - selfEnt.pos
-
-					if(Some(wp.id) == lastWaypoint.map(_.id))
-						Point3D.zero
-					else if(old > 0) dir.normal / old * times
-					else dir
-				}*/
-
-				//TODO: redo this with more specific properties added to the node
-				//visiting often adds a 'familiar' property, etc.
-
-				//cast out rays when you get to the most unfamilar node
-
-				val hintDir = nearWps.map { wp =>
-					val weight = wpWeight(wp)
-					val vec = wp.pos - selfEnt.pos
-
-					vec.normal * weight
-				}.foldLeft(Vec3D.zero)(_ + _)
-
-				val wpAvg = Vec3D(hintDir.x, 0.01, hintDir.z).normal
-
-				def getRandomVec = {
-					val flatIshRandom = Vec3D(math.random * 2 - 1, math.random * 0.8 - 0.4,
-						math.random * 2 - 1).normal
-					val vec = flatIshRandom * 50 + wpAvg.normal * 10
-					val hit = traceRay(selfEnt.pos, vec, footPos)
-
-					hit match {
-						case x if x.dist > 1.2 =>
-							val hitPos = vec.normal * (x.dist - 0.2)
-
-							var pos = getBlock(hitPos).globalPos.toPoint3D + Block.halfBlockVec
-							while(getBlock(pos).btyp.isPassable && pos.y > 0)
-								pos -= Vec3D(0, 1, 0)
-
-							Some(pos + Vec3D(0, 1, 0))
-						case _ => None
-					}
-				}
-
-				val rVecs = Vector.fill(30)(getRandomVec).flatten.sortBy { x =>
-					val hintFac = hintDir * x
-					val endPos = selfEnt.pos + x
-					val unexploredWeight = math.min((wpCenter - endPos).length, 10)
-
-					val nearbyWps = getNearWaypoints(endPos,
-						maxNum = 20, radius = waypointMinDistance)
-
-					val brandNewFac = if(nearbyWps.isEmpty) 30 else 1
-
-					brandNewFac * hintFac * -x.length// - unexploredWeight * 0.5
-				}
-
-				val filtered = rVecs.toStream filter { vec =>
-					val p = getShortPath(footBlockPos, footBlockPos + vec)
-
-					!p.isEmpty
-				}
-
-				log.info(s"random target res ${filtered.headOption}")
-
-				filtered.headOption match {
-					case Some(x) if x.length > 1.2 =>
-						moveGoal = Some(footBlockPos + x)
-					case _ =>
-				}
-			} catch {
-				case x: FindChunkError => Nil
+			if(curPath.isEmpty && !targetingEnt.isDefined && !moveGoal.isDefined &&
+					curPath.isEmpty && lastWaypoint.isDefined) {
+				if(desire("discover") > 20 && math.random < 0.1) findNewRandomWp
+				else selectWaypoint
+			} else if(targetingEnt.isDefined && curPath.isEmpty
+					&& lastWaypoint.isDefined && !moveGoal.isDefined) {
+				findMove()
 			}
 
-			checkWaypoints
+			checkWaypoints()
 		case PathTick =>
 	}
 }

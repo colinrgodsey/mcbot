@@ -13,10 +13,6 @@ trait Selector {
 }
 
 object BoltzmannSelector {
-	def apply(temp: Double = 0.1): BoltzmannSelector = new BoltzmannSelector {
-		val temperature = temp
-	}
-
 	def weightedSegmentSelect[K, V](chances: Map[K, V])
 			(implicit num: Numeric[V]): K = {
 		val (keys, values) = chances.unzip
@@ -35,12 +31,10 @@ object BoltzmannSelector {
 		iter(0.0, keys)
 	}
 
-	val default = apply()
+	lazy val default = apply()
 }
 
-trait BoltzmannSelector extends Selector {
-	def temperature: Double
-
+case class BoltzmannSelector(temperature: Double = 0.1) extends Selector {
 	def selectFrom[T](policy: Map[T, Double]): T = {
 		require(temperature > 0.0)
 
@@ -53,7 +47,6 @@ trait BoltzmannSelector extends Selector {
 		BoltzmannSelector weightedSegmentSelect distribution
 	}
 
-	override def toString = "BoltzmannSelector (" + temperature + ")"
 }
 
 object QLPolicy {
@@ -64,7 +57,8 @@ object QLPolicy {
 		val dat = (gamma, alphaScale, initialValue, selector, desire)
 
 		new QLPolicy[T, U] {
-			val (γ, α0, initialValue, selector, desire) = dat
+			val (γ, α0, initialValue,
+				selector, desire) = dat
 			def transFrom(trans: T): Set[T] = transF(trans)
 
 			def qValue(transition: T): U = f(transition)
@@ -131,7 +125,7 @@ trait QLearning[T, U <: VecLike[U]] {
 		val α = (1.0 / times) * α0
 		val q0 = qValue(transition)
 		val adjustedMaxQ = maxQForDest * γ
-		//val q1 = reward + adjustedMaxQ
+		val q1 = reward + adjustedMaxQ
 
 		//TODO: should we align the reward and 'ignore' unfocused rewards?
 		//or do we just add the whole thing
@@ -139,11 +133,12 @@ trait QLearning[T, U <: VecLike[U]] {
 		val alignedQ0 = desire.normal * (q0 * desire.normal)
 		//portion of the vector not aligned with desires
 		val remainingQ0 = q0 - alignedQ0
-		val alignedAdjMaxQ = desire.normal * (adjustedMaxQ * desire.normal)
+		//val alignedAdjMaxQ = desire.normal * (adjustedMaxQ * desire.normal)
 
 		//new q value for transition
-		//q0 * α + q1 * (1.0 - α)
+		q0 * α + q1 * (1.0 - α)
 
-		remainingQ0 + alignedQ0 * α + (alignedAdjMaxQ + reward) * (1.0 - α)
+		//remainingQ0 + alignedQ0 * α + (alignedAdjMaxQ + reward) * (1.0 - α)
+		//remainingQ0 + alignedQ0 * α + (q1 + reward) * (1.0 - α)
 	}
 }

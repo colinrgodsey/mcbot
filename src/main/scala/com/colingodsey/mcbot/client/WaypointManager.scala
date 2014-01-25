@@ -28,6 +28,8 @@ object WaypointManager extends Protocol {
 		def connection(x: Int) =
 			connections.get(x).getOrElse(Connection(x, 0))
 
+		def connectsTo(otherId: Int) = connections.get(otherId).isDefined
+
 		//hacky storin this in here...
 		def property(name: String) =
 			connections.get(id).flatMap(_.weights.get(name)).getOrElse(0.0)
@@ -87,12 +89,14 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 	val waypointFile = new File("./waypoints.dat")
 	val waypointSwapFile = new File("./waypoints.tmp.dat")
 
-	def transFrom(trans: WaypointTransition): Set[WaypointTransition] = {
-		val fromId = trans.destId
-		waypoints(fromId).connections.iterator.map { case (id, _) =>
-			WaypointTransition(fromId, id)
+	def transFrom(wpId: Int): Set[WaypointTransition] = {
+		waypoints(wpId).connections.iterator.map { case (id, _) =>
+			WaypointTransition(wpId, id)
 		}.toSet
 	}
+
+	def transFrom(trans: WaypointTransition): Set[WaypointTransition] =
+		transFrom(trans.destId)
 
 	def qValue(transition: WaypointTransition): VecN = {
 		val from = waypoints(transition.fromId)
@@ -192,8 +196,12 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		val from = waypoints(fromId)
 		val to = waypoints(toId)
 
+		if(!from.connectsTo(toId)) return
+
 		val conn = toId -> from.connection(toId).copy(
 			weights = newQ.weights)
+
+		log.info("Reinforcing " + reward)
 
 		addWaypoint(from.copy(connections = from.connections + conn))
 	}
@@ -210,11 +218,10 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 
 				val trans = WaypointTransition(fromId, toId)
 
-				val reward: VecN = MapVector("discover" -> 100.0)
 				val conn = toId -> Connection(toId, path.length)
 				addWaypoint(from.copy(connections = from.connections + conn))
 
-				reinforce(trans, reward)
+				reinforce(trans, MapVector("discover" -> 100.0))
 
 				log.info("New connection!")
 			}
