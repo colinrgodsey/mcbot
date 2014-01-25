@@ -127,6 +127,8 @@ trait QLearning[T, U <: VecLike[U]] {
 		val adjustedMaxQ = maxQForDest * γ
 		val q1 = reward + adjustedMaxQ
 
+		//println(q0, q1, reward, α, q0 * α + q1 * (1.0 - α))
+
 		//TODO: should we align the reward and 'ignore' unfocused rewards?
 		//or do we just add the whole thing
 

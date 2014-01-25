@@ -71,7 +71,7 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 
 			if(state == to) {
 				//res += moves
-				println(n, moves.length)
+				//println(n, moves.length)
 				return Some(moves.reverse)
 			}
 

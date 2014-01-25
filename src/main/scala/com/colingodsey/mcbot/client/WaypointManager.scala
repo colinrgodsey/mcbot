@@ -69,7 +69,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 
 	def desire = MapVector(desireMap)
 	def γ: Double = 0.8
-	def α0: Double = 1
+	def α0: Double = 0.2
 	def selector = BoltzmannSelector.default
 	val initialValue: VecN = MapVector.zero
 
@@ -192,16 +192,17 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 	//reward the damn thing
 	def reinforce(trans: WaypointTransition, reward: VecN) {
 		val WaypointTransition(fromId, toId) = trans
-		val newQ = update(trans, reward)
 		val from = waypoints(fromId)
 		val to = waypoints(toId)
 
 		if(!from.connectsTo(toId)) return
 
+		val newQ = update(trans, reward)
+
 		val conn = toId -> from.connection(toId).copy(
 			weights = newQ.weights)
 
-		log.info("Reinforcing " + reward)
+		log.info(s"Reinforcing $reward to $newQ")
 
 		addWaypoint(from.copy(connections = from.connections + conn))
 	}
@@ -215,7 +216,6 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 
 			if(path.isEmpty) log.warning("Bad connect!")
 			else {
-
 				val trans = WaypointTransition(fromId, toId)
 
 				val conn = toId -> Connection(toId, path.length)
