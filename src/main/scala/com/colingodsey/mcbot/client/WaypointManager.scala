@@ -13,8 +13,8 @@ import akka.actor.ActorLogging
 import akka.event.LoggingAdapter
 import java.nio.file.{Paths, Path, StandardCopyOption, Files}
 import com.colingodsey.mcbot.world.{CollisionDetection, FindChunkError}
-import com.colingodsey.collections.{VecN, PathFinding}
-import com.colingodsey.ai.{BoltzmannSelector, QLPolicyMaker, QLearning}
+import com.colingodsey.collections.{MapVector, VecN, PathFinding}
+import com.colingodsey.ai.{BoltzmannSelector, QLPolicy, QLearning}
 
 object WaypointManager extends Protocol {
 	case class Connection(destId: Int, distance: Double, weights: Map[String, Double] = Map()) {
@@ -57,12 +57,19 @@ object WaypointManager extends Protocol {
 	val packets = Set[PacketCompanion[_]](WaypointSnapshot)
 }
 
-trait WaypointManager {
+trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN] {
 	import WaypointManager._
 
 	def getShortPath(from: Vec3D, to: Vec3D): Seq[Vec3D]
 	def log: LoggingAdapter
+	def desireMap: Map[String, Double]
 	implicit def ec: ExecutionContext
+
+	def desire = MapVector(desireMap)
+	def γ: Double = 0.8
+	def α0: Double = 1
+	def selector = BoltzmannSelector.default
+	val initialValue: VecN = MapVector.zero
 
 	private val rTree = {
 		val t = new RTree
@@ -80,35 +87,20 @@ trait WaypointManager {
 	val waypointFile = new File("./waypoints.dat")
 	val waypointSwapFile = new File("./waypoints.tmp.dat")
 
-	class QLearner(desireMap: Map[String, Double])
-			extends QLPolicyMaker[WaypointManager.WaypointTransition, VecN]
-			with QLearning[WaypointManager.WaypointTransition, VecN] {
-		def qLearning = this
-		def selector = BoltzmannSelector.default
-
-		val desireVector = VecN(desireMap)
-		val gamma: Double = 0.8
-		val alphaScale: Double = 1
-		val initialValue: Double = 0
-
-		def transFrom(trans: WaypointTransition): Set[WaypointTransition] = {
-			val fromId = trans.destId
-			waypoints(fromId).connections.iterator.map { case (id, _) =>
-				WaypointTransition(fromId, id)
-			}.toSet
-		}
-
-		def qValue(transition: WaypointTransition): Double = {
-			val from = waypoints(transition.fromId)
-			val to = waypoints(transition.destId)
-
-			val weights = desireMap map { case (prop, w) =>
-				from.connection(to.id).weight(prop) * w
-			}
-
-			weights
-		}
+	def transFrom(trans: WaypointTransition): Set[WaypointTransition] = {
+		val fromId = trans.destId
+		waypoints(fromId).connections.iterator.map { case (id, _) =>
+			WaypointTransition(fromId, id)
+		}.toSet
 	}
+
+	def qValue(transition: WaypointTransition): VecN = {
+		val from = waypoints(transition.fromId)
+		val to = waypoints(transition.destId)
+
+		MapVector(from.connection(to.id).weights)
+	}
+
 
 	def finder(dest: Vec3D) = new PathFinding[Waypoint, Connection] {
 		def maxPathLength: Int = 256
@@ -193,6 +185,19 @@ trait WaypointManager {
 		case None => false
 	}
 
+	//reward the damn thing
+	def reinforce(trans: WaypointTransition, reward: VecN) {
+		val WaypointTransition(fromId, toId) = trans
+		val newQ = update(trans, reward)
+		val from = waypoints(fromId)
+		val to = waypoints(toId)
+
+		val conn = toId -> from.connection(toId).copy(
+			weights = newQ.weights)
+
+		addWaypoint(from.copy(connections = from.connections + conn))
+	}
+
 	def connectWaypoints(fromId: Int, toId: Int) {
 		val from = waypoints(fromId)
 		val to = waypoints(toId)
@@ -202,8 +207,15 @@ trait WaypointManager {
 
 			if(path.isEmpty) log.warning("Bad connect!")
 			else {
+
+				val trans = WaypointTransition(fromId, toId)
+
+				val reward: VecN = MapVector("discover" -> 100.0)
 				val conn = toId -> Connection(toId, path.length)
 				addWaypoint(from.copy(connections = from.connections + conn))
+
+				reinforce(trans, reward)
+
 				log.info("New connection!")
 			}
 		}
@@ -240,7 +252,7 @@ trait WaypointManager {
 	}
 
 	//TODO: use qleanr
-	def reinforce(fromId: Int, toId: Int, props: Set[String]) = {
+	/*def reinforce(fromId: Int, toId: Int, props: Set[String]) = {
 		val from = waypoints(fromId)
 		val to = waypoints(toId)
 
@@ -252,7 +264,7 @@ trait WaypointManager {
 				}
 			case None =>
 		}
-	}
+	}*/
 
 
 	//get set of waypoints in radius at least equal to the maxHeight / 2

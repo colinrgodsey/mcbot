@@ -1,7 +1,7 @@
 package com.colingodsey.ai
 
 import scala.annotation.tailrec
-import com.colingodsey.logos.collections.{Vec1D, VecCompanion, Vec}
+import com.colingodsey.logos.collections._
 import com.colingodsey.collections.VecN
 
 
@@ -53,101 +53,95 @@ trait BoltzmannSelector extends Selector {
 	override def toString = "BoltzmannSelector (" + temperature + ")"
 }
 
-/*object QLPolicyMaker {
-	def apply[S](transFrom: S => Set[S],
-			selector: Selector = BoltzmannSelector.default,
-			qlearning: QLearning[S] = QLearning[S]()) = {
-		val a = transFrom
-		val b = selector
-		val c = qlearning
+object QLPolicy {
+	def apply[T, U <: VecLike[U]](initialValue: U, desire: U,
+			gamma: Double = 0.8, alphaScale: Double = 1.0,
+			selector: Selector = BoltzmannSelector.default)
+			(f: T => U)(transF: T => Set[T]) = {
+		val dat = (gamma, alphaScale, initialValue, selector, desire)
 
-		new QLPolicyMaker[S] {
-			def transFrom(trans: S): Set[S] = a(trans)
-			val selector = b
-			val qLearning = c
+		new QLPolicy[T, U] {
+			val (γ, α0, initialValue, selector, desire) = dat
+			def transFrom(trans: T): Set[T] = transF(trans)
+
+			def qValue(transition: T): U = f(transition)
 		}
 	}
-}*/
+}
 
-trait QLPolicyMaker[T, U <: Vec] {
+trait QLPolicy[T, U <: VecLike[U]] extends QLearning[T, U] {
 	def transFrom(trans: T): Set[T]
 	def selector: Selector
-	def qLearning: QLearning[T, U]
 
-	def desireVector: U
-
-	def companion: VecCompanion[U]
+	def desire: U
 
 	//compare the end state
 	def maxQ(justTransitioned: T): U = {
-		val values = transFrom(justTransitioned).iterator.map(qLearning.qValue)
+		val values = transFrom(justTransitioned).iterator.map(qValue)
 
-		//values.map(_.length)
-		values.toStream.sortBy(-desireVector.normal * _).headOption.getOrElse(companion.zero)
+		values.toStream.sortBy(-desire.normal * _).headOption.getOrElse(initialValue)
 	}
 
 	//new q value for trans
-	def update(trans: T, reward: U) =
-		qLearning.update(trans, reward, maxQ(trans))
+	def update(trans: T, reward: U): U =
+		update(trans, reward, maxQ(trans))
 
 	def policy(transitions: Set[T]): T = {
 		val possibleToSs = transitions.map { x =>
-			(x, qLearning.qValue(x) * desireVector.normal)
+			(x, qValue(x) * desire.normal)
 		}.toMap
 
 		selector selectFrom possibleToSs
 	}
 }
 
-
-
 object QLearning {
-	def apply[T](gamma: Double = 0.8, alphaScale: Double = 1.0,
-			initialValue: Double = 0.0)(f: T => Double) = {
-		val (a, b, c) = (gamma, alphaScale, initialValue)
+	/*def apply[T, U <: VecLike[U]](initialValue: U, gamma: Double = 0.8,
+			alphaScale: Double = 1.0)(f: T => U) = {
+		val dat = (gamma, alphaScale, initialValue)
 
-		new QLearning[T, Vec1D] {
-			val gamma: Double = a
-			val alphaScale: Double = b
-			val initialValue: Double = c
+		new QLearning[T, U] {
+			val (γ, α0, initialValue) = dat
 
-			def qValue(transition: T): Double = f(transition)
+			def qValue(transition: T): U = f(transition)
 		}
-	}
+	}*/
 }
 
 //cue, behavior, reward
-trait QLearning[T, U <: Vec] {
-	def gamma: Double //how much the max q of associated state is blended in
-	def alphaScale: Double //familiarity
+trait QLearning[T, U <: VecLike[U]] {
+	def γ: Double //gamma, how much the max q of associated state is blended in
+	def α0: Double //alpha, familiarity
 	def initialValue: U //best at 0 usually
 
+	def gamma = γ
+	def alpha0 = α0
+
 	def qValue(transition: T): U
-
-	/*val qTable: ConcurrentMap[T, Double] =
-		new java.util.concurrent.ConcurrentHashMap[STransition, Double]
-	private val timesUtilized: ConcurrentMap[STransition, Int] =
-		new java.util.concurrent.ConcurrentHashMap[STransition, Int]()*/
-
-	/*def init(initial: Map[(S, S), Double] = Map[(S, S), Double]()) =
-		initial foreach {
-			case (tran, v) => setQValueFor(tran, v)
-		}*/
+	def desire: U
 
 	//maxQForToS - max Q of the neighbors of the dest state
 	//TODO: needs to return a vector of Q values
 	//take dot product of vector
-	def update(transition: T, reward: U, maxQForToS: U) = {
+	def update(transition: T, reward: U, maxQForDest: U): U = {
 
-		val newValue = reward + maxQForToS * gamma
+		//familiarity, optional. less likely to commit initially. affects α
 		val times = 1//getTimesUtilized(transition) + 1
 
-		//familiarity, optional. less likely to commit in beginning
-		val alpha = (1.0 / times) * alphaScale
-		val oldValue = qValue(transition)
+		val α = (1.0 / times) * α0
+		val q0 = qValue(transition)
+		val adjustedMaxQ = maxQForDest * γ
+		val q1 = reward + adjustedMaxQ
 
-		newValue * (1.0 - alpha) + oldValue * alpha
+		//TODO: use desire normal for what parts are spread
 
-		//setQValueFor(transition, currentValue)
+		val alignedQ0 = desire.normal * (q0 * desire.normal)
+		val remainingQ0 = q1 - alignedQ0
+		val alignedQ1 = desire.normal * (q1 * desire.normal)
+
+		//new q value for transition
+		//q0 * α + q1 * (1.0 - α)
+
+		remainingQ0 + alignedQ0 * α + alignedQ1 * (1.0 - α)
 	}
 }

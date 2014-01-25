@@ -11,7 +11,7 @@ import akka.pattern._
 import scala.util.Failure
 import scala.Some
 import com.colingodsey.mcbot.world.Player
-import com.colingodsey.ai.{QLPolicyMaker, QLearning}
+import com.colingodsey.ai.{QLPolicy, QLearning}
 
 object BotNavigation {
 	case class PathFound(path: Seq[Vec3D])
