@@ -13,7 +13,7 @@ import akka.actor.ActorLogging
 import akka.event.LoggingAdapter
 import java.nio.file.{Paths, Path, StandardCopyOption, Files}
 import com.colingodsey.mcbot.world.{CollisionDetection, FindChunkError}
-import com.colingodsey.collections.PathFinding
+import com.colingodsey.collections.{VecN, PathFinding}
 import com.colingodsey.ai.{BoltzmannSelector, QLPolicyMaker, QLearning}
 
 object WaypointManager extends Protocol {
@@ -81,10 +81,12 @@ trait WaypointManager {
 	val waypointSwapFile = new File("./waypoints.tmp.dat")
 
 	class QLearner(desireMap: Map[String, Double])
-			extends QLPolicyMaker[WaypointManager.WaypointTransition]
-			with QLearning[WaypointManager.WaypointTransition] {
+			extends QLPolicyMaker[WaypointManager.WaypointTransition, VecN]
+			with QLearning[WaypointManager.WaypointTransition, VecN] {
 		def qLearning = this
 		def selector = BoltzmannSelector.default
+
+		val desireVector = VecN(desireMap)
 		val gamma: Double = 0.8
 		val alphaScale: Double = 1
 		val initialValue: Double = 0

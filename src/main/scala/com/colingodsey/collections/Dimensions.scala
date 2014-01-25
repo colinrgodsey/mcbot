@@ -3,10 +3,10 @@ package com.colingodsey.logos.collections
 import com.colingodsey.logos.collections
 
 abstract class Dimensions {
-    type Point <: collections.Point
+    type Point <: collections.Vec
     //type Matrix <: collections.Matrix
 
-    val Point: PointCompanion[Point]
+    val Point: VecCompanion[Point]
     //val Matrix: MatrixCompanion[Matrix]
 
     def n: Int
@@ -19,10 +19,10 @@ object Dimensions {
     }*/
 
     case object Two extends Dimensions {
-        type Point = Point2D
+        type Point = Vec2D
         //type Matrix = Matrix3x2
 
-        val Point = Point2D
+        val Point = Vec2D
         //val Matrix = ImmutableMatrix3x2
 
         def n = 2

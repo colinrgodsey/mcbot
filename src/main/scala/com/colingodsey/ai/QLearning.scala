@@ -1,6 +1,8 @@
 package com.colingodsey.ai
 
 import scala.annotation.tailrec
+import com.colingodsey.logos.collections.{Vec1D, VecCompanion, Vec}
+import com.colingodsey.collections.VecN
 
 
 trait Selector {
@@ -51,7 +53,7 @@ trait BoltzmannSelector extends Selector {
 	override def toString = "BoltzmannSelector (" + temperature + ")"
 }
 
-object QLPolicyMaker {
+/*object QLPolicyMaker {
 	def apply[S](transFrom: S => Set[S],
 			selector: Selector = BoltzmannSelector.default,
 			qlearning: QLearning[S] = QLearning[S]()) = {
@@ -65,54 +67,46 @@ object QLPolicyMaker {
 			val qLearning = c
 		}
 	}
-}
+}*/
 
-trait QLPolicyMaker[T] {
+trait QLPolicyMaker[T, U <: Vec] {
 	def transFrom(trans: T): Set[T]
 	def selector: Selector
-	def qLearning: QLearning[T]
+	def qLearning: QLearning[T, U]
+
+	def desireVector: U
+
+	def companion: VecCompanion[U]
 
 	//compare the end state
-	def maxQ(justTransitioned: T): Double = {
+	def maxQ(justTransitioned: T): U = {
 		val values = transFrom(justTransitioned).iterator.map(qLearning.qValue)
 
-		values.foldLeft(qLearning.initialValue)(math.max)
+		//values.map(_.length)
+		values.toStream.sortBy(-desireVector.normal * _).headOption.getOrElse(companion.zero)
 	}
 
 	//new q value for trans
-	def update(trans: T, reward: Double) =
+	def update(trans: T, reward: U) =
 		qLearning.update(trans, reward, maxQ(trans))
 
 	def policy(transitions: Set[T]): T = {
 		val possibleToSs = transitions.map { x =>
-			(x, qLearning.qValue(x))
+			(x, qLearning.qValue(x) * desireVector.normal)
 		}.toMap
 
 		selector selectFrom possibleToSs
 	}
 }
 
-case class RewardVector[T](weights: Map[T, Double]) extends QLearning.TReward {
-	def apply(x: T) = weights.getOrElse(x, 0.0)
 
-	def *(x: RewardVector): Double = {
-		val keys = weights.keySet ++ x.weights.keySet
-
-		keys.iterator.map { k =>
-			apply(k) * x(k)
-		}.sum
-	}
-	def *(x: Double): this.type
-	def -(x: this.type): this.type
-	def +(x: this.type): this.type
-}
 
 object QLearning {
 	def apply[T](gamma: Double = 0.8, alphaScale: Double = 1.0,
 			initialValue: Double = 0.0)(f: T => Double) = {
 		val (a, b, c) = (gamma, alphaScale, initialValue)
 
-		new QLearning[T] {
+		new QLearning[T, Vec1D] {
 			val gamma: Double = a
 			val alphaScale: Double = b
 			val initialValue: Double = c
@@ -120,28 +114,15 @@ object QLearning {
 			def qValue(transition: T): Double = f(transition)
 		}
 	}
-
-	type Reward = {
-		def *(x: Reward.this.type): Double
-		def *(x: Double): Reward.this.type
-		def -(x: Reward.this.type): Reward.this.type
-		def +(x: Reward.this.type): Reward.this.type
-	}
-
-	trait TReward extends Reward {
-		//TODO: I have no idea if this is right....
-		lazy val length = math.sqrt(this * this)
-	}
 }
 
-trait QLearning[T] {
-	import QLearning.Reward
-
+//cue, behavior, reward
+trait QLearning[T, U <: Vec] {
 	def gamma: Double //how much the max q of associated state is blended in
 	def alphaScale: Double //familiarity
-	def initialValue: Double //best at 0 usually
+	def initialValue: U //best at 0 usually
 
-	def qValue(transition: T): Double
+	def qValue(transition: T): U
 
 	/*val qTable: ConcurrentMap[T, Double] =
 		new java.util.concurrent.ConcurrentHashMap[STransition, Double]
@@ -156,18 +137,17 @@ trait QLearning[T] {
 	//maxQForToS - max Q of the neighbors of the dest state
 	//TODO: needs to return a vector of Q values
 	//take dot product of vector
-	def update(transition: T, reward: Reward, maxQForToS: Double) = {
+	def update(transition: T, reward: U, maxQForToS: U) = {
 
-		val newValue = reward + gamma * maxQForToS
+		val newValue = reward + maxQForToS * gamma
 		val times = 1//getTimesUtilized(transition) + 1
 
 		//familiarity, optional. less likely to commit in beginning
 		val alpha = (1.0 / times) * alphaScale
 		val oldValue = qValue(transition)
 
-		val currentValue = (1.0 - alpha) * newValue + alpha * oldValue
+		newValue * (1.0 - alpha) + oldValue * alpha
 
 		//setQValueFor(transition, currentValue)
-		currentValue
 	}
 }
