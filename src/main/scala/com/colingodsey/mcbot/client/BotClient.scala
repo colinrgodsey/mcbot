@@ -37,7 +37,7 @@ import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
 import org.bouncycastle.crypto.{KeyGenerationParameters, CipherKeyGenerator}
 import akka.util.Timeout
 import akka.pattern._
-import com.colingodsey.logos.collections.{Point3D, Dimensions}
+import com.colingodsey.logos.collections.{Vec3D, Dimensions}
 import Dimensions.Three._
 import protocol.ClientProtocol
 import protocol.{ClientProtocol => cpr}
@@ -120,8 +120,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	def selfEnt = entities(selfId).asInstanceOf[Player]
 
-	def footPos = selfEnt.pos - Point3D(0, stanceDelta, 0)
-	def footBlockPos = footPos + Point3D(0, 0.5, 0)
+	def footPos = selfEnt.pos - Vec3D(0, stanceDelta, 0)
+	def footBlockPos = footPos + Vec3D(0, 0.5, 0)
 	def footBlock = getBlock(footBlockPos)
 
 	val worldView: WorldView = this
@@ -133,7 +133,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	//this accesses local state in another thread... dangerous
 
 
-	def lookAt(vec: Point3D) {
+	def lookAt(vec: Vec3D) {
 		val alpha1 = -math.asin(vec.normal.x) / math.Pi * 180
 		val alpha2 =  math.acos(vec.normal.z) / math.Pi * 180
 		val yaw = if(alpha2 > 90) 180 - alpha1
@@ -148,7 +148,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	def randomPushSelf() {
 		updateEntity(selfId) { case ent: Player =>
-			ent.copy(vel = ent.vel + Point3D.random * 0.2)
+			ent.copy(vel = ent.vel + Vec3D.random * 0.2)
 		}
 	}
 
@@ -212,7 +212,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	}
 
 	def jump(): Unit = if(selfEnt.onGround) updateEntity(selfId) { case ent: Player =>
-		ent.copy(vel = ent.vel + Point3D(0, jumpSpeed, 0), onGround = false)
+		ent.copy(vel = ent.vel + Vec3D(0, jumpSpeed, 0), onGround = false)
 	}
 
 	def loadingChunk() {
@@ -258,14 +258,14 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				case x: Throwable =>
 					log.error("Got bad position!!")
 					throw x
-					Point3D.zero
+					Vec3D.zero
 			}
 			guaranteePlayer()
 
 			val lastPos = selfEnt.pos
 
 			updateEntity(selfId) { case e: Player =>
-				e.copy(pos = pos, yaw = yaw, vel = Point3D.zero,
+				e.copy(pos = pos, yaw = yaw, vel = Vec3D.zero,
 					pitch = pitch, onGround = onGround)
 			}
 
@@ -333,11 +333,11 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			//direction = Point3D(math.cos(theta), 0, math.sin(theta))
 			move(selfId, dt, CollisionDetection.playerBody(stanceDelta))
 
-			if(direction !~~ Point3D.zero) lookAt(direction)
+			if(direction !~~ Vec3D.zero) lookAt(direction)
 
 			lastTime = ct
 
-			val walkDir = Point3D(direction.x, 0, direction.z)
+			val walkDir = Vec3D(direction.x, 0, direction.z)
 
 			if(walkDir.length > 0.01) {
 				val moveVec = walkDir.normal * movementSpeed * dt
@@ -381,16 +381,16 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			if(math.random < 0.03) {
 				curPath = Nil
 				updateEntity(selfId) { case ent: Player =>
-					ent.copy(vel = ent.vel + Point3D.random * 0.2)
+					ent.copy(vel = ent.vel + Vec3D.random * 0.2)
 				}
 			}
 
 			//if(math.random < 0.2) jump()
 
-			if(direction !~~ Point3D.zero && direction.length > 0.01) try {
+			if(direction !~~ Vec3D.zero && direction.length > 0.01) try {
 				val l = 0.5
 				val res = traceBody(CollisionDetection.UnitBox,
-					selfEnt.pos + Point3D(0, -stanceDelta + 1, 0), direction * l)
+					selfEnt.pos + Vec3D(0, -stanceDelta + 1, 0), direction * l)
 
 				//if(res.head.dist < l) jump()
 			} catch {

@@ -21,3 +21,13 @@
 
 Fixed Goals/Behaviors
 *Dead-End - Exploration goal that results
+
+Properties-
+*A node property shows up in one of 3 ways:
+  *A value on the node that spreads when a connection to it is satisfied
+  *A value on the connecting leading from the node elsewhere
+
+
+Exploration-
+*All nodes have a familiarity property to them, moving from this node spreads its property
+*Going to the most unfamiliar places

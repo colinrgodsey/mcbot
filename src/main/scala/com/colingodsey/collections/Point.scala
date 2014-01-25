@@ -86,34 +86,34 @@ final case class Point2D(x: Double, y: Double) extends Point with PointLike[Poin
     override lazy val normal: Point2D = super.normal.asInstanceOf[Point2D]
 }
 
-object Point3D extends PointCompanion[Point3D] {
-	val origin = Point3D(0, 0, 0)
-	val one = Point3D(1, 1, 1)
+object Vec3D extends PointCompanion[Vec3D] {
+	val origin = Vec3D(0, 0, 0)
+	val one = Vec3D(1, 1, 1)
 
 	def zero = origin
 
-	def random = (Point3D(math.random, math.random,
-		math.random) * 2 - Point3D.one).normal
+	def random = (Vec3D(math.random, math.random,
+		math.random) * 2 - Vec3D.one).normal
 
 	def dimensions: Dimensions = Dimensions.Two
 }
 
-final case class Point3D(x: Double, y: Double, z: Double) extends Point with PointLike[Point3D] {
-	def unary_-(): Point3D = Point3D(-x, -y, -z)
-	def + (other: Point3D): Point3D = Point3D(x + other.x, y + other.y, z + other.z)
-	def - (other: Point3D): Point3D = Point3D(x - other.x, y - other.y, z - other.z)
-	def * (scale: Double): Point3D = Point3D(x * scale, y * scale, z * scale)
-	def * (other: Point3D): Double = x * other.x + y * other.y + z * other.z
+final case class Vec3D(x: Double, y: Double, z: Double) extends Point with PointLike[Vec3D] {
+	def unary_-(): Vec3D = Vec3D(-x, -y, -z)
+	def + (other: Vec3D): Vec3D = Vec3D(x + other.x, y + other.y, z + other.z)
+	def - (other: Vec3D): Vec3D = Vec3D(x - other.x, y - other.y, z - other.z)
+	def * (scale: Double): Vec3D = Vec3D(x * scale, y * scale, z * scale)
+	def * (other: Vec3D): Double = x * other.x + y * other.y + z * other.z
 
 	require(!x.isNaN && !y.isNaN && !z.isNaN, "no NaNs for points/vectors!")
 
-	override def isOrigin = this == Point3D.origin
+	override def isOrigin = this == Vec3D.origin
 	def toPoint = this
 
 	lazy val isAxisAligned: Boolean = Seq(x, y, z).count(_ != 0) == 1
 
 	override lazy val length = super.length
-	override lazy val normal: Point3D = super.normal.asInstanceOf[Point3D]
+	override lazy val normal: Vec3D = super.normal.asInstanceOf[Vec3D]
 
 	//def apply(other: Point3D) = Point3D(x * other.x, y * other.y, z * other.z)
 }

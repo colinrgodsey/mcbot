@@ -1,6 +1,6 @@
 package com.colingodsey.mcbot.world
 
-import com.colingodsey.logos.collections.{IPoint3D, Epsilon, Point3D}
+import com.colingodsey.logos.collections.{IPoint3D, Epsilon, Vec3D}
 
 object CollisionDetection {
 	sealed trait TraceResult {
@@ -10,7 +10,7 @@ object CollisionDetection {
 		def unapply(x: TraceResult) = Some(x.dist)
 	}
 	sealed trait SurfaceHit extends TraceResult {
-		def normal: Point3D
+		def normal: Vec3D
 	}
 	object SurfaceHit {
 		def unapply(x: TraceResult) = x match {
@@ -19,8 +19,8 @@ object CollisionDetection {
 		}
 	}
 
-	case class TraceHit(dist: Double, normal: Point3D) extends SurfaceHit
-	case class StartHit(normal: Point3D) extends SurfaceHit {
+	case class TraceHit(dist: Double, normal: Vec3D) extends SurfaceHit
+	case class StartHit(normal: Vec3D) extends SurfaceHit {
 		def dist: Double = 0
 	}
 	case object StartSolid extends TraceResult {
@@ -32,18 +32,18 @@ object CollisionDetection {
 		//def points: Seq[Point3D]
 	}
 
-	case class SphereBody(spheres: Seq[(Point3D, Double)], offset: Point3D = Point3D.zero) extends Body
+	case class SphereBody(spheres: Seq[(Vec3D, Double)], offset: Vec3D = Vec3D.zero) extends Body
 
-	case class BoxBody(min: Point3D, max: Point3D) extends Body {
+	case class BoxBody(min: Vec3D, max: Vec3D) extends Body {
 		val points = Seq(
-			Point3D(min.x, min.y, min.z),
-			Point3D(max.x, min.y, min.z),
-			Point3D(max.x, min.y, max.z),
-			Point3D(min.x, min.y, max.z),
-			Point3D(min.x, max.y, min.z),
-			Point3D(max.x, max.y, min.z),
-			Point3D(max.x, max.y, max.z),
-			Point3D(min.x, max.y, max.z))
+			Vec3D(min.x, min.y, min.z),
+			Vec3D(max.x, min.y, min.z),
+			Vec3D(max.x, min.y, max.z),
+			Vec3D(min.x, min.y, max.z),
+			Vec3D(min.x, max.y, min.z),
+			Vec3D(max.x, max.y, min.z),
+			Vec3D(max.x, max.y, max.z),
+			Vec3D(min.x, max.y, max.z))
 	}
 
 	//val eyeHeight = 1.62
@@ -58,11 +58,11 @@ object CollisionDetection {
 
 	val playerHalfWidth = 0.4
 	def playerBody(eyeHeight: Double) =
-		BoxBody(Point3D(-playerHalfWidth, -eyeHeight, -playerHalfWidth),
-			Point3D(playerHalfWidth, 1.8 - eyeHeight, playerHalfWidth)) //eye origin
+		BoxBody(Vec3D(-playerHalfWidth, -eyeHeight, -playerHalfWidth),
+			Vec3D(playerHalfWidth, 1.8 - eyeHeight, playerHalfWidth)) //eye origin
 
-	val UnitBox = BoxBody(Point3D.one * -playerHalfWidth, Point3D.one * playerHalfWidth)
-	val SmallBox = BoxBody(Point3D.one * -playerHalfWidth / 4, Point3D.one * playerHalfWidth / 4)
+	val UnitBox = BoxBody(Vec3D.one * -playerHalfWidth, Vec3D.one * playerHalfWidth)
+	val SmallBox = BoxBody(Vec3D.one * -playerHalfWidth / 4, Vec3D.one * playerHalfWidth / 4)
 }
 
 trait CollisionDetection {
@@ -81,7 +81,7 @@ trait CollisionDetection {
 
 	//from a point along a vector, what distance along the vector can we move
 	//returns < 0 if we started solid
-	def traceBody(body: BoxBody, from: Point3D, vec: Point3D): Seq[TraceResult] = {
+	def traceBody(body: BoxBody, from: Vec3D, vec: Vec3D): Seq[TraceResult] = {
 		val startPoints = body.points.map(_ + from)
 		val endPoints = body.points.map(_ + from + vec)
 		val vl = vec.length
@@ -99,9 +99,9 @@ trait CollisionDetection {
 	}
 
 	val axisNorms = Set(
-		Point3D(0, 1, 0),
-		Point3D(1, 0, 0),
-		Point3D(0, 0, 1)
+		Vec3D(0, 1, 0),
+		Vec3D(1, 0, 0),
+		Vec3D(0, 0, 1)
 	)
 
 	val blockNormals =
@@ -115,7 +115,7 @@ trait CollisionDetection {
 		require((math.abs(dx) + math.abs(dy) + math.abs(dz)) == 1,
 			"bad block delta normal? " + (dx, dy, dz))
 
-		Point3D(-dx, -dy, -dz)
+		Vec3D(-dx, -dy, -dz)
 	}
 
 	private def normalsFromBlockDelta(start: Block, end: Block) = {
@@ -123,27 +123,27 @@ trait CollisionDetection {
 		val dy = end.globalPos.y - start.globalPos.y
 		val dz = end.globalPos.z - start.globalPos.z
 
-		var outSet = Set[Point3D]()
+		var outSet = Set[Vec3D]()
 
-		if(dy > 0) outSet += Point3D(0, -1, 0)
-		if(dz > 0) outSet += Point3D(0, 0, -1)
-		if(dx > 0) outSet += Point3D(-1, 0, 0)
-		if(dy < 0) outSet += Point3D(0, 1, 0)
-		if(dz < 0) outSet += Point3D(0, 0, 1)
-		if(dx < 0) outSet += Point3D(1, 0, 0)
+		if(dy > 0) outSet += Vec3D(0, -1, 0)
+		if(dz > 0) outSet += Vec3D(0, 0, -1)
+		if(dx > 0) outSet += Vec3D(-1, 0, 0)
+		if(dy < 0) outSet += Vec3D(0, 1, 0)
+		if(dz < 0) outSet += Vec3D(0, 0, 1)
+		if(dx < 0) outSet += Vec3D(1, 0, 0)
 
 		outSet
 	}
 
 
 	//fixes whole-number boundries
-	def blockSelect(point: Point3D, centerPoint: Point3D) = {
+	def blockSelect(point: Vec3D, centerPoint: Vec3D) = {
 		val centerVec = point - centerPoint
 
-		var centerCorVec = Point3D.zero
-		if((point.x.toInt == point.x) && centerVec.x > 0) centerCorVec += Point3D(-1, 0, 0)
-		if((point.y.toInt == point.y) && centerVec.y > 0) centerCorVec += Point3D(0, -1, 0)
-		if((point.z.toInt == point.z) && centerVec.z > 0) centerCorVec += Point3D(0, 0, -1)
+		var centerCorVec = Vec3D.zero
+		if((point.x.toInt == point.x) && centerVec.x > 0) centerCorVec += Vec3D(-1, 0, 0)
+		if((point.y.toInt == point.y) && centerVec.y > 0) centerCorVec += Vec3D(0, -1, 0)
+		if((point.z.toInt == point.z) && centerVec.z > 0) centerCorVec += Vec3D(0, 0, -1)
 
 
 		//below makes no sense
@@ -158,13 +158,13 @@ trait CollisionDetection {
 		else getBlock(bl), centerCorVec)
 	}
 
-	def traceRay(from: Point3D, vec: Point3D, center: Point3D): TraceResult = {
+	def traceRay(from: Vec3D, vec: Vec3D, center: Vec3D): TraceResult = {
 		val (startBlock, _) = blockSelect(from, center)
 		traceRay(from, vec, startBlock)
 	}
 
 	//always clip to the closest surface, move from there
-	def traceRay(from: Point3D, vec: Point3D,
+	def traceRay(from: Vec3D, vec: Vec3D,
 			startBlock: Block, distAcc: Double = 0): TraceResult = {
 		//val (startBlock, _) = blockSelect(from, centerPoint)
 

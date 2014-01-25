@@ -1,6 +1,6 @@
 package com.colingodsey.mcbot.world
 
-import com.colingodsey.logos.collections.Point3D
+import com.colingodsey.logos.collections.Vec3D
 import com.colingodsey.mcbot.protocol._
 
 //object, mob, player
@@ -9,8 +9,8 @@ trait Entity extends Product {
 
 	def id: Int
 	def typ: Int
-	def pos: Point3D
-	def vel: Point3D
+	def pos: Vec3D
+	def vel: Vec3D
 	def yaw: Double
 	def pitch: Double
 	def onGround: Boolean
@@ -19,8 +19,8 @@ trait Entity extends Product {
 	
 	//def update(id: Int = id, pos: Point3D = pos, vel: Point3D = vel, yaw: Double = yaw, )
 	
-	def entityCopy(pos: Point3D = pos,
-		vel: Point3D = vel,
+	def entityCopy(pos: Vec3D = pos,
+		vel: Vec3D = vel,
 		yaw: Double = yaw,
 		pitch: Double = pitch,
 		onGround: Boolean = onGround,
@@ -46,8 +46,8 @@ case class Modifier(uuid: BigInt128, amount: Double, operation: Byte)
 case class PropertyData(key: String, value: Double, modifiers: Seq[Modifier])
 
 case class Mob(id: Int, typ: Int,
-		pos: Point3D = Point3D.origin,
-		vel: Point3D = Point3D.origin,
+		pos: Vec3D = Vec3D.origin,
+		vel: Vec3D = Vec3D.origin,
 		yaw: Double = 0,
 		pitch: Double = 0,
 		props: Map[String, PropertyData] = Map(),
@@ -61,8 +61,8 @@ case class Mob(id: Int, typ: Int,
 			health: Double): LivingEntity =
 		copy(headAngle = headAngle, health = health)
 
-	def entityCopy(pos: Point3D,
-			vel: Point3D,
+	def entityCopy(pos: Vec3D,
+			vel: Vec3D,
 			yaw: Double,
 			pitch: Double,
 			onGround: Boolean,
@@ -72,8 +72,8 @@ case class Mob(id: Int, typ: Int,
 }
 
 case class Player(id: Int,
-		pos: Point3D = Point3D.origin,
-		vel: Point3D = Point3D.origin,
+		pos: Vec3D = Vec3D.origin,
+		vel: Vec3D = Vec3D.origin,
 		yaw: Double = 90,
 		pitch: Double = 90,
 		props: Map[String, PropertyData] = Map(),
@@ -89,8 +89,8 @@ case class Player(id: Int,
 			health: Double): LivingEntity =
 		copy(headAngle = headAngle, health = health)
 
-	def entityCopy(pos: Point3D,
-			vel: Point3D,
+	def entityCopy(pos: Vec3D,
+			vel: Vec3D,
 			yaw: Double,
 			pitch: Double,
 			onGround: Boolean,
@@ -113,8 +113,8 @@ object Entity {
 }
 
 case class ObjectEntity(id: Int, typ: Int,
-			pos: Point3D = Point3D.origin,
-			vel: Point3D = Point3D.origin,
+			pos: Vec3D = Vec3D.origin,
+			vel: Vec3D = Vec3D.origin,
 			yaw: Double = 0,
 			pitch: Double = 0,
 			props: Map[String, PropertyData] = Map(),
@@ -122,8 +122,8 @@ case class ObjectEntity(id: Int, typ: Int,
 			status: Int = 0
 		) extends Entity {
 
-	def entityCopy(pos: Point3D,
-			vel: Point3D,
+	def entityCopy(pos: Vec3D,
+			vel: Vec3D,
 			yaw: Double,
 			pitch: Double,
 			onGround: Boolean,

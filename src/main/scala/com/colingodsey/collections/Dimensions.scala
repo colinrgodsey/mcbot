@@ -29,10 +29,10 @@ object Dimensions {
     }
 
 	case object Three extends Dimensions {
-		type Point = Point3D
+		type Point = Vec3D
 		//type Matrix = Matrix3x2
 
-		val Point = Point3D
+		val Point = Vec3D
 		//val Matrix = ImmutableMatrix3x2
 
 		def n = 2

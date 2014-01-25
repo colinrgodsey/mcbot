@@ -1,7 +1,7 @@
 package com.colingodsey.mcbot.client
 
 import com.infomatiq.jsi.rtree.RTree
-import com.colingodsey.logos.collections.Point3D
+import com.colingodsey.logos.collections.Vec3D
 import com.infomatiq.jsi.{Point, Rectangle}
 import gnu.trove.TIntProcedure
 import scala.collection.immutable.VectorBuilder
@@ -14,29 +14,37 @@ import akka.event.LoggingAdapter
 import java.nio.file.{Paths, Path, StandardCopyOption, Files}
 import com.colingodsey.mcbot.world.{CollisionDetection, FindChunkError}
 import com.colingodsey.collections.PathFinding
+import com.colingodsey.ai.{BoltzmannSelector, QLPolicyMaker, QLearning}
 
 object WaypointManager extends Protocol {
-	case class Connection(destId: Int, distance: Double, weights: Map[String, Double] = Map())
+	case class Connection(destId: Int, distance: Double, weights: Map[String, Double] = Map()) {
+		def weight(str: String) = weights.getOrElse(str, 0.0)
+	}
 
-	case class Waypoint(id: Int, pos: Point3D,
+	case class Waypoint(id: Int, pos: Vec3D,
 			connections: Map[Int, Connection] = Map()) {
 		val rect = new Rectangle(pos.x.toFloat, pos.z.toFloat, 1, 1)
+
+		def connection(x: Int) =
+			connections.get(x).getOrElse(Connection(x, 0))
 
 		//hacky storin this in here...
 		def property(name: String) =
 			connections.get(id).flatMap(_.weights.get(name)).getOrElse(0.0)
 
 		def updateProperty(name: String, value: Double) = {
-			val conn = connections.get(id).getOrElse(Connection(id, 0))
+			val conn = connection(id)
 			val newConn = conn.copy(weights = conn.weights + (name -> value))
 
 			copy(connections = connections + (id -> newConn))
 		}
 	}
 
+	case class WaypointTransition(fromId: Int, destId: Int)
+
 	implicit object WaypointSnapshot extends LocalPacketCompanion[WaypointSnapshot](0) {
 		import LengthCodec.IntLengthCodec
-		implicit val pointCodec = codecFrom3(Point3D.apply)
+		implicit val pointCodec = codecFrom3(Vec3D.apply)
 		implicit val connCodec = codecFrom3(Connection.apply)
 		implicit val wpCodec = codecFrom3(Waypoint.apply)
 
@@ -52,7 +60,7 @@ object WaypointManager extends Protocol {
 trait WaypointManager {
 	import WaypointManager._
 
-	def getShortPath(from: Point3D, to: Point3D): Seq[Point3D]
+	def getShortPath(from: Vec3D, to: Vec3D): Seq[Vec3D]
 	def log: LoggingAdapter
 	implicit def ec: ExecutionContext
 
@@ -72,7 +80,35 @@ trait WaypointManager {
 	val waypointFile = new File("./waypoints.dat")
 	val waypointSwapFile = new File("./waypoints.tmp.dat")
 
-	def finder(dest: Point3D) = new PathFinding[Waypoint, Connection] {
+	class QLearner(desireMap: Map[String, Double])
+			extends QLPolicyMaker[WaypointManager.WaypointTransition]
+			with QLearning[WaypointManager.WaypointTransition] {
+		def qLearning = this
+		def selector = BoltzmannSelector.default
+		val gamma: Double = 0.8
+		val alphaScale: Double = 1
+		val initialValue: Double = 0
+
+		def transFrom(trans: WaypointTransition): Set[WaypointTransition] = {
+			val fromId = trans.destId
+			waypoints(fromId).connections.iterator.map { case (id, _) =>
+				WaypointTransition(fromId, id)
+			}.toSet
+		}
+
+		def qValue(transition: WaypointTransition): Double = {
+			val from = waypoints(transition.fromId)
+			val to = waypoints(transition.destId)
+
+			val weights = desireMap map { case (prop, w) =>
+				from.connection(to.id).weight(prop) * w
+			}
+
+			weights
+		}
+	}
+
+	def finder(dest: Vec3D) = new PathFinding[Waypoint, Connection] {
 		def maxPathLength: Int = 256
 
 		def legalNeighbors(state: Waypoint): Stream[(Waypoint, Connection)] = {
@@ -179,7 +215,7 @@ trait WaypointManager {
 		from.copy(connections = from.connections - toId)
 	}
 
-	def getNearWaypoints(pos: Point3D,
+	def getNearWaypoints(pos: Vec3D,
 			radius: Double = maxVerticalHeight, maxNum: Int = 20): Seq[Waypoint] = {
 		var list = new VectorBuilder[Waypoint]()
 		var n = 0
@@ -200,6 +236,22 @@ trait WaypointManager {
 
 		list.result.sortBy(w => (pos - w.pos).length)
 	}
+
+	//TODO: use qleanr
+	def reinforce(fromId: Int, toId: Int, props: Set[String]) = {
+		val from = waypoints(fromId)
+		val to = waypoints(toId)
+
+		from.connections.get(to.id) match {
+			case Some(conn) =>
+				conn.weights ++ props.map { prop =>
+					val old = conn.weights.getOrElse(prop, 0.0)
+
+				}
+			case None =>
+		}
+	}
+
 
 	//get set of waypoints in radius at least equal to the maxHeight / 2
 	/*def getNearestWaypoint(pos: Point3D, maxRadius: Double = 200) = {
