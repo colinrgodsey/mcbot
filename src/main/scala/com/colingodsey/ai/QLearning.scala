@@ -7,6 +7,9 @@ import com.colingodsey.collections.VecN
 
 trait Selector {
 	def selectFrom[T](policy: Map[T, Double]): T
+
+	def selectFrom[T](vals: Set[T])(f: T => Double): T =
+		selectFrom(vals.map(x => x -> f(x)).toMap)
 }
 
 object BoltzmannSelector {
@@ -86,13 +89,10 @@ trait QLPolicy[T, U <: VecLike[U]] extends QLearning[T, U] {
 	def update(trans: T, reward: U): U =
 		update(trans, reward, maxQ(trans))
 
-	def policy(transitions: Set[T]): T = {
-		val possibleToSs = transitions.map { x =>
-			(x, qValue(x) * desire.normal)
-		}.toMap
-
-		selector selectFrom possibleToSs
-	}
+	def policy(transitions: Set[T]): T =
+		selector.selectFrom(transitions) { x =>
+			qValue(x) * desire.normal
+		}
 }
 
 object QLearning {
@@ -131,17 +131,19 @@ trait QLearning[T, U <: VecLike[U]] {
 		val α = (1.0 / times) * α0
 		val q0 = qValue(transition)
 		val adjustedMaxQ = maxQForDest * γ
-		val q1 = reward + adjustedMaxQ
+		//val q1 = reward + adjustedMaxQ
 
-		//TODO: use desire normal for what parts are spread
+		//TODO: should we align the reward and 'ignore' unfocused rewards?
+		//or do we just add the whole thing
 
 		val alignedQ0 = desire.normal * (q0 * desire.normal)
-		val remainingQ0 = q1 - alignedQ0
-		val alignedQ1 = desire.normal * (q1 * desire.normal)
+		//portion of the vector not aligned with desires
+		val remainingQ0 = q0 - alignedQ0
+		val alignedAdjMaxQ = desire.normal * (adjustedMaxQ * desire.normal)
 
 		//new q value for transition
 		//q0 * α + q1 * (1.0 - α)
 
-		remainingQ0 + alignedQ0 * α + alignedQ1 * (1.0 - α)
+		remainingQ0 + alignedQ0 * α + (alignedAdjMaxQ + reward) * (1.0 - α)
 	}
 }
