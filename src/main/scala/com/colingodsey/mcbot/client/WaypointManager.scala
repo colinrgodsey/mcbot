@@ -217,13 +217,13 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		val from = waypoints(fromId)
 		val to = waypoints(toId)
 
+		val trans = WaypointTransition(fromId, toId)
+
 		if(from.connections.get(toId) == None) {
 			val path = getShortPath(from.pos, to.pos)
 
 			if(path.isEmpty) log.warning("Bad connect!")
 			else {
-				val trans = WaypointTransition(fromId, toId)
-
 				val conn = toId -> Connection(toId, path.length)
 				addWaypoint(from.copy(connections = from.connections + conn))
 
@@ -231,6 +231,10 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 
 				log.info("New connection!")
 			}
+		} else {
+			//TODO: is this right?
+			val disc = qValue(trans)("discover") * 0.01
+			reinforce(trans, MapVector("discover" -> -disc))
 		}
 	}
 

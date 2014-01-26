@@ -353,10 +353,10 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			val brandNewFac = if(nearbyWps.isEmpty) 600
 			else (nearbyWps.head.pos - selfEnt.pos).length
 
-			/*val discoverFac = if(nearbyWps.isEmpty) 1.0
-			else desire("discover") + 1.0*/
+			val discoverFac = if(nearbyWps.isEmpty) 1.0
+			else desire("discover") + 1.0
 
-			brandNewFac/* * hintFac*/ * -x.length// - unexploredWeight * 0.5
+			discoverFac * brandNewFac/* * hintFac*/ * -x.length// - unexploredWeight * 0.5
 		}
 
 		val filtered = rVecs.toStream filter { vec =>
@@ -391,13 +391,22 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			val sel = waypoints(selTrans.destId)
 			val vec = selfEnt.pos - sel.pos
 
-			if(vec.length < 7) false
+			if(vec.length < 5) false
 			else {
 				moveGoal = Some(sel.pos)
 
-				println("selected node w q-value " + qValue(selTrans))
+				val path = getShortPath(footBlockPos, sel.pos)
 
-				true
+				if(path.isEmpty) {
+					disconnectWaypoints(lastWaypoint.get.id, sel.id)
+
+					log.info("bad wp sel!")
+					false
+				} else {
+					log.info("selected node w q-value " + qValue(selTrans))
+
+					true
+				}
 			}
 		}
 	}
@@ -453,7 +462,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 			if(curPath.isEmpty && !targetingEnt.isDefined && !moveGoal.isDefined &&
 					curPath.isEmpty && lastWaypoint.isDefined) {
-				val wpQ = lastTransition.map(qValue).getOrElse(desire)
+				val wpQ = lastTransition.map(qValue).getOrElse(MapVector.zero)
 				val selQ = (for {
 					trans <- lastTransition
 					transs = transFrom(trans)
@@ -466,6 +475,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 				if(desire("discover") > 10 && selQ("discover") <= wpQ("discover"))
 					findNewRandomWp()
+				else if(math.random < 0.05) findNewRandomWp()
 				else if(!selectWaypoint()) findNewRandomWp()
 			} else if(targetingEnt.isDefined && curPath.isEmpty
 					&& lastWaypoint.isDefined && !moveGoal.isDefined) {
