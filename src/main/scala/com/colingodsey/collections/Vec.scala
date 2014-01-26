@@ -111,33 +111,33 @@ object Epsilon {
     implicit val default = Epsilon(1e-13)
 }
 
-object Vec1D extends VecCompanion[Vec1D] {
-	val origin = Vec1D(0)
-	val one = Vec1D(1)
+object Vec1 extends VecCompanion[Vec1] {
+	val origin = Vec1(0)
+	val one = Vec1(1)
 
-	def apply(x: Vec): Vec1D = x match {
-		case x: Vec1D => x
-		case x => Vec1D(x.toVecN("x"))
+	def apply(x: Vec): Vec1 = x match {
+		case x: Vec1 => x
+		case x => Vec1(x.toVecN("x"))
 	}
 
 	def dimensions: Dimensions = Dimensions.Two
 
-	implicit def dTov1d(d: Double): Vec1D = Vec1D(d)
-	implicit def v1dToD(x: Vec1D): Double = x.x
+	implicit def dTov1d(d: Double): Vec1 = Vec1(d)
+	implicit def v1dToD(x: Vec1): Double = x.x
 }
 
-final case class Vec1D(x: Double) extends Vec with VecLike[Vec1D] {
+final case class Vec1(x: Double) extends Vec with VecLike[Vec1] {
 	//only able to force this.type here because of final class
-	def unary_-() = Vec1D(-x).asInstanceOf[this.type]
-	def + (other: Vec1D) = Vec1D(x + other.x).asInstanceOf[this.type]
-	def - (other: Vec1D) = Vec1D(x - other.x).asInstanceOf[this.type]
-	def * (scale: Double) = Vec1D(x * scale).asInstanceOf[this.type]
-	def * (other: Vec1D): Double = x * other.x
+	def unary_-() = Vec1(-x).asInstanceOf[this.type]
+	def + (other: Vec1) = Vec1(x + other.x).asInstanceOf[this.type]
+	def - (other: Vec1) = Vec1(x - other.x).asInstanceOf[this.type]
+	def * (scale: Double) = Vec1(x * scale).asInstanceOf[this.type]
+	def * (other: Vec1): Double = x * other.x
 
-	override def isOrigin = this == Vec1D.origin
+	override def isOrigin = this == Vec1.origin
 	def toVec = this
 
-	def companion = Vec1D
+	def companion = Vec1
 
 	lazy val isAxisAligned: Boolean = true
 
@@ -147,31 +147,31 @@ final case class Vec1D(x: Double) extends Vec with VecLike[Vec1D] {
 	def toVecN = MapVector("x" -> x)
 }
 
-object Vec2D extends VecCompanion[Vec2D] {
-    val origin = Vec2D(0, 0)
-    val one = Vec2D(1, 1)
+object Vec2 extends VecCompanion[Vec2] {
+    val origin = Vec2(0, 0)
+    val one = Vec2(1, 1)
 
     def dimensions: Dimensions = Dimensions.Two
 
-	def apply(x: Vec): Vec2D = x match {
-		case x: Vec2D => x
+	def apply(x: Vec): Vec2 = x match {
+		case x: Vec2 => x
 		case x =>
 			val vn = x.toVecN
-			Vec2D(vn("x"), vn("y"))
+			Vec2(vn("x"), vn("y"))
 	}
 }
 
-final case class Vec2D(x: Double, y: Double) extends Vec with VecLike[Vec2D] {
-    final def unary_-() = Vec2D(-x, -y)
-    def + (other: Vec2D) = Vec2D(x + other.x, y + other.y).asInstanceOf[this.type]
-    def - (other: Vec2D) = Vec2D(x - other.x, y - other.y).asInstanceOf[this.type]
-    def * (scale: Double) = Vec2D(x * scale, y * scale).asInstanceOf[this.type]
-    def * (other: Vec2D): Double = x * other.x + y * other.y
+final case class Vec2(x: Double, y: Double) extends Vec with VecLike[Vec2] {
+    final def unary_-() = Vec2(-x, -y)
+    def + (other: Vec2) = Vec2(x + other.x, y + other.y).asInstanceOf[this.type]
+    def - (other: Vec2) = Vec2(x - other.x, y - other.y).asInstanceOf[this.type]
+    def * (scale: Double) = Vec2(x * scale, y * scale).asInstanceOf[this.type]
+    def * (other: Vec2): Double = x * other.x + y * other.y
 
-	override def isOrigin = this == Vec2D.origin
+	override def isOrigin = this == Vec2.origin
     def toVec = this
 
-	def companion = Vec2D
+	def companion = Vec2
 
 	lazy val isAxisAligned: Boolean = Seq(x, y).count(_ != 0) == 1
 
@@ -181,36 +181,36 @@ final case class Vec2D(x: Double, y: Double) extends Vec with VecLike[Vec2D] {
 	def toVecN = MapVector("x" -> x, "y" -> y)
 }
 
-object Vec3D extends VecCompanion[Vec3D] {
-	val origin = Vec3D(0, 0, 0)
-	val one = Vec3D(1, 1, 1)
+object Vec3 extends VecCompanion[Vec3] {
+	val origin = Vec3(0, 0, 0)
+	val one = Vec3(1, 1, 1)
 
-	def random = (Vec3D(math.random, math.random,
-		math.random) * 2 - Vec3D.one).normal
+	def random = (Vec3(math.random, math.random,
+		math.random) * 2 - Vec3.one).normal
 
 	def dimensions: Dimensions = Dimensions.Two
 
-	def apply(x: Vec): Vec3D = x match {
-		case x: Vec3D => x
+	def apply(x: Vec): Vec3 = x match {
+		case x: Vec3 => x
 		case x =>
 			val vn = x.toVecN
-			Vec3D(vn("x"), vn("y"), vn("z"))
+			Vec3(vn("x"), vn("y"), vn("z"))
 	}
 }
 
-final case class Vec3D(x: Double, y: Double, z: Double) extends Vec with VecLike[Vec3D] {
-	def unary_-() = Vec3D(-x, -y, -z).asInstanceOf[this.type]
-	def + (other: Vec3D) = Vec3D(x + other.x, y + other.y, z + other.z).asInstanceOf[this.type]
-	def - (other: Vec3D) = Vec3D(x - other.x, y - other.y, z - other.z).asInstanceOf[this.type]
-	def * (scale: Double) = Vec3D(x * scale, y * scale, z * scale).asInstanceOf[this.type]
-	def * (other: Vec3D): Double = x * other.x + y * other.y + z * other.z
+final case class Vec3(x: Double, y: Double, z: Double) extends Vec with VecLike[Vec3] {
+	def unary_-() = Vec3(-x, -y, -z).asInstanceOf[this.type]
+	def + (other: Vec3) = Vec3(x + other.x, y + other.y, z + other.z).asInstanceOf[this.type]
+	def - (other: Vec3) = Vec3(x - other.x, y - other.y, z - other.z).asInstanceOf[this.type]
+	def * (scale: Double) = Vec3(x * scale, y * scale, z * scale).asInstanceOf[this.type]
+	def * (other: Vec3): Double = x * other.x + y * other.y + z * other.z
 
 	require(!x.isNaN && !y.isNaN && !z.isNaN, "no NaNs for points/vectors!")
 
-	override def isOrigin = this == Vec3D.origin
+	override def isOrigin = this == Vec3.origin
 
 	def toVec = this
-	def companion = Vec3D
+	def companion = Vec3
 
 	lazy val isAxisAligned: Boolean = Seq(x, y, z).count(_ != 0) == 1
 

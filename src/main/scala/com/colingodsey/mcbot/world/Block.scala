@@ -1,6 +1,6 @@
 package com.colingodsey.mcbot.world
 
-import com.colingodsey.logos.collections.{Vec3D, IPoint3D}
+import com.colingodsey.logos.collections.{Vec3, IPoint3D}
 import com.colingodsey.mcbot.world
 
 object Block {
@@ -45,7 +45,7 @@ object Block {
 	val typeSet = Set[BlockType](Air, Stone, Grass, Dirt, Bedrock, Water,
 		Lava, Sand, Gravel, GoldOre, Torch, RedstoneWire)
 
-	val halfBlockVec = Vec3D.one / 2
+	val halfBlockVec = Vec3.one / 2
 
 	protected abstract class ABlockType(val typ: Int) extends BlockType {
 		def isPassable: Boolean = true

@@ -10,11 +10,11 @@ import java.io.InputStream
 
 package object collections {
 	object IPoint3D {
-		def apply(point: Vec3D) = Vec3D(point.x.toInt, point.y.toInt, point.z.toInt)
+		def apply(point: Vec3) = Vec3(point.x.toInt, point.y.toInt, point.z.toInt)
 	}
 
 	final case class IPoint3D(x: Int, y: Int, z: Int) {
-		def toPoint3D = Vec3D(x, y, z)
+		def toPoint3D = Vec3(x, y, z)
 	}
 
 	implicit def IPoint3DToPoint3D(x: IPoint3D) = x.toPoint3D

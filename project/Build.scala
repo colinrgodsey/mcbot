@@ -27,6 +27,7 @@ object General {
 			"io.spray"              %%  "spray-json"                % "1.2.3",
 
 			"com.typesafe.akka"     %%  "akka-actor"                % akkaV,
+			"com.typesafe.akka"     %%  "akka-remote"               % akkaV,
 			"com.typesafe.akka"     %%  "akka-testkit"              % akkaV,
 
 			"com.couchbase.client"  %   "couchbase-client"          % "1.2.3",
@@ -34,6 +35,7 @@ object General {
 			"org.bouncycastle"      %   "bcprov-jdk15on"            % "1.50",
 			"org.bouncycastle"      %   "bcpkix-jdk15on"            % "1.50",
 
+			"org.scalafx"           %   "scalafx_2.10"              % "8.0.0-M3",
 
 			"net.sourceforge.jsi"   %   "jsi"                       % "1.0.0",
 

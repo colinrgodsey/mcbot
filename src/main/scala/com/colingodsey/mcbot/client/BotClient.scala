@@ -37,7 +37,7 @@ import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
 import org.bouncycastle.crypto.{KeyGenerationParameters, CipherKeyGenerator}
 import akka.util.Timeout
 import akka.pattern._
-import com.colingodsey.logos.collections.{Vec3D, Dimensions}
+import com.colingodsey.logos.collections.{Vec3, Dimensions}
 import Dimensions.Three._
 import protocol.ClientProtocol
 import protocol.{ClientProtocol => cpr}
@@ -46,6 +46,8 @@ import com.colingodsey.mcbot.world._
 import scala.Some
 import com.colingodsey.mcbot.world.Player
 import akka.event.LoggingReceive
+import com.colingodsey.mcbot.client.WaypointManager.Waypoint
+import com.colingodsey.collections.VecN
 
 object BotClient {
 	case class Settings(host: String, port: Int)
@@ -54,7 +56,13 @@ object BotClient {
 	case object LongTick
 	case object PathTick
 	case object SaveWaypoints
+	case object Subscribe
 
+	case class BotSnapshot(
+		nearWaypoints: Set[Waypoint],
+		curPos: Vec3,
+		desire: VecN
+	)
 
 	def props(settings: BotClient.Settings) = Props(classOf[BotClient], settings)
 
@@ -109,6 +117,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	var lastPosEnt: Option[Player] = None
 	var heldItem = 0
 	var lastTime = curTime
+	var subscribers = Set[ActorRef]()
 
 	var pluginMessage: Option[spr.PluginMessage] = None
 
@@ -122,8 +131,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	def selfEnt = entities(selfId).asInstanceOf[Player]
 
-	def footPos = selfEnt.pos - Vec3D(0, stanceDelta, 0)
-	def footBlockPos = footPos + Vec3D(0, 0.5, 0)
+	def footPos = selfEnt.pos - Vec3(0, stanceDelta, 0)
+	def footBlockPos = footPos + Vec3(0, 0.5, 0)
 	def footBlock = getBlock(footBlockPos)
 
 	val worldView: WorldView = this
@@ -135,7 +144,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	//this accesses local state in another thread... dangerous
 
 
-	def lookAt(vec: Vec3D) {
+	def lookAt(vec: Vec3) {
 		val alpha1 = -math.asin(vec.normal.x) / math.Pi * 180
 		val alpha2 =  math.acos(vec.normal.z) / math.Pi * 180
 		val yaw = if(alpha2 > 90) 180 - alpha1
@@ -150,7 +159,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	def randomPushSelf() {
 		updateEntity(selfId) { case ent: Player =>
-			ent.copy(vel = ent.vel + Vec3D.random * 0.2)
+			ent.copy(vel = ent.vel + Vec3.random * 0.2)
 		}
 	}
 
@@ -214,7 +223,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	}
 
 	def jump(): Unit = if(selfEnt.onGround) updateEntity(selfId) { case ent: Player =>
-		ent.copy(vel = ent.vel + Vec3D(0, jumpSpeed, 0), onGround = false)
+		ent.copy(vel = ent.vel + Vec3(0, jumpSpeed, 0), onGround = false)
 	}
 
 	def loadingChunk() {
@@ -260,14 +269,14 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				case x: Throwable =>
 					log.error("Got bad position!!")
 					throw x
-					Vec3D.zero
+					Vec3.zero
 			}
 			guaranteePlayer()
 
 			val lastPos = selfEnt.pos
 
 			updateEntity(selfId) { case e: Player =>
-				e.copy(pos = pos, yaw = yaw, vel = Vec3D.zero,
+				e.copy(pos = pos, yaw = yaw, vel = Vec3.zero,
 					pitch = pitch, onGround = onGround)
 			}
 
@@ -335,11 +344,11 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			//direction = Point3D(math.cos(theta), 0, math.sin(theta))
 			move(selfId, dt, CollisionDetection.playerBody(stanceDelta))
 
-			if(direction !~~ Vec3D.zero) lookAt(direction)
+			if(direction !~~ Vec3.zero) lookAt(direction)
 
 			lastTime = ct
 
-			val walkDir = Vec3D(direction.x, 0, direction.z)
+			val walkDir = Vec3(direction.x, 0, direction.z)
 
 			if(walkDir.length > 0.01) {
 				val moveVec = walkDir.normal * movementSpeed * dt
@@ -383,16 +392,16 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			if(math.random < 0.03) {
 				curPath = Nil
 				updateEntity(selfId) { case ent: Player =>
-					ent.copy(vel = ent.vel + Vec3D.random * 0.2)
+					ent.copy(vel = ent.vel + Vec3.random * 0.2)
 				}
 			}
 
 			//if(math.random < 0.2) jump()
 
-			if(direction !~~ Vec3D.zero && direction.length > 0.01) try {
+			if(direction !~~ Vec3.zero && direction.length > 0.01) try {
 				val l = 0.5
 				val res = traceBody(CollisionDetection.UnitBox,
-					selfEnt.pos + Vec3D(0, -stanceDelta + 1, 0), direction * l)
+					selfEnt.pos + Vec3(0, -stanceDelta + 1, 0), direction * l)
 
 				//if(res.head.dist < l) jump()
 			} catch {
@@ -400,6 +409,14 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			}
 
 			log.debug(s"health = ${selfEnt.health}, pos = ${selfEnt.pos},  ground = ${selfEnt.onGround}, velL = ${selfEnt.vel.length}")
+
+		case Subscribe =>
+			subscribers += sender
+			//send ! waypoints
+
+			val wps = getNearWaypoints(selfEnt.pos, radius = 200, maxNum = 500)
+
+
 	}
 
 	def processChatCommand(str: String) = str match {

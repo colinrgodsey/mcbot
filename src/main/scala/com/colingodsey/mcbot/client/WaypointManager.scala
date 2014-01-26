@@ -1,7 +1,7 @@
 package com.colingodsey.mcbot.client
 
 import com.infomatiq.jsi.rtree.RTree
-import com.colingodsey.logos.collections.Vec3D
+import com.colingodsey.logos.collections.Vec3
 import com.infomatiq.jsi.{Point, Rectangle}
 import gnu.trove.TIntProcedure
 import scala.collection.immutable.VectorBuilder
@@ -21,7 +21,7 @@ object WaypointManager extends Protocol {
 		def weight(str: String) = weights.getOrElse(str, 0.0)
 	}
 
-	case class Waypoint(id: Int, pos: Vec3D,
+	case class Waypoint(id: Int, pos: Vec3,
 			connections: Map[Int, Connection] = Map()) {
 		val rect = new Rectangle(pos.x.toFloat, pos.z.toFloat, 1, 1)
 
@@ -46,7 +46,7 @@ object WaypointManager extends Protocol {
 
 	implicit object WaypointSnapshot extends LocalPacketCompanion[WaypointSnapshot](0) {
 		import LengthCodec.IntLengthCodec
-		implicit val pointCodec = codecFrom3(Vec3D.apply)
+		implicit val pointCodec = codecFrom3(Vec3.apply)
 		implicit val connCodec = codecFrom3(Connection.apply)
 		implicit val wpCodec = codecFrom3(Waypoint.apply)
 
@@ -62,7 +62,7 @@ object WaypointManager extends Protocol {
 trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN] {
 	import WaypointManager._
 
-	def getShortPath(from: Vec3D, to: Vec3D): Seq[Vec3D]
+	def getShortPath(from: Vec3, to: Vec3): Seq[Vec3]
 	def log: LoggingAdapter
 	def desireMap: Map[String, Double]
 	implicit def ec: ExecutionContext
@@ -106,13 +106,12 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 
 	def qValue(transition: WaypointTransition): VecN = {
 		val from = waypoints(transition.fromId)
-		val to = waypoints(transition.destId)
 
-		MapVector(from.connection(to.id).weights)
+		MapVector(from.connection(transition.destId).weights)
 	}
 
 
-	def finder(dest: Vec3D) = new PathFinding[Waypoint, Connection] {
+	def finder(dest: Vec3) = new PathFinding[Waypoint, Connection] {
 		def maxPathLength: Int = 256
 
 		def legalNeighbors(state: Waypoint): Stream[(Waypoint, Connection)] = {
@@ -136,8 +135,18 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 	def makeWaypointSnapshot =
 		WaypointSnapshot(waypoints.values.toSeq)
 
-	def loadWaypointSnapshot(snapshot: WaypointSnapshot) =
+	def loadWaypointSnapshot(snapshot: WaypointSnapshot) = {
 		snapshot.waypoints.foreach(addWaypoint)
+
+		for {
+			(id, wp) <- waypoints.iterator
+			(toId, con) <- wp.connections
+			if !waypoints.get(toId).isDefined
+		} {
+			log.error("Removing bad connection to " + toId)
+			addWaypoint(wp.copy(connections = wp.connections - toId))
+		}
+	}
 
 	def loadWaypoints() {
 		if(!waypointFile.canRead) {
@@ -233,7 +242,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 			}
 		} else {
 			//TODO: is this right?
-			val disc = qValue(trans)("discover") * 0.01
+			val disc = qValue(trans)("discover") * 0.1
 			reinforce(trans, MapVector("discover" -> -disc))
 		}
 	}
@@ -246,7 +255,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		from.copy(connections = from.connections - toId)
 	}
 
-	def getNearWaypoints(pos: Vec3D,
+	def getNearWaypoints(pos: Vec3,
 			radius: Double = maxVerticalHeight, maxNum: Int = 20): Seq[Waypoint] = {
 		var list = new VectorBuilder[Waypoint]()
 		var n = 0
