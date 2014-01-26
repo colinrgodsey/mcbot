@@ -90,8 +90,14 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 	val waypointSwapFile = new File("./waypoints.tmp.dat")
 
 	def transFrom(wpId: Int): Set[WaypointTransition] = {
-		waypoints(wpId).connections.iterator.map { case (id, _) =>
-			WaypointTransition(wpId, id)
+		val from = waypoints(wpId)
+
+		waypoints(wpId).connections.iterator.flatMap { case (id, _) =>
+			val to = waypoints(id)
+			val path = getShortPath(from.pos, to.pos)
+
+			if(path.isEmpty) None
+			else Some(WaypointTransition(wpId, id))
 		}.toSet
 	}
 

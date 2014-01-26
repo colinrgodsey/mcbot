@@ -161,17 +161,18 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 
 		//TODO: add real start solid detection
 //println("start trymkove")
-		def tryMove(pos: Vec3D, vec: Vec3D): (Vec3D, Vec3D) = {
-			if(vec ~~ Vec3D.zero) return (pos, vec)
+		def tryMove(pos: Vec3D, vec: Vec3D): Option[(Vec3D, Vec3D)] = {
+			if(vec ~~ Vec3D.zero) return None
 
 			val res = traceFunc(pos, vec)
 
 			res.headOption.getOrElse(StartSolid) match {
-				case NoHit(_) => (pos + vec, vec)
+				case NoHit(_) => Some(pos + vec, vec)
 				case StartSolid =>
 					log.warning(s"Start solid! $pos over $vec")
 					//(ent.pos + Point3D(0, 0.01, 0) * dt, Point3D.zero)
-					(ent.pos, Vec3D.zero)
+					//(ent.pos, Vec3D.zero)
+					None
 				/*case SurfaceHit(d, norm) if d == vec.length => //rare, but could cause errors
 					if(norm == Point3D(0, 1, 0)) hitGround = true
 					(pos, vec)*/
@@ -192,7 +193,7 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 					val nextVec = remainingVec - subVector
 					val nextPos = pos + vec.normal * d
 
-					if(nextVec ~~ Vec3D.zero) (nextPos, Vec3D.zero)
+					if(nextVec ~~ Vec3D.zero) Some(nextPos, Vec3D.zero)
 					else {
 						//println(s"vec ${vec} just clipped to ${nextVec} on normal $norm moved $d of ${vec.length}")
 						tryMove(nextPos, nextVec)
@@ -203,7 +204,7 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 					(pos, Point3D.zero)*/
 				case x =>
 					//println(x)
-					(pos, Vec3D.zero)
+					None
 			}
 		}
 
@@ -211,21 +212,28 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 
 		//log.debug(s"tracing from ${ent.pos} along vel $moveVec")
 
-		val (newPos, postMoveVec) = try tryMove(ent.pos, moveVec) catch {
+		val moveRes = try tryMove(ent.pos, moveVec) catch {
 			case x: FindChunkError =>
 				log.error(s"failed tracing from ${ent.pos}: ${x.getMessage}")
-				(ent.pos, Vec3D.zero)
+				None
 				//(ent.pos + terminalVel * dt, terminalVel * dt)
 		}
 
-		try if(traceFunc(newPos, Vec3D(0, 0.01, 0)) contains StartSolid) {
+		if(!moveRes.isDefined) {
+			log.warning("Failed move!")
+			return
+		}
+
+		val Some((newPos, postMoveVec)) = moveRes
+
+		try if(traceFunc(newPos, postMoveVec) contains StartSolid) {
 			log.warning("possible start solid")
 			ent.entityCopy(vel = Vec3D(math.random - 0.5,
 				math.random - 0.5, math.random - 0.5).normal)
 			return
 		} catch {
 			case t: Throwable =>
-				log.warning(t.getMessage)
+				log.error(t, "traceFunc fail!")
 		}
 
 		require(postMoveVec.length <= moveVec.length)
@@ -235,7 +243,7 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 		val resVel = (newVec / dt)// * dragFac// + gravAcc * dt
 
 		val arggggVel = if(resVel.length > terminalVel.length) {
-			log.error("wbad res length!!! " + (resVel.length - terminalVel.length))
+			//log.error("wbad res length!!! " + (resVel.length - terminalVel.length))
 			terminalVel
 		} else resVel
 

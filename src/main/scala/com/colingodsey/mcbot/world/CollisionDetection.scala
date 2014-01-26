@@ -168,7 +168,9 @@ trait CollisionDetection {
 			startBlock: Block, distAcc: Double = 0): TraceResult = {
 		//val (startBlock, _) = blockSelect(from, centerPoint)
 
-		require(vec.length > 0)
+		if(vec.length <= 0) return NoHit(0)
+
+		//require(vec.length > 0)
 
 		if(!startBlock.btyp.isPassable) {
 			require(distAcc == 0)

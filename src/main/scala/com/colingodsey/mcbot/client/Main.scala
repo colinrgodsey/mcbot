@@ -16,7 +16,9 @@ object Main extends App {
 	// we need an ActorSystem to host our application in
 	implicit val system = ActorSystem("MCBotClient")
 
-	val bot = system.actorOf(BotClient.props(botSettings), name = "bot-client")
+	var bot = system.actorOf(BotClient.props(botSettings), name = "bot-client")
+
+
 
 	implicit val timeout = Timeout(5.seconds)
 
@@ -24,5 +26,9 @@ object Main extends App {
 	//IO(Http) ? Http.Bind(service, interface = "0.0.0.0", port = 8099)
 
 	//system.awaitTermination
-	while(!system.isTerminated) Thread.sleep(500)
+	while(!system.isTerminated) {
+		Thread.sleep(500)
+		if(bot.isTerminated)
+			bot = system.actorOf(BotClient.props(botSettings), name = "bot-client")
+	}
 }

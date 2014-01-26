@@ -116,7 +116,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	context watch stream
 
-	def desireMap = Map("discover" -> 100.0)
+	def desireMap = Map("discover" -> 10.0)
 
 	def curTime = System.currentTimeMillis / 1000.0
 
