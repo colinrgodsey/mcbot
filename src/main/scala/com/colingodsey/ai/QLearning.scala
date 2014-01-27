@@ -124,8 +124,7 @@ trait QLearning[T, U <: VecLike[U]] {
 
 		val α = (1.0 / times) * α0
 		val q0 = qValue(transition)
-		val adjustedMaxQ = maxQForDest * γ
-		val q1 = reward + adjustedMaxQ
+		val q1 = maxQForDest * γ
 
 		//println(q0, q1, reward, α, q0 * α + q1 * (1.0 - α))
 
@@ -138,7 +137,7 @@ trait QLearning[T, U <: VecLike[U]] {
 		//val alignedAdjMaxQ = desire.normal * (adjustedMaxQ * desire.normal)
 
 		//new q value for transition
-		q0 * α + q1 * (1.0 - α)
+		reward + q0 * α + q1 * (1.0 - α)
 
 		//remainingQ0 + alignedQ0 * α + (alignedAdjMaxQ + reward) * (1.0 - α)
 		//remainingQ0 + alignedQ0 * α + (q1 + reward) * (1.0 - α)

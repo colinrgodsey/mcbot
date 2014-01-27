@@ -64,6 +64,8 @@ object BotClient {
 		desire: VecN
 	)
 
+	case class BotPosition(curPos: Vec3)
+
 	def props(settings: BotClient.Settings) = Props(classOf[BotClient], settings)
 
 	implicit object JsObjectWriter extends RootJsonFormat[JsObject] {
@@ -84,6 +86,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	import settings._
 	import BotClient._
 	import BotNavigation._
+
+	log.info("Botclient ref " + self)
 
 	implicit def ec = context.system.dispatcher
 
@@ -243,6 +247,12 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		stream ! spr.ChatMessage(str)
 	}
 
+	def makeBotSnapshot = {
+		val wps = getNearWaypoints(selfEnt.pos, radius = 600, maxNum = 500)
+		BotSnapshot(nearWaypoints = wps.toSet,
+			curPos = selfEnt.pos, desire = desire)
+	}
+
 	def normal: Receive = worldClientReceive orElse blockChange orElse clientThink orElse unhandled
 
 	def unhandled: Receive = {
@@ -344,7 +354,16 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			//direction = Point3D(math.cos(theta), 0, math.sin(theta))
 			move(selfId, dt, CollisionDetection.playerBody(stanceDelta))
 
-			if(direction !~~ Vec3.zero) lookAt(direction)
+			if(direction !~~ Vec3.zero) {
+				lookAt(direction)
+				val xzVel = Vec3(selfEnt.vel.x, 0, selfEnt.vel.z)
+				val vecPart = xzVel * direction.normal
+				val remVec = xzVel - direction.normal * vecPart
+
+				updateEntity(selfId) { case ent: Player =>
+					ent.copy(vel = ent.vel - remVec * 4 * dt)
+				}
+			}
 
 			lastTime = ct
 
@@ -374,6 +393,9 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			else if(lookChanged) sendLook
 			else sendOnGround
 
+			if(posChanged)
+				subscribers.foreach(_ ! BotPosition(selfEnt.pos))
+
 			pathPhysicsTick(dt)
 		case PhysicsTick => //log.info("dropped physics tick!")
 		case Respawn => respawn
@@ -381,8 +403,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			//if(math.random < 0.3) direction = Point3D(math.random - 0.5, 0, math.random - 0.5).normal
 			//direction = Point3D(1, 0, 0)
 
-			val follow = playerOpt("colinrgodsey")
-			//targetingEnt = follow.map(_.id)
+
 
 			if(dead) {
 				context.system.scheduler.scheduleOnce(2.5.seconds, self, Respawn)
@@ -408,20 +429,34 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				case t: FindChunkError =>
 			}
 
+			if(math.random < 0.2) subscribers.foreach(_ ! makeBotSnapshot)
+
 			log.debug(s"health = ${selfEnt.health}, pos = ${selfEnt.pos},  ground = ${selfEnt.onGround}, velL = ${selfEnt.vel.length}")
 
 		case Subscribe =>
 			subscribers += sender
-			//send ! waypoints
 
-			val wps = getNearWaypoints(selfEnt.pos, radius = 200, maxNum = 500)
+			log.info(s"$sender just subscribed!")
 
+			context watch sender
 
+			sender ! makeBotSnapshot
+		case Terminated(ref) if subscribers(ref) =>
+			subscribers -= ref
 	}
 
 	def processChatCommand(str: String) = str match {
 		case "status" =>
 			log.info(selfEnt.toString)
+		case "follow" =>
+			val follow = playerOpt("colinrgodsey")
+			targetingEnt = follow.map(_.id)
+			say("Following")
+		case "stop" =>
+			say("Stopping goal")
+			targetingEnt = None
+			curPath = Nil
+			moveGoal = None
 		case "die" => stream ! spr.ChatMessage("/kill")
 		case x if x.startsWith("echo ") =>
 			stream ! spr.ChatMessage(x.substring(5))

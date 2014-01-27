@@ -23,7 +23,7 @@ object WaypointManager extends Protocol {
 
 	case class Waypoint(id: Int, pos: Vec3,
 			connections: Map[Int, Connection] = Map()) {
-		val rect = new Rectangle(pos.x.toFloat, pos.z.toFloat, 1, 1)
+		def rect = new Rectangle(pos.x.toFloat, pos.z.toFloat, 1, 1)
 
 		def connection(x: Int) =
 			connections.get(x).getOrElse(Connection(x, 0))
@@ -69,7 +69,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 
 	def desire = MapVector(desireMap)
 	def γ: Double = 0.8
-	def α0: Double = 0.2
+	def α0: Double = 0.7
 	def selector = BoltzmannSelector.default
 	val initialValue: VecN = MapVector.zero
 
@@ -89,27 +89,35 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 	val waypointFile = new File("./waypoints.dat")
 	val waypointSwapFile = new File("./waypoints.tmp.dat")
 
-	def transFrom(wpId: Int): Set[WaypointTransition] = {
+	def transFrom(trans: WaypointTransition): Set[WaypointTransition] = {
+		val from = waypoints(trans.destId)
+
+		waypoints(trans.destId).connections.iterator.flatMap { case (id, _) =>
+			val to = waypoints(id)
+			val path = getShortPath(from.pos, to.pos)
+
+			if(path.isEmpty || trans.fromId == id) None
+			else Some(WaypointTransition(trans.destId, id))
+		}.toSet
+	}
+
+	def transFrom(wpId: Int, ignoreId: Option[Int]): Set[WaypointTransition] = {
 		val from = waypoints(wpId)
 
 		waypoints(wpId).connections.iterator.flatMap { case (id, _) =>
 			val to = waypoints(id)
 			val path = getShortPath(from.pos, to.pos)
 
-			if(path.isEmpty) None
+			if(path.isEmpty || ignoreId == Some(id)) None
 			else Some(WaypointTransition(wpId, id))
 		}.toSet
 	}
-
-	def transFrom(trans: WaypointTransition): Set[WaypointTransition] =
-		transFrom(trans.destId)
 
 	def qValue(transition: WaypointTransition): VecN = {
 		val from = waypoints(transition.fromId)
 
 		MapVector(from.connection(transition.destId).weights)
 	}
-
 
 	def finder(dest: Vec3) = new PathFinding[Waypoint, Connection] {
 		def maxPathLength: Int = 256
@@ -205,14 +213,19 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 	}
 
 	//reward the damn thing
-	def reinforce(trans: WaypointTransition, reward: VecN) {
+	def reinforce(trans: WaypointTransition, reward: VecN, ignoreIds: Set[Int]) {
 		val WaypointTransition(fromId, toId) = trans
 		val from = waypoints(fromId)
 		val to = waypoints(toId)
 
 		if(!from.connectsTo(toId)) return
 
-		val newQ = update(trans, reward)
+		//filter out the immediate recursion value
+		val values = transFrom(trans).iterator.filter(
+			x => !ignoreIds(x.destId) && !ignoreIds(x.fromId)).map(qValue)
+		val maxQ = values.toStream.sortBy(-desire.normal * _).headOption.getOrElse(initialValue)
+
+		val newQ = update(trans, reward, maxQ)
 
 		val conn = toId -> from.connection(toId).copy(
 			weights = newQ.weights)
@@ -228,7 +241,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 
 		val trans = WaypointTransition(fromId, toId)
 
-		if(from.connections.get(toId) == None) {
+		if(from.connections.get(toId) == None && fromId != toId) {
 			val path = getShortPath(from.pos, to.pos)
 
 			if(path.isEmpty) log.warning("Bad connect!")
@@ -236,16 +249,14 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 				val conn = toId -> Connection(toId, path.length)
 				addWaypoint(from.copy(connections = from.connections + conn))
 
-				reinforce(trans, MapVector("discover" -> 100.0))
+				//reinforce(trans, MapVector(), Set(toId, fromId))
 
 				log.info("New connection!")
 			}
-		} else {
-			//TODO: is this right?
-			val disc = qValue(trans)("discover") * 0.1
-			reinforce(trans, MapVector("discover" -> -disc))
 		}
 	}
+
+	//TODO: check waypoint ground
 
 	def disconnectWaypoints(fromId: Int, toId: Int) {
 		val from = waypoints(fromId)

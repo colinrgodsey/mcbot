@@ -226,7 +226,7 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 
 		val Some((newPos, postMoveVec)) = moveRes
 
-		try if(traceFunc(newPos, postMoveVec) contains StartSolid) {
+		try if(traceFunc(newPos, Vec3(1, 1, 1)) contains StartSolid) {
 			log.warning("possible start solid")
 			ent.entityCopy(vel = Vec3(math.random - 0.5,
 				math.random - 0.5, math.random - 0.5).normal)

@@ -78,13 +78,6 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 			n += 1
 		}
 
-		//println("NO PATH!!")
-
-		//val totalRes = res.result
-
 		None
-
-		//paths.headOption.map(_._2)
-		//else Some(totalRes.sortBy(_.length).head)
 	}
 }
