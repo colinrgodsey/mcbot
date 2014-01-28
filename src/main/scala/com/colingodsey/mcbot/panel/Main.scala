@@ -5,7 +5,7 @@ import akka.actor._
 import akka.util.Timeout
 import com.colingodsey.mcbot.network.ProtocolStream
 import javafx.application.{Platform, Application}
-import javafx.stage.{WindowEvent, Stage}
+import javafx.stage.{Screen, WindowEvent, Stage}
 import javafx.scene.layout.StackPane
 import javafx.scene._
 import javafx.scene.paint.Color
@@ -117,27 +117,31 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 		//if(node.getChildren.size() > 1) return
 
 		wp.connections.values.map { conn =>
-			val other = waypoints(conn.destId)
+			try {
+				val other = waypoints(conn.destId)
 
-			val vec = (other.pos - wp.pos).normal * 8
+				val vec = (other.pos - wp.pos).normal * 8
 
-			val line = new Line
+				val line = new Line
 
-			val disc = math.max(0, conn.weight("discover"))
+				val disc = math.max(0, conn.weight("discover"))
 
-			val discoverFactor = math.min(disc / 70, 1)
-			//println(disc, discoverFactor)
-			line.setStroke(Color.color(1 - discoverFactor, discoverFactor, 0))
+				val discoverFactor = math.min(disc / 20, 1)
+				//println(disc, discoverFactor)
+				line.setStroke(Color.color(1 - discoverFactor, discoverFactor, 0))
 
-			line.setStartX(0)
-			line.setStartY(0)
-			line.setEndX(vec.x)
-			line.setEndY(vec.z)
+				line.setStartX(0)
+				line.setStartY(0)
+				line.setEndX(vec.x)
+				line.setEndY(vec.z)
 
-			line.setStrokeWidth(0.3)
+				line.setStrokeWidth(0.3)
 
-			node.getChildren add line
-			//root.getChildren add line
+				node.getChildren add line
+				//root.getChildren add line
+			} catch {
+				case x: Throwable =>
+			}
 		}
 	}
 
@@ -216,6 +220,14 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 
 				if(math.abs(dy) > 5) removeWaypoint(wp.id)
 			}
+
+			/*val screen = Screen.getPrimary
+			val bounds = screen.getVisualBounds
+
+			stage.setX(bounds.getMinX)
+			stage.setY(bounds.getMinY)
+			stage.setWidth(bounds.getWidth)
+			stage.setHeight(bounds.getHeight)*/
 
 			var newWps = Set[Waypoint]()
 			wps foreach { wp =>

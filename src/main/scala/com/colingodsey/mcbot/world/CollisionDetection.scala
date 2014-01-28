@@ -175,6 +175,7 @@ trait CollisionDetection {
 		if(!startBlock.btyp.isPassable) {
 			require(distAcc == 0)
 			return StartSolid
+			//return StartHit(Vec3(1, 0, 0))
 		}
 
 		//find all planar hits, transition from block to block that way

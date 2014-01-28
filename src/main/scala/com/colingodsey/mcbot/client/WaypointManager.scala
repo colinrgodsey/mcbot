@@ -42,7 +42,9 @@ object WaypointManager extends Protocol {
 		}
 	}
 
-	case class WaypointTransition(fromId: Int, destId: Int)
+	case class WaypointTransition(fromId: Int, destId: Int) {
+		require(fromId != destId)
+	}
 
 	implicit object WaypointSnapshot extends LocalPacketCompanion[WaypointSnapshot](0) {
 		import LengthCodec.IntLengthCodec

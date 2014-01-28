@@ -15,7 +15,8 @@ trait Selector {
 object BoltzmannSelector {
 	def weightedSegmentSelect[K, V](chances: Map[K, V])
 			(implicit num: Numeric[V]): K = {
-		val (keys, values) = chances.unzip
+		val (keys0, values) = chances.unzip
+		val keys = keys0.toSeq.sortBy(_ => math.random)
 		val sel = math.random * num.toDouble(values.sum)
 
 		@tailrec def iter(acc: Double, keyList: Iterable[K]): K = {

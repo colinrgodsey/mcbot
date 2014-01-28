@@ -193,7 +193,7 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 					val nextVec = remainingVec - subVector
 					val nextPos = pos + vec.normal * d
 
-					if(nextVec ~~ Vec3.zero) Some(nextPos, Vec3.zero)
+					if(nextVec ~~ Vec3.zero || nextVec.length <= 0.01) Some(nextPos, Vec3.zero)
 					else {
 						//println(s"vec ${vec} just clipped to ${nextVec} on normal $norm moved $d of ${vec.length}")
 						tryMove(nextPos, nextVec)

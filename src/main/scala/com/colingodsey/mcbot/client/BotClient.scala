@@ -304,7 +304,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				lastTime = curTime
 
 				joined = true
-
+				getPath(selfEnt.pos)
 			} else
 				log.info(s"Correction packet: ${selfEnt.pos - lastPos}. $lastPos -> ${selfEnt.pos}")
 		case cpr.HeldItemChange(item) =>
@@ -361,7 +361,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				val remVec = xzVel - direction.normal * vecPart
 
 				updateEntity(selfId) { case ent: Player =>
-					ent.copy(vel = ent.vel - remVec * 4 * dt)
+					ent.copy(vel = ent.vel - remVec * 15 * dt)
 				}
 			}
 
