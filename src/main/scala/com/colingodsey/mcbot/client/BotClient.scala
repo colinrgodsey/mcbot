@@ -364,7 +364,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			val walkDir = Vec3(direction.x, 0, direction.z)
 
 			if(direction !~~ Vec3.zero) {
-				lookAt(direction)
+				lookAt(direction.normal)
 			}
 
 			if(walkDir !~~ Vec3.zero) {

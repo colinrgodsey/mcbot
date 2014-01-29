@@ -298,13 +298,14 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				i <- 0 until 3
 				if i < curPath.length
 				step = curPath(i) + Block.halfBlockVec
-				dir = step - footBlockPos
+				dir0 = step - footBlockPos
+				dir = Vec3(dir0.x, 0, dir0.z)
 				len = dir.length / math.pow(i + 1, 6)
 			} yield dir.normal * len
 
-			val dir = dirs.head//reduce(_ + _)
+			val dir = dirs.reduce(_ + _)
 
-			direction = dir.normal * 4
+			direction = dir.normal * 40
 
 			/*if(selfEnt.vel.length < 0.01)
 				direction += Vec3.random*/
@@ -603,12 +604,13 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 				//if(desire("discover") > wpQ("discover") || math.random < 0.1) findNewRandomWp
 
-				/*if(desire("discover") > 10 && selQ("discover") <= wpQ("discover"))
+				if(desire("discover") > 10 && selQ("discover") <= wpQ("discover")
+						&& math.random < 0.2)
 					findNewRandomWp()
-				else */if(math.random < 0.05) findNewRandomWp()
+				else if(math.random < 0.05) findNewRandomWp()
 				//else if(!selectWaypoint()) findNewRandomWp()
 				else {
-					//if(wpQ("discover") > 20 && math.random < 0.15) findNewRandomWp()
+					if(wpQ("discover") > 20 && math.random < 0.15) findNewRandomWp()
 					if(!moveGoal.isDefined) {
 						if(!selectWaypoint()) findNewRandomWp()
 					}
