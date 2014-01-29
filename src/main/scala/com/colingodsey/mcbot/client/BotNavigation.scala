@@ -144,7 +144,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 	}
 
 	def roughPathFrom(start: Block, to: Block, of: Int = 1000): Option[Seq[Vec3]] = blocking {
-		val finder = new BlockPathFinder(worldView, to, 40)
+		val finder = new BlockPathFinder(worldView, to, 80)
 		val paths = finder.pathsFrom(start)
 
 		val iter = paths.iterator
@@ -225,11 +225,11 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 								lastWaypointId.get, w.id))
 							reinforce(lastTransition.get,
 								MapVector("discover" -> 100.0),
-								Set(lastWaypointId.get, w.id))
+								Set(/*lastWaypointId.get, */w.id))
 							val revTran = WaypointTransition(w.id, lastWaypointId.get)
 							reinforce(revTran,
 								MapVector("discover" -> 10.0),
-								Set(lastWaypointId.get, w.id))
+								Set(/*lastWaypointId.get, */w.id))
 						}
 
 						visitWaypoint(w.id)
@@ -470,9 +470,9 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		val lastWp = lastWaypoint.get
 		val trans = transFrom(lastWaypointId.get, Some(lastWaypointId.get))
 
-		val curWpPath = getShortPath(selfEnt.pos, lastWp.pos)
+		val curWpPath = getShortPath(footBlockPos, lastWp.pos)
 
-		if(curWpPath.isEmpty) {
+		if(curWpPath.isEmpty && (footBlockPos - lastWp.pos).length > 2) {
 			//lastWaypoint = None
 			log.info("Bailing on current wp")
 			false
@@ -563,7 +563,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 			direction = Vec3.zero
 
-			if(selfEnt.onGround) checkWaypoints()
+			if(selfEnt.onGround && curPath.isEmpty) checkWaypoints()
 		case PathTick if !dead && joined && !gettingPath && selfEnt.onGround =>
 			//lastCurPath = curPath
 
@@ -582,14 +582,14 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				if(!moveGoal.isDefined || math.random < 0.15) moveGoal = Some(ent.pos)
 			}
 
-			if(math.random < 0.05) {
+			/*if(math.random < 0.05) {
 				moveGoal = None
 				curPath = Nil
 				lastPathTime = curTime
-			}
+			}*/
 
 			if(moveGoal.isDefined && curPath.isEmpty) getPath(moveGoal.get)
-			else if(selfEnt.onGround) checkWaypoints()
+			else if(selfEnt.onGround && curPath.isEmpty) checkWaypoints()
 
 			if(curPath.isEmpty && !targetingEnt.isDefined && !moveGoal.isDefined &&
 					curPath.isEmpty && lastWaypoint.isDefined) {

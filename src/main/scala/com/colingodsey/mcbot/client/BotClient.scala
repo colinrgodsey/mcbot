@@ -422,15 +422,6 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				joined = false
 			}
 
-			if(math.random < 0.03) {
-				curPath = Nil
-				updateEntity(selfId) { case ent: Player =>
-					ent.copy(vel = ent.vel + Vec3.random * 0.2)
-				}
-			}
-
-			//if(math.random < 0.2) jump()
-
 			if(direction !~~ Vec3.zero && direction.length > 0.01) try {
 				val l = 0.5
 				val res = traceBody(CollisionDetection.UnitBox,

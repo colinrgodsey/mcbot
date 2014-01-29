@@ -110,7 +110,11 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 			val to = waypoints(id)
 			val path = getShortPath(from.pos, to.pos)
 
-			if(path.isEmpty || ignoreId == Some(id)) None
+			if(path.isEmpty) {
+				log.info("bad transFrom connection!")
+				disconnectWaypoints(wpId, id)
+				None
+			} else if(ignoreId == Some(id)) None
 			else Some(WaypointTransition(wpId, id))
 		}.toSet
 	}
