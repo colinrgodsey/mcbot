@@ -6,7 +6,7 @@ import akka.util.Timeout
 import com.colingodsey.mcbot.network.ProtocolStream
 import javafx.application.{Platform, Application}
 import javafx.stage.{Screen, WindowEvent, Stage}
-import javafx.scene.layout.StackPane
+import javafx.scene.layout.{VBoxBuilder, StackPane}
 import javafx.scene._
 import javafx.scene.paint.Color
 import com.typesafe.config.{Config, ConfigFactory}
@@ -21,6 +21,9 @@ import com.colingodsey.mcbot.client.BotClient.{BotPosition, BotSnapshot}
 import com.colingodsey.mcbot.client.BotClient
 import com.colingodsey.logos.collections.Vec3
 import javafx.event.EventHandler
+import javafx.geometry.Pos
+import javafx.beans.value.{ObservableValue, ChangeListener}
+import javax.swing.event.ChangeEvent
 
 class Main extends Application {
 	val defCfg = ConfigFactory.load(getClass.getClassLoader)
@@ -88,6 +91,9 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 	root.setScaleX(latScale)
 	root.setScaleY(latScale)
 	root.setDepthTest(DepthTest.ENABLE)
+	root.setAlignment(Pos.CENTER)
+
+	//stage.setFullScreen(true)
 
 	stage.setOnCloseRequest(new EventHandler[WindowEvent] {
 		def handle(event: WindowEvent) {
@@ -192,6 +198,24 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 		stage.close
 	}
 
+	scene.widthProperty addListener new ChangeListener[java.lang.Number] {
+		def changed(observableValue: ObservableValue[_ <: java.lang.Number],
+			old: java.lang.Number, nw: java.lang.Number) = resetSize
+	}
+
+	scene.heightProperty addListener new ChangeListener[java.lang.Number] {
+		def changed(observableValue: ObservableValue[_ <: java.lang.Number],
+				old: java.lang.Number, nw: java.lang.Number) = resetSize
+	}
+
+	def resetSize {
+		//root.setLayoutX(200)
+		//root.setLayoutY(200)
+		scene.setRoot(root)
+		stage setScene scene
+		stage.show()
+	}
+
 	def receive = {
 		case Show =>
 			log.info("UI started! Showing...")
@@ -228,6 +252,9 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 			stage.setY(bounds.getMinY)
 			stage.setWidth(bounds.getWidth)
 			stage.setHeight(bounds.getHeight)*/
+
+			stage setScene scene
+			stage.show()
 
 			var newWps = Set[Waypoint]()
 			wps foreach { wp =>

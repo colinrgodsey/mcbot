@@ -163,7 +163,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	def randomPushSelf() {
 		updateEntity(selfId) { case ent: Player =>
-			ent.copy(vel = ent.vel + Vec3.random * 0.2)
+			ent.copy(vel = ent.vel + Vec3.random * 0.8)
 		}
 	}
 
@@ -347,27 +347,39 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case PhysicsTick if joined && (curTime - lastTime) > 0.01 =>
 			val ct = curTime
 			//val dt = tickDelta.toMillis / 1000.0
-			val dt = ct - lastTime
+			val dt = math.min(ct - lastTime, 1/30.0)
 
 			val theta = System.currentTimeMillis * 0.0003
 
 			//direction = Point3D(math.cos(theta), 0, math.sin(theta))
-			move(selfId, dt, CollisionDetection.playerBody(stanceDelta))
+			val moveRes = move(selfId, dt, CollisionDetection.playerBody(stanceDelta))
+
+			if(!moveRes) {
+				updateEntity(selfId) { case ent: Player =>
+					ent.copy(pos = footBlockPos)
+				}
+				log.warning("trying to fix location to block location")
+			}
+
+			val walkDir = Vec3(direction.x, 0, direction.z)
 
 			if(direction !~~ Vec3.zero) {
 				lookAt(direction)
+			}
+
+			if(walkDir !~~ Vec3.zero) {
 				val xzVel = Vec3(selfEnt.vel.x, 0, selfEnt.vel.z)
-				val vecPart = xzVel * direction.normal
-				val remVec = xzVel - direction.normal * vecPart
+				val vecPart = xzVel * walkDir.normal
+				val remVec = xzVel - walkDir.normal * vecPart
 
 				updateEntity(selfId) { case ent: Player =>
-					ent.copy(vel = ent.vel - remVec * 15 * dt)
+					ent.copy(vel = ent.vel - remVec * 5 * dt)
 				}
 			}
 
 			lastTime = ct
 
-			val walkDir = Vec3(direction.x, 0, direction.z)
+
 
 			if(walkDir.length > 0.01) {
 				val moveVec = walkDir.normal * movementSpeed * dt

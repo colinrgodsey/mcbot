@@ -72,8 +72,12 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 		//do flat first..
 		//flatN #::: lowerN #::: upperN    //use this for non a*
 		(flatN #::: lowerN #::: upperN).sortBy { case (block, moves) =>
-			val moveVec = block.globalPos - state.globalPos
-			-(moveVec * delta)// - moveVec.length
+			/*var moveVec = block.globalPos - state.globalPos
+			val weight = if((moveVec * moveVec) != 0.8) 1 else 1
+			-(moveVec * delta * weight)// - moveVec.length*/
+			val vec = destPos - block.globalPos
+
+			vec.length
 		}
 	}
 }

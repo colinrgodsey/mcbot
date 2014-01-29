@@ -32,7 +32,7 @@ object CollisionDetection {
 		//def points: Seq[Point3D]
 	}
 
-	case class SphereBody(spheres: Seq[(Vec3, Double)], offset: Vec3 = Vec3.zero) extends Body
+	case class SphereBody(spheres: Seq[(Vec3, Double)]) extends Body
 
 	case class BoxBody(min: Vec3, max: Vec3) extends Body {
 		val points = Seq(
@@ -97,6 +97,11 @@ trait CollisionDetection {
 			traceRay(from + point, vec, from)
 		}.sortBy(_.dist)
 	}
+
+	//def planeAABBIntersection()
+
+	//def traceBody(body: SphereBody, from: Vec3, vec: Vec3)
+
 
 	val axisNorms = Set(
 		Vec3(0, 1, 0),

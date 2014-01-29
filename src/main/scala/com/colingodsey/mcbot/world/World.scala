@@ -130,129 +130,134 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 	def chunkLoaded()
 
 
-	def move(eid: Int, dt: Double, body: Body): Unit = updateEntity(eid) { ent =>
-		import CollisionDetection._
+	def move(eid: Int, dt: Double, body: Body): Boolean = {
+		var retVal = true
+		if(dt > epsilon) updateEntity(eid) { ent =>
+			import CollisionDetection._
 
-		require(dt > epsilon)
+			require(dt > epsilon)
 
-		val traceFunc = body match {
-			//case x: SphereBody => traceBody(x, _: Point3D, _: Point3D)
-			case x: BoxBody =>
-				//log.warning("box bodys dont work great yet...")
-				traceBody(x, _: Vec3, _: Vec3)
-		}
-
-		//println(ent.pos, ent.onGround, "ENT")
-
-		val (gravity, terminal, drag) = ent match {
-			case _: LivingEntity => (32, 78.4, 0.4)
-			//case Minecart(cart) =>
-			case _ => (16, 39.2, 0.4)
-		}
-
-		val gravAcc = Vec3(0, -gravity, 0)
-
-		var hitGround = false
-
-		val dragFac = (1 - drag * dt)
-
-		val evalVel = ent.vel.clamp(terminal) + gravAcc * dt
-		val terminalVel = (evalVel * dragFac) clamp terminal
-
-		//TODO: add real start solid detection
-//println("start trymkove")
-		def tryMove(pos: Vec3, vec: Vec3): Option[(Vec3, Vec3)] = {
-			if(vec ~~ Vec3.zero) return None
-
-			val res = traceFunc(pos, vec)
-
-			res.headOption.getOrElse(StartSolid) match {
-				case NoHit(_) => Some(pos + vec, vec)
-				case StartSolid =>
-					log.warning(s"Start solid! $pos over $vec")
-					//(ent.pos + Point3D(0, 0.01, 0) * dt, Point3D.zero)
-					//(ent.pos, Vec3D.zero)
-					None
-				/*case SurfaceHit(d, norm) if d == vec.length => //rare, but could cause errors
-					if(norm == Point3D(0, 1, 0)) hitGround = true
-					(pos, vec)*/
-				case SurfaceHit(d, norm)/* if d > 0*/ =>
-					if((norm * Vec3(0, 1, 0)) == 1) hitGround = true
-
-					/*val vecNormal = vec.normal
-					val remainingD = vec.length - d
-					val remainingVec = vecNormal * remainingD
-					val subVector = norm * (remainingVec * norm)
-					//println(d, norm, pos + vecNormal * d)
-					val newPos = pos + vecNormal * d
-					val nextVec = remainingVec - subVector*/
-
-					val remainingVec = vec.normal * (vec.length - d)
-					val remainingNormalD = remainingVec * norm
-					val subVector = norm * remainingNormalD
-					val nextVec = remainingVec - subVector
-					val nextPos = pos + vec.normal * d
-
-					if(nextVec ~~ Vec3.zero || nextVec.length <= 0.01) Some(nextPos, Vec3.zero)
-					else {
-						//println(s"vec ${vec} just clipped to ${nextVec} on normal $norm moved $d of ${vec.length}")
-						tryMove(nextPos, nextVec)
-					}
-				/*case TraceHit(d, norm) => //if d == 0
-					//println("zero d")
-					if(norm == Point3D(0, 1, 0)) hitGround = true
-					(pos, Point3D.zero)*/
-				case x =>
-					//println(x)
-					None
+			val traceFunc = body match {
+				//case x: SphereBody => traceBody(x, _: Point3D, _: Point3D)
+				case x: BoxBody =>
+					//log.warning("box bodys dont work great yet...")
+					traceBody(x, _: Vec3, _: Vec3)
 			}
-		}
 
-		val moveVec = terminalVel * dt
+			//println(ent.pos, ent.onGround, "ENT")
 
-		//log.debug(s"tracing from ${ent.pos} along vel $moveVec")
+			val (gravity, terminal, drag) = ent match {
+				case _: LivingEntity => (32, 78.4, 0.4)
+				//case Minecart(cart) =>
+				case _ => (16, 39.2, 0.4)
+			}
 
-		val moveRes = try tryMove(ent.pos, moveVec) catch {
-			case x: FindChunkError =>
-				log.error(s"failed tracing from ${ent.pos}: ${x.getMessage}")
-				None
+			val gravAcc = Vec3(0, -gravity, 0)
+
+			var hitGround = false
+
+			val dragFac = (1 - drag * dt)
+
+			val evalVel = ent.vel.clamp(terminal) + gravAcc * dt
+			val terminalVel = (evalVel * dragFac) clamp terminal
+
+			//TODO: add real start solid detection
+			//println("start trymkove")
+			def tryMove(pos: Vec3, vec: Vec3): Option[(Vec3, Vec3)] = {
+				if(vec ~~ Vec3.zero) return None
+
+				val res = traceFunc(pos, vec)
+
+				res.headOption.getOrElse(StartSolid) match {
+					case NoHit(_) => Some(pos + vec, vec)
+					case StartSolid =>
+						log.warning(s"Start solid! $pos over $vec")
+						//(ent.pos + Point3D(0, 0.01, 0) * dt, Point3D.zero)
+						//(ent.pos, Vec3D.zero)
+
+						retVal = true
+
+						val minY = body match {
+							case x: BoxBody => x.points.map(_.y).min
+							case _ => 0
+						}
+
+						val off = Vec3(0, minY - 0.5 + 0.1, 0)
+
+						val blPos = Block.halfBlockVec + off + getBlock(ent.pos).globalPos
+
+						//None
+						Some(blPos, Vec3.zero)
+					case SurfaceHit(d, norm)/* if d > 0*/ =>
+						if((norm * Vec3(0, 1, 0)) == 1) hitGround = true
+
+						require((norm * vec) < 0)
+
+						val remainingVec = vec.normal * (vec.length - d)
+						val remainingNormalD = remainingVec * norm
+						val subVector = norm * remainingNormalD
+						val nextVec = remainingVec - subVector
+						val nextPos = pos + vec.normal * d
+
+						if(nextVec ~~ Vec3.zero || nextVec.length <= 0.01) Some(nextPos, Vec3.zero)
+						else {
+							//println(s"vec ${vec} just clipped to ${nextVec} on normal $norm moved $d of ${vec.length}")
+							tryMove(nextPos, nextVec)
+						}
+					case x =>
+						//println(x)
+						None
+				}
+			}
+
+			val moveVec = terminalVel * dt
+
+			//log.debug(s"tracing from ${ent.pos} along vel $moveVec")
+
+			val moveRes = try tryMove(ent.pos, moveVec) catch {
+				case x: FindChunkError =>
+					log.error(s"failed tracing from ${ent.pos}: ${x.getMessage}")
+					None
 				//(ent.pos + terminalVel * dt, terminalVel * dt)
+			}
+
+			if(!moveRes.isDefined) {
+				log.warning("Failed move!")
+				return false
+			}
+
+			val Some((newPos, postMoveVec)) = moveRes
+
+			try if(traceFunc(newPos, Vec3(1, 1, 1)) contains StartSolid) {
+				log.warning("possible start solid")
+				ent.entityCopy(vel = Vec3(math.random - 0.5,
+					math.random - 0.5, math.random - 0.5).normal)
+				return false
+			} catch {
+				case t: Throwable =>
+					log.error(t, "traceFunc fail!")
+			}
+
+			require(postMoveVec.length <= moveVec.length)
+
+			val newVec = postMoveVec
+
+			val resVel = (newVec / dt)// * dragFac// + gravAcc * dt
+
+			val arggggVel = if(resVel.length > terminalVel.length) {
+				//log.error("wbad res length!!! " + (resVel.length - terminalVel.length))
+				terminalVel
+			} else resVel
+
+			val xzOnly = Vec3(arggggVel.x, 0, arggggVel.z)
+
+			val finalVel = if(xzOnly.length < 0.1) Vec3(0, arggggVel.y, 0)
+			else arggggVel
+
+			ent.entityCopy(pos = newPos, vel = finalVel, onGround = hitGround)
 		}
 
-		if(!moveRes.isDefined) {
-			log.warning("Failed move!")
-			return
-		}
-
-		val Some((newPos, postMoveVec)) = moveRes
-
-		try if(traceFunc(newPos, Vec3(1, 1, 1)) contains StartSolid) {
-			log.warning("possible start solid")
-			ent.entityCopy(vel = Vec3(math.random - 0.5,
-				math.random - 0.5, math.random - 0.5).normal)
-			return
-		} catch {
-			case t: Throwable =>
-				log.error(t, "traceFunc fail!")
-		}
-
-		require(postMoveVec.length <= moveVec.length)
-
-		val newVec = postMoveVec
-
-		val resVel = (newVec / dt)// * dragFac// + gravAcc * dt
-
-		val arggggVel = if(resVel.length > terminalVel.length) {
-			//log.error("wbad res length!!! " + (resVel.length - terminalVel.length))
-			terminalVel
-		} else resVel
-
-		val xzOnly = Vec3(arggggVel.x, 0, arggggVel.z)
-
-		val finalVel = if(xzOnly.length < 0.1) Vec3(0, arggggVel.y, 0)
-		else arggggVel
-
-		ent.entityCopy(pos = newPos, vel = finalVel, onGround = hitGround)
+		retVal
 	}
 
 	def handleChunks(x: Any)(implicit ec: ExecutionContext) = {
