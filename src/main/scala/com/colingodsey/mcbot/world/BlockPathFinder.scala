@@ -15,10 +15,17 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 		Vec3(0, 0, 1)
 	)
 
+	private val corners = Seq(
+		Vec3(1, 0, 1) -> Set(Vec3(1, 0, 0), Vec3(0, 0, 1)),
+		Vec3(1, 0, -1) -> Set(Vec3(1, 0, 0), Vec3(0, 0, -1)),
+		Vec3(-1, 0, 1) -> Set(Vec3(-1, 0, 0), Vec3(0, 0, 1)),
+		Vec3(-1, 0, -1) -> Set(Vec3(-1, 0, 0), Vec3(0, 0, -1))
+	)
+
 	def legalNeighbors(state: Block): Stream[(Block, Vec3)] = {
 		val delta = destPos - state.globalPos
 
-		val sortedNs = flatNeighbs.sortBy(_ * delta)
+		val sortedNs = flatNeighbs//.sortBy(_ * delta)
 
 		val posBlocks = sortedNs.toStream map { x =>
 			(getBlock(state.globalPos.toPoint3D + x), x)
@@ -35,7 +42,26 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 			def topBlock = getBlock(p + Vec3(0, 1, 0))
 			def bottomBlock = getBlock(p + Vec3(0, -1, 0))
 
-			block.btyp.isPassable && topBlock.btyp.isPassable && !bottomBlock.btyp.isPassable
+			block.btyp.isPassable && topBlock.btyp.isPassable &&
+					!bottomBlock.btyp.isPassable
+		}
+
+		val availFlatN = flatN.map(_._2).toSet
+
+		val cornerN = corners.toStream filter { case (corner, reqs) =>
+			(reqs -- availFlatN).isEmpty
+		} flatMap { case (corner, reqs) =>
+			val p = state.globalPos.toPoint3D + corner
+			val block = getBlock(p)
+			def topBlock = getBlock(p + Vec3(0, 1, 0))
+			def bottomBlock = getBlock(p + Vec3(0, -1, 0))
+
+			val r = !bottomBlock.btyp.isPassable &&
+				topBlock.btyp.isPassable &&
+				block.btyp.isPassable
+
+			if(r) Some(block -> corner)
+			else None
 		}
 
 		val lowerN = posBlocks flatMap { case (block, move) =>
@@ -71,7 +97,7 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 
 		//do flat first..
 		//flatN #::: lowerN #::: upperN    //use this for non a*
-		(flatN #::: lowerN #::: upperN).sortBy { case (block, moves) =>
+		(cornerN #::: flatN #::: lowerN #::: upperN).sortBy { case (block, moves) =>
 			/*var moveVec = block.globalPos - state.globalPos
 			val weight = if((moveVec * moveVec) != 0.8) 1 else 1
 			-(moveVec * delta * weight)// - moveVec.length*/

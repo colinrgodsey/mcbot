@@ -34,6 +34,7 @@ object CollisionDetection {
 
 	case class SphereBody(spheres: Seq[(Vec3, Double)]) extends Body
 
+	//TODO: add mid-points, must be less than 1 block
 	case class BoxBody(min: Vec3, max: Vec3) extends Body {
 		val points = Seq(
 			Vec3(min.x, min.y, min.z),
@@ -86,6 +87,7 @@ trait CollisionDetection {
 		val endPoints = body.points.map(_ + from + vec)
 		val vl = vec.length
 
+		//TODO: this should only trace points that are at the head of the vector
 		body.points.map { point =>
 			/*val adjustedPoint = point * (1 - bbScaleBack)
 			val deltaL = point.length - adjustedPoint.length

@@ -347,7 +347,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case PhysicsTick if joined && (curTime - lastTime) > 0.01 =>
 			val ct = curTime
 			//val dt = tickDelta.toMillis / 1000.0
-			val dt = math.min(ct - lastTime, 1/30.0)
+			val dt = math.min(ct - lastTime, 0.1)
 
 			val theta = System.currentTimeMillis * 0.0003
 
@@ -381,7 +381,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 
 
-			if(walkDir.length > 0.01) {
+			if(walkDir.length > 0.0001) {
 				val moveVec = walkDir.normal * movementSpeed * dt
 
 				//println(addLen, moveVec, moveLen, movementSpeed)

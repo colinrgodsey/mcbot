@@ -52,7 +52,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 	var lastTransition: Option[WaypointTransition] = None
 	var lastQ: Option[VecN] = None
 
-	def maxPathLength: Int = 100
+	def maxPathLength: Int = 80
 
 	def waypointMinDistance = 10.0
 
@@ -137,8 +137,6 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			val endStartBlock = getBlock(from)
 			val startBlock = takeBlockDown(endStartBlock)
 
-			//val finder = new BlockPathFinder(worldView, targetBlock, 128)
-
 			roughPathFrom(startBlock, targetBlock, 1900).toSeq.flatten
 		} catch {
 			case t: FindChunkError => Nil
@@ -146,7 +144,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 	}
 
 	def roughPathFrom(start: Block, to: Block, of: Int = 1000): Option[Seq[Vec3]] = blocking {
-		val finder = new BlockPathFinder(worldView, to, 128)
+		val finder = new BlockPathFinder(worldView, to, 40)
 		val paths = finder.pathsFrom(start)
 
 		val iter = paths.iterator
@@ -182,8 +180,11 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		val closest = closestA filter { wp =>
 			lazy val p = getShortPath(selfEnt.pos, wp.pos)
 
+			val isSuperClose = (takeBlockDown(footBlockPos).globalPos -
+					takeBlockDown(wp.pos).globalPos).length < 4
+
 			//either super close, or no path
-			takeBlockDown(footBlockPos) == takeBlockDown(wp.pos) || !p.isEmpty
+			isSuperClose || !p.isEmpty
 		}
 
 		closest.headOption match {
@@ -209,7 +210,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 						_.pos).getOrElse(Vec3.zero) - selfEnt.pos
 
 					if(posDelta.length < 4) {
-						log.info(s"bad new waypoint!! ${selfEnt.pos} ${closestA.headOption} ${closest.headOption}")
+						log.info(s"bad new waypoint!! ${takeBlockDown(selfEnt.pos).globalPos} ${closestA.headOption.map(wp => takeBlockDown(wp.pos).globalPos)} ${closest.headOption}")
 						//direction = Vec3.random
 						randomPushSelf()
 					} else {
@@ -276,7 +277,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				lastPathTime = curTime
 				//if(!curPath.isEmpty) say("Next stop, " + curPath.headOption)
 				/*if(curPath.isEmpty) */direction = Vec3.zero
-				log.info("visited path node")
+				//log.info("visited path node")
 			}
 
 			if(vec.length > 2) {
