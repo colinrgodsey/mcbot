@@ -67,14 +67,20 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 		val lowerN = posBlocks flatMap { case (block, move) =>
 			val p = block.globalPos.toPoint3D
 			def topBlock = getBlock(p + Vec3(0, 1, 0))
-			def lowerBlock = getBlock(p + Vec3(0, -1, 0))
-			def bottomBlock = getBlock(p + Vec3(0, -2, 0))
+
+			lazy val lowerBlock = takeBlockDown(block)
+			lazy val bottomBlock = getBlock(
+				lowerBlock.globalPos - Vec3(0, 1, 0))
+
+			def dropLength = {
+				block.globalPos.y - lowerBlock.globalPos.y
+			}
 
 			if(block.btyp.isPassable &&
-					!bottomBlock.btyp.isPassable &&
 					topBlock.btyp.isPassable &&
-					lowerBlock.btyp.isPassable)
-				Some(lowerBlock, move + Vec3(0, -1, 0))
+					!bottomBlock.btyp.isPassable &&
+					dropLength >= 1 && dropLength <= 4)
+				Some(lowerBlock, move + Vec3(0, -dropLength, 0))
 			else None
 		}
 

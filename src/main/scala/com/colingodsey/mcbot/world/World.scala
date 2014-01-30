@@ -43,6 +43,22 @@ trait WorldView {
 			math.floor(pos.y).toInt - chunk.y * Chunk.dims.y,
 			math.floor(pos.z).toInt - chunk.z * Chunk.dims.z)
 	}
+
+	def takeBlockDown(vec: Vec3): Block =
+		takeBlockDown(getBlock(vec))
+
+	def takeBlockDown(block: Block): Block = {
+		var ptr = block.globalPos.toPoint3D
+
+		if(!block.btyp.isPassable) sys.error("block start solid!")
+
+		while(getBlock(ptr).btyp.isPassable && ptr.y > 0)
+			ptr -= Vec3(0, 1, 0)
+
+		ptr += Vec3(0, 1, 0)
+
+		getBlock(ptr)
+	}
 }
 
 trait World { wv: WorldView =>

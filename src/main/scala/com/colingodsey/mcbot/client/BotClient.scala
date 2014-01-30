@@ -439,7 +439,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case Subscribe =>
 			subscribers += sender
 
-			log.info(s"$sender just subscribed!")
+			//log.info(s"$sender just subscribed!")
 
 			context watch sender
 

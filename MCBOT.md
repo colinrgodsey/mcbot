@@ -31,3 +31,4 @@ Properties-
 Exploration-
 *All nodes have a familiarity property to them, moving from this node spreads its property
 *Going to the most unfamiliar places
+*Enforce a 'craving' for new Wps, if exploring and getting nowere, increase explore
