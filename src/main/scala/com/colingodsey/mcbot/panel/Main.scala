@@ -76,7 +76,7 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 	val camera = new PerspectiveCamera
 	val selfCircle = new Circle
 
-	camera.setFieldOfView(90)
+	camera.setFieldOfView(160)//90)
 	scene.setCamera(camera)
 
 	var wpNodes = Map[Int, Group]()
@@ -186,7 +186,7 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 
 		node.setTranslateX(wp.pos.x)
 		node.setTranslateY(wp.pos.z)
-		node.setTranslateZ(wp.pos.y)
+		node.setTranslateZ(-wp.pos.y)
 
 		root.getChildren add node
 		wpNodes += wp.id -> node
@@ -209,8 +209,8 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 	}
 
 	def resetSize {
-		//root.setLayoutX(200)
-		//root.setLayoutY(200)
+		//root.setLayoutX(-800)
+		//root.setLayoutY(-800)
 		scene.setRoot(root)
 		stage setScene scene
 		stage.show()
@@ -242,7 +242,7 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 			waypoints.values map { wp =>
 				val dy = wp.pos.y - curPos.y
 
-				if(math.abs(dy) > 5) removeWaypoint(wp.id)
+				if(math.abs(dy) > 3) removeWaypoint(wp.id)
 			}
 
 			/*val screen = Screen.getPrimary
@@ -272,10 +272,12 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 
 			root.setTranslateX(-curPos.x * latScale)
 			root.setTranslateY(-curPos.z * latScale)
-			root.setTranslateZ(-curPos.y + 1.2)
+			root.setTranslateZ(curPos.y - 1.2)
+
+
 
 			selfCircle.setTranslateX(curPos.x)
 			selfCircle.setTranslateY(curPos.z)
-			selfCircle.setTranslateZ(curPos.y)
+			selfCircle.setTranslateZ(-curPos.y)
 	}
 }
