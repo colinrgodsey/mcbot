@@ -255,7 +255,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 				val conn = toId -> Connection(toId, path.length)
 				addWaypoint(from.copy(connections = from.connections + conn))
 
-				//reinforce(trans, MapVector(), Set(toId, fromId))
+				reinforce(trans, MapVector("discover" -> 10.0), Set(toId, fromId))
 
 				log.info("New connection!")
 			}

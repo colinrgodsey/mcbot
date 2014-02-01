@@ -30,9 +30,18 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 		val posBlocks = sortedNs.toStream map { x =>
 			(getBlock(state.globalPos.toPoint3D + x), x)
 		}
-		def localBottom = getBlock(state.globalPos.toPoint3D + Vec3(0, -1, 0))
+		def localBottom = takeBlockDown(
+			getBlock(state.globalPos.toPoint3D))
 
-		if(localBottom.btyp.isPassable || !state.btyp.isPassable) return Stream()
+		if(!state.btyp.isPassable) return Stream()
+
+		if(localBottom != state) {
+			val dy = localBottom.globalPos.y - state.globalPos.y
+
+			if(math.abs(dy) > 4) return Stream()
+
+			return Stream(localBottom -> Vec3(0, dy, 0))
+		}
 
 		// XX topBlock
 		// XX block
@@ -80,7 +89,7 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 					topBlock.btyp.isPassable &&
 					!bottomBlock.btyp.isPassable &&
 					dropLength >= 1 && dropLength <= 4)
-				Some(lowerBlock, move + Vec3(0, -dropLength, 0))
+				Some(block/*lowerBlock*/, move/* + Vec3(0, -dropLength, 0)*/)
 			else None
 		}
 

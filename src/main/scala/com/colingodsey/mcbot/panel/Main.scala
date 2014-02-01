@@ -19,11 +19,12 @@ import com.colingodsey.mcbot.client.WaypointManager.Waypoint
 import javafx.scene.shape.{Line, Circle}
 import com.colingodsey.mcbot.client.BotClient.{BotPosition, BotSnapshot}
 import com.colingodsey.mcbot.client.BotClient
-import com.colingodsey.logos.collections.Vec3
+import com.colingodsey.logos.collections.{Vec, Vec3}
 import javafx.event.EventHandler
 import javafx.geometry.Pos
 import javafx.beans.value.{ObservableValue, ChangeListener}
 import javax.swing.event.ChangeEvent
+import com.colingodsey.collections.{VecN, MapVector}
 
 class Main extends Application {
 	val defCfg = ConfigFactory.load(getClass.getClassLoader)
@@ -82,6 +83,7 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 	var wpNodes = Map[Int, Group]()
 	var waypoints = Map[Int, Waypoint]()
 	var curPos = Vec3.zero
+	var curDesire: Vec = MapVector()
 
 	selfCircle.setFill(Color.TRANSPARENT)
 	selfCircle.setStroke(Color.WHITE)
@@ -130,9 +132,10 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 
 				val line = new Line
 
-				val disc = math.max(0, conn.weight("discover"))
+				//val disc = math.max(0, conn.weight("discover"))
+				val desireWeight = MapVector(conn.weights) * curDesire
 
-				val discoverFactor = math.min(disc / 20, 1)
+				val discoverFactor = math.min(desireWeight / 20, 1)
 				//println(disc, discoverFactor)
 				line.setStroke(Color.color(1 - discoverFactor, discoverFactor, 0))
 
@@ -228,6 +231,7 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 			log.info("Got snapshot!")
 
 			curPos = pos
+			curDesire = desire
 /*
 			root.setTranslateX(-curPos.x * latScale)
 			root.setTranslateY(-curPos.z * latScale)
@@ -237,12 +241,12 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 			selfCircle.setTranslateY(curPos.z)
 			selfCircle.setTranslateZ(-curPos.y)
 */
-			//wpNodes.keySet foreach removeWaypoint
+			wpNodes.keySet foreach removeWaypoint
 
 			waypoints.values map { wp =>
 				val dy = wp.pos.y - curPos.y
 
-				if(math.abs(dy) > 3) removeWaypoint(wp.id)
+				//if(math.abs(dy) > 10) removeWaypoint(wp.id)
 			}
 
 			/*val screen = Screen.getPrimary
@@ -258,9 +262,10 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 
 			var newWps = Set[Waypoint]()
 			wps foreach { wp =>
+				val dy = wp.pos.y - curPos.y
 				if(waypoints.get(wp.id) == Some(wp)) {
 					//do nothing?
-				} else {
+				} else { //if(math.abs(dy) < 10) {
 					addWaypoint(wp)
 					newWps += wp
 				}

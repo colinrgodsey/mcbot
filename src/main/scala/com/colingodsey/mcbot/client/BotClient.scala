@@ -129,7 +129,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	context watch stream
 
-	def desireMap = Map("discover" -> 10.0)
+	def desireMap = Map("discover" -> 10.0, "deadend" -> -10)
 
 	def curTime = System.currentTimeMillis / 1000.0
 
@@ -458,7 +458,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case "stop" =>
 			say("Stopping goal")
 			targetingEnt = None
-			curPath = Nil
+			curPath = Stream()
 			moveGoal = None
 		case "die" => stream ! spr.ChatMessage("/kill")
 		case x if x.startsWith("echo ") =>
