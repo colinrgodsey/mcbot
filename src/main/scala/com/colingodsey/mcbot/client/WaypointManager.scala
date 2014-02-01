@@ -228,16 +228,17 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 
 		//filter out the immediate recursion value
 		//why the fuck was i filtering fromID
-		val values = transFrom(trans).iterator.filter(
-			x => !ignoreIds(x.destId)/* && !ignoreIds(x.fromId)*/).map(qValue)
+		val values = transFrom(trans).iterator/*.filter(
+			x => !ignoreIds(x.destId)/* && !ignoreIds(x.fromId)*/)*/.map(qValue)
 		val maxQ = values.toStream.sortBy(-desire.normal * _).headOption.getOrElse(initialValue)
 
+		val oldQ = qValue(trans)
 		val newQ = update(trans, reward, maxQ)
 
 		val conn = toId -> from.connection(toId).copy(
 			weights = newQ.weights)
 
-		log.info(s"Reinforcing $reward to $newQ")
+		log.info(s"Reinforcing with $reward from $oldQ to $newQ")
 
 		addWaypoint(from.copy(connections = from.connections + conn))
 	}

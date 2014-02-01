@@ -17,13 +17,13 @@ trait Vec extends VecOps[Vec] {
 }
 
 trait VecOps[+Repr <: Vec] {
-	def unary_-(): Repr
-	def * (scale: Double): Repr
-	def + (other: Vec): Repr
-	def - (other: Vec): Repr
+	def unary_-(): Vec
+	def * (scale: Double): Vec
+	def + (other: Vec): Vec
+	def - (other: Vec): Vec
 	def * (other: Vec): Double
 
-	def normal: Repr
+	def normal: Vec
 	def length: Double
 }
 
@@ -36,8 +36,8 @@ object AnyVecBuilder extends VecBuilder[Vec, Vec] {
 trait VecLike[Coll <: VecLike[Coll] with Vec] extends VecOps[Coll] with Vec {
 	type This = Coll
 
-	def unary_-(): This
-	def * (scale: Double): This
+	def unary_-(): Coll
+	def * (scale: Double): Coll
 
 	//need generics that convert
     /*def + [U <: Vec](that: U)(implicit builder: CanBuildFrom[This, Double, U]): U =
@@ -45,20 +45,20 @@ trait VecLike[Coll <: VecLike[Coll] with Vec] extends VecOps[Coll] with Vec {
 
 	def to[U <: Vec](implicit builder: CanBuildFrom[This, Double, U]): U*/
 
-	def + (other: Coll): This
-	def - (other: Coll): This
+	def + (other: Coll): Coll
+	def - (other: Coll): Coll
 	def * (other: Coll): Double
 
-	def + (other: Vec): This = companion(other) + toVec
-	def - (other: Vec): This = companion(other) - toVec
+	def + (other: Vec): Coll = companion(other) + toVec
+	def - (other: Vec): Coll = companion(other) - toVec
 	def * (other: Vec): Double = companion(other) * toVec
 
 	def isNormal = length == 1
-	def / (scale: Double): This = this * (1.0 / scale)
+	def / (scale: Double): Coll = this * (1.0 / scale)
 
 	def isOrigin: Boolean = (toVec * toVec) == 0
 
-    def toVec: This
+    def toVec: Coll
 
 	def companion: VecCompanion[This]
 
@@ -76,7 +76,7 @@ trait VecLike[Coll <: VecLike[Coll] with Vec] extends VecOps[Coll] with Vec {
 	    r
     }
 
-    def normal: This = {
+    def normal: Coll = {
         val l = length
 	    require(l != 0, "cant take a normal of a zero length vector!")
         if(l == 1) toVec else toVec / l
@@ -96,12 +96,13 @@ trait VecLike[Coll <: VecLike[Coll] with Vec] extends VecOps[Coll] with Vec {
 
 trait VecCompanion[+VecType <: Vec] {
     def origin: VecType
-    def one: VecType
+	def unit: VecType
 
 	def apply(x: Vec): VecType
 
     //def dimensions: Dimensions
 
+	def one = unit
 	def zero = origin
 }
 
@@ -113,7 +114,7 @@ object Epsilon {
 
 object Vec1 extends VecCompanion[Vec1] {
 	val origin = Vec1(0)
-	val one = Vec1(1)
+	val unit = Vec1(1)
 
 	def apply(x: Vec): Vec1 = x match {
 		case x: Vec1 => x
@@ -149,7 +150,7 @@ final case class Vec1(x: Double) extends Vec with VecLike[Vec1] {
 
 object Vec2 extends VecCompanion[Vec2] {
     val origin = Vec2(0, 0)
-    val one = Vec2(1, 1)
+    val unit = Vec2(1, 1)
 
     def dimensions: Dimensions = Dimensions.Two
 
@@ -183,7 +184,7 @@ final case class Vec2(x: Double, y: Double) extends Vec with VecLike[Vec2] {
 
 object Vec3 extends VecCompanion[Vec3] {
 	val origin = Vec3(0, 0, 0)
-	val one = Vec3(1, 1, 1)
+	val unit = Vec3(1, 1, 1)
 
 	def random = (Vec3(math.random, math.random,
 		math.random) * 2 - Vec3.one).normal

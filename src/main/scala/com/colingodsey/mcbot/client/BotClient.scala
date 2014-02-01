@@ -381,7 +381,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 
 
-			if(walkDir.length > 0.0001) {
+			if(walkDir.length > epsilon) {
+				//TODO: should this be dt or dt^2 ?
 				val moveVec = walkDir.normal * movementSpeed * dt
 
 				//println(addLen, moveVec, moveLen, movementSpeed)

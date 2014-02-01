@@ -212,7 +212,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 								lastWaypointId.get, w.id))
 							reinforce(lastTransition.get,
 								MapVector("discover" -> 100.0),
-								Set(/*lastWaypointId.get, */w.id))
+								Set(lastWaypointId.get/*, w.id*/))
 						}
 
 						visitWaypoint(w.id)
@@ -231,7 +231,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 					val disc = qValue(lastTransition.get)("discover") * 0.05
 					val reinMap = MapVector()//"discover" -> -disc)
 					reinforce(lastTransition.get,
-						reinMap, Set(from.id, x.id))
+						reinMap, Set(/*from.id, */x.id))
 				}
 				lastWaypointId = Some(x.id)
 			case Some(x) =>
@@ -505,8 +505,8 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 				//TODO: check WP route instead of connections
 				if(Some(wp.id) == lastWaypointId) true
-				else connIds(wp.id) &&
-						wpPath.length < (waypointMinDistance * 1.5)
+				else /*connIds(wp.id) &&*/
+						wpPath.length < (waypointMinDistance * 1)
 			}
 
 			!p.isEmpty && tooCloseWps.isEmpty
@@ -608,6 +608,9 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 					disconnectWaypoints(lastWaypointId.get, sel.id)
 
 					log.info("bad wp sel!")
+					moveGoal = None
+					lastWaypointId = None
+					lastTransition = None
 					false
 				} else {
 					log.info("selected node w q-value " + qValue(selTrans))
