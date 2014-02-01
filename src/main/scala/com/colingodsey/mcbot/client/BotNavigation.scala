@@ -36,6 +36,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 	def joined: Boolean
 
 	def jump()
+	def lookAt(vec: Vec3)
 	def randomPushSelf()
 
 	def log: LoggingAdapter
@@ -307,18 +308,20 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				if dir.length > 0
 			} yield dir.normal * len
 
-			val dir = dirs.head//reduce(_ + _)
+			val dir = dirs.reduce(_ + _)
 
 			val centerVec0 = lastPathNodePoint - footBlockPos
 			val centerVec = Vec3(centerVec0.x, 0, centerVec0.z)
 
 			val centerAddDir = if(centerVec.length > 0)
-				centerVec.normal * 20
+				centerVec.normal * 5
 			else Vec3.zero
+
+			val centerAddDir2 = footBlockPos - (Block.halfBlockVec + footBlock.globalPos)
 
 			lastPathNodePoint = nextStep + Block.halfBlockVec
 
-			direction = dir.normal * 40 + centerAddDir
+			direction = dir.normal * 40 + centerAddDir + centerAddDir2 * 10
 
 			/*if(selfEnt.vel.length < 0.01)
 				direction += Vec3.random*/
@@ -374,7 +377,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 	})
 
 	//pick a random place...
-	def findNewRandomWp(): Unit = try {
+	def findNewRandomWp(deadend: Boolean = true): Unit = try {
 		val curWpId = lastWaypoint
 		val nearWps = getNearWaypoints(selfEnt.pos, maxNum = 10) filter { x =>
 			val vec = x.pos - selfEnt.pos
@@ -477,7 +480,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 		//val samplePoints = Vector.fill(100)(getRandomVec).flatten
 		val samplePoints = getCylinderPoints(4, 8, 1) #::: getCylinderPoints(
-			7, waypointMinDistance.toInt + 3, 3)
+			7, waypointMinDistance.toInt * 2 + 3, 3)
 
 		val sampleBlocks = samplePoints.flatMap { x =>
 			val bl = getBlock(x + footBlockPos)
@@ -496,15 +499,17 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		val blFiltered = sampleBlocks.toSet.toStream.filter { bl =>
 			val p = getShortPath(footBlockPos, bl.globalPos)
 
-			val closestWaypoint = getNearWaypoints(bl.globalPos,
-					maxNum = 5, radius = waypointMinDistance * 1.2) filter { wp =>
+			val tooCloseWps = getNearWaypoints(bl.globalPos,
+					maxNum = 5, radius = waypointMinDistance * 0.85) filter { wp =>
 				def wpPath = getShortPath(wp.pos, bl.globalPos)
 
 				//TODO: check WP route instead of connections
-				connIds(wp.id) && wpPath.length < (waypointMinDistance * 1.5)
+				if(Some(wp.id) == lastWaypointId) true
+				else connIds(wp.id) &&
+						wpPath.length < (waypointMinDistance * 1.5)
 			}
 
-			!p.isEmpty && closestWaypoint.isEmpty
+			!p.isEmpty && tooCloseWps.isEmpty
 		}
 
 
@@ -545,12 +550,13 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			case Some(pos) if (pos - footBlockPos).length > 1.2 =>
 				log.info(s"random target res ${possiblePoints.headOption}")
 				moveGoal = Some(pos)
+				lookAt(pos)
 				getPath(moveGoal.get)
 			case a =>
 				log.info("failed to get random targeT! best "+ a)
 				randomPushSelf()
 				direction = Vec3.random
-				if(lastTransition.isDefined) {
+				if(lastTransition.isDefined && deadend) {
 					reinforce(lastTransition.get, MapVector("deadend" -> 10.0),
 						Set(lastTransition.get.destId, lastTransition.get.fromId))
 				}
@@ -605,6 +611,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 					false
 				} else {
 					log.info("selected node w q-value " + qValue(selTrans))
+					lookAt(sel.pos)
 
 					true
 				}
@@ -618,7 +625,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			if(!moveGoal.isDefined || math.random < 0.15) moveGoal = Some(ent.pos)
 		}
 
-		if(math.random < 0.01) {
+		if(math.random < 0.01 && false) {
 			moveGoal = None
 			curPath = Stream()
 			lastPathTime = curTime
@@ -643,7 +650,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			//if(desire("discover") > wpQ("discover") || math.random < 0.1) findNewRandomWp
 			//println(selQ("discover"),  wpQ("discover"), desire("discover"))
 println(selQ -> wpQ, lastTransition)
-			if(wpQ("discover") > 20 && math.random < 0.15) findNewRandomWp()
+			if(wpQ("discover") > 20 || math.random < 0.1) findNewRandomWp(false)
 			else if(desire("discover") >= 10 && selQ("discover") <= wpQ("discover")
 					&& math.random < 0.8)
 				findNewRandomWp()
@@ -684,7 +691,8 @@ println(selQ -> wpQ, lastTransition)
 
 			if(startIdx > 0) println("SKIPPED " + startIdx)
 
-			if(selfEnt.onGround && (curPath.isEmpty || targetingEnt.isDefined)) checkWaypoints()
+			//TODO: below comment dissallows connections along an indentified path
+			if(selfEnt.onGround/* && (curPath.isEmpty || targetingEnt.isDefined)*/) checkWaypoints()
 
 			if(path.isEmpty) {
 				direction = Vec3.zero//curPath = Nil

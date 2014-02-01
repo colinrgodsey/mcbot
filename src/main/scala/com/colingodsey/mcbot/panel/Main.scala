@@ -135,7 +135,8 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 				//val disc = math.max(0, conn.weight("discover"))
 				val desireWeight = MapVector(conn.weights) * curDesire
 
-				val discoverFactor = math.min(desireWeight / 20, 1)
+				val col = desireWeight / 20
+				val discoverFactor = math.max(math.min(col, 1), 0)
 				//println(disc, discoverFactor)
 				line.setStroke(Color.color(1 - discoverFactor, discoverFactor, 0))
 
