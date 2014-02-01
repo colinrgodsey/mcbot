@@ -57,7 +57,7 @@ object CollisionDetection {
 		(Point3D(0, -eyeHeight + 1.5, 0), 0.5)
 	))*/
 
-	val playerHalfWidth = 0.4
+	val playerHalfWidth = 0.25
 	def playerBody(eyeHeight: Double) =
 		BoxBody(Vec3(-playerHalfWidth, -eyeHeight, -playerHalfWidth),
 			Vec3(playerHalfWidth, 1.8 - eyeHeight, playerHalfWidth)) //eye origin

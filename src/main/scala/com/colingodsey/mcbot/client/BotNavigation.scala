@@ -192,7 +192,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				}
 
 				//if(!lastWaypoint.isDefined || newPath.isEmpty) {
-				if(true) {
+				if(newPath.isEmpty) {
 					val posDelta = closestA.headOption.map(
 						_.pos).getOrElse(Vec3.zero) - selfEnt.pos
 
@@ -252,15 +252,22 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 	def pathPhysicsTick(dt: Double) = {
 		val oldPath = curPath
 
-		if(!curPath.isEmpty && selfEnt.onGround) {
+		if(!curPath.isEmpty) {
 			val closer = curPath.take(3).zipWithIndex.sortBy { case (p, idx) =>
 				val dy = (footBlock.globalPos.y - p.y)
 				val dv = p + Block.halfBlockVec - footBlockPos
 
+				val abD = Vec3(selfEnt.vel.x, 0, selfEnt.vel.z)
+
+				val dirFac = if(abD.length > 0) {
+					dv * abD.normal
+				} else 0
+
 				if(dy > 0 && dy <= 2)
 					Vec3(dv.x, 0, dv.z).length
-				else if(p.y.toInt != footBlock.y) 100000
-				else dv.length
+				//else if(p.y.toInt != footBlock.y) 100000
+				else if(dirFac < 0) 10000000
+				else dv.length// * dirFac
 			}
 
 			val closestIdx = closer.headOption.map(_._2).getOrElse(0)
@@ -277,7 +284,8 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 			val vec = nextStep - footBlockPos
 
-			if(vec.length < 0.2 && selfEnt.onGround) {
+			//CollisionDetection
+			if(vec.length < 0.2) {
 				curPath = curPath.tail
 				lastPathTime = curTime
 				//if(!curPath.isEmpty) say("Next stop, " + curPath.headOption)
@@ -295,37 +303,42 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		//if we still have a path
 		if(!curPath.isEmpty) {
 			val nextStep = curPath.head
+			//val stepDir
+			val dv = footBlock.globalPos.toPoint3D + Block.halfBlockVec - footBlockPos
 
-			if(nextStep.y > footPos.y) jump()
+			//get really close to the center of our block
+			/*if(nextStep.y != footPos.y && dv.length > 0.18 && selfEnt.onGround) {
+				direction = dv
 
-			val dirs = for {
-				i <- 0 until 3
-				if i < curPath.length
-				step = curPath(i) + Block.halfBlockVec
-				dir0 = step - footBlockPos
-				dir = Vec3(dir0.x, 0, dir0.z)
-				len = dir.length / math.pow(i + 1, 6)
-				if dir.length > 0
-			} yield dir.normal * len
+			} else */{
+				if(nextStep.y > footPos.y) jump()
 
-			val dir = dirs.reduce(_ + _)
+				val dirs = for {
+					i <- 0 until 3
+					if i < curPath.length
+					step = curPath(i) + Block.halfBlockVec
+					dir0 = step - footBlockPos
+					dir = Vec3(dir0.x, 0, dir0.z)
+					len = dir.length / math.pow(i + 1, 6)
+					if dir.length > 0
+				} yield dir.normal * len
 
-			val centerVec0 = lastPathNodePoint - footBlockPos
-			val centerVec = Vec3(centerVec0.x, 0, centerVec0.z)
+				val dir = dirs.reduce(_ + _)
 
-			val centerAddDir = if(centerVec.length > 0)
-				centerVec.normal * 5
-			else Vec3.zero
+				val centerVec0 = lastPathNodePoint - footBlockPos
+				val centerVec = Vec3(centerVec0.x, 0, centerVec0.z)
 
-			val centerAddDir2 = footBlockPos - (Block.halfBlockVec + footBlock.globalPos)
+				val centerAddDir = if(centerVec.length > 0)
+					centerVec.normal * 5
+				else Vec3.zero
 
-			lastPathNodePoint = nextStep + Block.halfBlockVec
+				val centerAddDir2 = footBlockPos - (Block.halfBlockVec + footBlock.globalPos)
 
-			direction = dir.normal * 40 + centerAddDir + centerAddDir2 * 10
+				lastPathNodePoint = nextStep + Block.halfBlockVec
 
-			/*if(selfEnt.vel.length < 0.01)
-				direction += Vec3.random*/
-		} //else direction = Point3D.zero
+				direction = dir.normal * 40 + centerAddDir + centerAddDir2 * 10
+			}
+		}
 
 		if(curPath.isEmpty && !oldPath.isEmpty) moveGoal = None
 	}
@@ -361,7 +374,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 		targetClosest.headOption match {
 			case Some(x) if x.id != curWp.id =>
-				val waypointPath = finder(target.pos).pathFrom(curWp, x, of = 2000).toSeq.flatten
+				val waypointPath = wpPathFinder(target.pos).pathFrom(curWp, x, of = 2000).toSeq.flatten
 				if(waypointPath.isEmpty) {
 					log.info("No wp path to closest wp by entw")
 					None
@@ -479,8 +492,8 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			x => waypoints(x.fromId).pos).getOrElse(selfEnt.pos)
 
 		//val samplePoints = Vector.fill(100)(getRandomVec).flatten
-		val samplePoints = getCylinderPoints(4, 8, 1) #::: getCylinderPoints(
-			7, waypointMinDistance.toInt * 2 + 3, 3)
+		val samplePoints = getCylinderPoints(4, 8, 2) #::: getCylinderPoints(
+			waypointMinDistance.toInt * 2 + 3, 16, 3)
 
 		val sampleBlocks = samplePoints.flatMap { x =>
 			val bl = getBlock(x + footBlockPos)
@@ -501,12 +514,17 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 			val tooCloseWps = getNearWaypoints(bl.globalPos,
 					maxNum = 5, radius = waypointMinDistance * 0.85) filter { wp =>
-				def wpPath = getShortPath(wp.pos, bl.globalPos)
+				def path = getShortPath(wp.pos, bl.globalPos)
+
+				val finder = wpPathFinder(wp.pos, 7)
+				def wpPath = finder.pathFrom(lastWaypoint.getOrElse(wp), wp)
 
 				//TODO: check WP route instead of connections
 				if(Some(wp.id) == lastWaypointId) true
-				else /*connIds(wp.id) &&*/
-						wpPath.length < (waypointMinDistance * 1)
+				else if(!lastWaypoint.isDefined) false
+				/*else connIds(wp.id) &&
+						path.length < (waypointMinDistance * 1)*/
+				else !wpPath.isEmpty
 			}
 
 			!p.isEmpty && tooCloseWps.isEmpty
@@ -628,6 +646,14 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			if(!moveGoal.isDefined || math.random < 0.15) moveGoal = Some(ent.pos)
 		}
 
+		if(math.random < 0.01 && moveGoal.isDefined) {
+			curPath = Stream()
+			getPath(moveGoal.get)
+			lastPathTime = curTime
+			log.info("Randomly clearing path")
+			return
+		}
+
 		if(math.random < 0.01 && false) {
 			moveGoal = None
 			curPath = Stream()
@@ -636,7 +662,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		}
 
 		if(moveGoal.isDefined && curPath.isEmpty) getPath(moveGoal.get)
-		else if(selfEnt.onGround && curPath.isEmpty) checkWaypoints()
+		else if(selfEnt.onGround) checkWaypoints()
 
 		if(curPath.isEmpty && !targetingEnt.isDefined && !moveGoal.isDefined &&
 				curPath.isEmpty && lastWaypoint.isDefined) {

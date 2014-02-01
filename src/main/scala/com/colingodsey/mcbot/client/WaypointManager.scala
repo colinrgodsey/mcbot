@@ -125,8 +125,8 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		MapVector(from.connection(transition.destId).weights)
 	}
 
-	def finder(dest: Vec3) = new PathFinding[Waypoint, Connection] {
-		def maxPathLength: Int = 256
+	def wpPathFinder(dest: Vec3, maxLength: Int = 256) = new PathFinding[Waypoint, Connection] {
+		def maxPathLength: Int = maxLength
 
 		def legalNeighbors(state: Waypoint): Stream[(Waypoint, Connection)] = {
 			val wps = state.connections.toStream map { case (id, conn) =>
