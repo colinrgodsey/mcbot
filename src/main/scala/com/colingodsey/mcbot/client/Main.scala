@@ -9,16 +9,18 @@ object Main extends App {
 	val host = "192.168.0.2"
 	val port = 25565
 
-	val botSettings = BotClient.Settings(host, port)
+	val botSettings = BotClient.Settings(host, port, "funnybot1")
 
 	java.lang.Math.random()
 
 	// we need an ActorSystem to host our application in
 	implicit val system = ActorSystem("MCBotClient")
 
-	var bot = system.actorOf(BotClient.props(botSettings), name = "bot-client")
+	val bot = system.actorOf(BotClient.props(botSettings), name = "bot-client")
 
-
+	val otherBots = for(i <- 2 until 6) yield
+		system.actorOf(BotClient.props(botSettings.copy(username = "funnybot" + i)),
+			name = "bot-client" + i)
 
 	implicit val timeout = Timeout(5.seconds)
 
@@ -28,7 +30,6 @@ object Main extends App {
 	//system.awaitTermination
 	while(!system.isTerminated) {
 		Thread.sleep(500)
-		if(bot.isTerminated)
-			bot = system.actorOf(BotClient.props(botSettings), name = "bot-client")
+
 	}
 }

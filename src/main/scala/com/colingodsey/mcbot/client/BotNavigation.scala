@@ -192,7 +192,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				}
 
 				//if(!lastWaypoint.isDefined || newPath.isEmpty) {
-				if(newPath.isEmpty) {
+				if(true) {
 					val posDelta = closestA.headOption.map(
 						_.pos).getOrElse(Vec3.zero) - selfEnt.pos
 
@@ -212,7 +212,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 								lastWaypointId.get, w.id))
 							reinforce(lastTransition.get,
 								MapVector("discover" -> 100.0),
-								Set(lastWaypointId.get/*, w.id*/))
+								Set(/*lastWaypointId.get, w.id*/))
 						}
 
 						visitWaypoint(w.id)
@@ -229,9 +229,9 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 				if(from.connectsTo(x.id)) {
 					val disc = qValue(lastTransition.get)("discover") * 0.05
-					val reinMap = MapVector()//"discover" -> -disc)
+					val reinMap = MapVector("discover" -> -disc)
 					reinforce(lastTransition.get,
-						reinMap, Set(/*from.id, */x.id))
+						reinMap, Set(/*from.id, x.id*/))
 				}
 				lastWaypointId = Some(x.id)
 			case Some(x) =>
@@ -253,6 +253,10 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		val oldPath = curPath
 
 		if(!curPath.isEmpty) {
+			val nextStep = curPath.head + Block.halfBlockVec
+			val vec = nextStep - footBlockPos
+			val goingUp = vec.y > 0
+
 			val closer = curPath.take(3).zipWithIndex.sortBy { case (p, idx) =>
 				val dy = (footBlock.globalPos.y - p.y)
 				val dv = p + Block.halfBlockVec - footBlockPos
@@ -272,17 +276,20 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 			val closestIdx = closer.headOption.map(_._2).getOrElse(0)
 
-			if(!closer.isEmpty && closer.head._2 != 0) {
-				curPath = curPath.drop(closestIdx)
-				lastPathTime = curTime
+			if(!closer.isEmpty && closer.head._2 != 0 && !goingUp) {
+				val clVec = curPath(closestIdx) - footBlockPos + Block.halfBlockVec
+				if(clVec.length < 2) {
+					curPath = curPath.drop(closestIdx)
+					lastPathTime = curTime
+				}
 			}
 		}
 
 		//drop head node if we're close
 		if(!curPath.isEmpty) {
 			val nextStep = curPath.head + Block.halfBlockVec
-
 			val vec = nextStep - footBlockPos
+			val goingUp = vec.y > 0
 
 			//CollisionDetection
 			if(vec.length < 0.2) {
@@ -291,7 +298,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				//if(!curPath.isEmpty) say("Next stop, " + curPath.headOption)
 				/*if(curPath.isEmpty) */direction = Vec3.zero
 				//log.info("visited path node")
-			} else if(vec.length > 4) {
+			} else if(vec.length > 2 && math.abs(vec.y) < epsilon) {
 				direction = Vec3.zero
 				randomPushSelf()
 				curPath = Stream()
@@ -325,7 +332,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 				val dir = dirs.reduce(_ + _)
 
-				val centerVec0 = lastPathNodePoint - footBlockPos
+				val centerVec0 = footBlockPos - lastPathNodePoint
 				val centerVec = Vec3(centerVec0.x, 0, centerVec0.z)
 
 				val centerAddDir = if(centerVec.length > 0)
@@ -468,7 +475,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			}
 		}
 
-		def getCylinderPoints(sphereRad: Int, nPointPerCircle: Int, yCuts: Int) = {
+		def getCylinderPoints(sphereRad: Double, nPointPerCircle: Int, yCuts: Int) = {
 			val minCircle = -yCuts
 			val maxCircle = yCuts
 
@@ -491,12 +498,15 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		val detractPoint = lastTransition.map(
 			x => waypoints(x.fromId).pos).getOrElse(selfEnt.pos)
 
+		val bigRad = waypointMinDistance.toInt * (1 + math.random * 1.3) + 3
+
 		//val samplePoints = Vector.fill(100)(getRandomVec).flatten
-		val samplePoints = getCylinderPoints(4, 8, 2) #::: getCylinderPoints(
-			waypointMinDistance.toInt * 2 + 3, 16, 3)
+		val samplePoints =
+			getCylinderPoints(waypointMinDistance + 1, 8, 3) #:::
+			getCylinderPoints(bigRad, 16, 3)
 
 		val sampleBlocks = samplePoints.flatMap { x =>
-			val bl = getBlock(x + footBlockPos)
+			val bl = getBlock(x + footBlockPos + Vec3(0, math.random * 2, 0))
 
 			if(bl.btyp.isPassable)
 				Some(takeBlockDown(bl))
@@ -513,8 +523,8 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			val p = getShortPath(footBlockPos, bl.globalPos)
 
 			val tooCloseWps = getNearWaypoints(bl.globalPos,
-					maxNum = 5, radius = waypointMinDistance * 0.85) filter { wp =>
-				def path = getShortPath(wp.pos, bl.globalPos)
+					maxNum = 5, radius = waypointMinDistance) filter { wp =>
+				//def path = getShortPath(wp.pos, bl.globalPos)
 
 				val finder = wpPathFinder(wp.pos, 7)
 				def wpPath = finder.pathFrom(lastWaypoint.getOrElse(wp), wp)
@@ -587,7 +597,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		if(!lastWaypoint.isDefined || !selfEnt.onGround || !curPath.isEmpty) return false
 
 		val lastWp = lastWaypoint.get
-		val trans = transFrom(lastWaypointId.get, Some(lastWaypointId.get))
+		val trans = transFrom(lastWaypointId.get, Set(lastWaypointId.get))
 
 		val curWpPath = getShortPath(footBlockPos, lastWp.pos)
 
@@ -670,8 +680,9 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			val selQ = (for {
 				trans <- lastTransition
 				wpid <- lastWaypointId
-				transs = transFrom(wpid, Some(wpid))//transFrom(trans)
+				transs = transFrom(wpid, Set(wpid))//transFrom(trans)
 				if(!transs.isEmpty)
+				if Some(trans.destId) != lastTransition.map(_.fromId)
 				sel = policy(transs)
 				q = qValue(sel)
 			} yield q).getOrElse(wpQ)
@@ -680,7 +691,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			//println(selQ("discover"),  wpQ("discover"), desire("discover"))
 println(selQ -> wpQ, lastTransition)
 			if(wpQ("discover") > 20 || math.random < 0.1) findNewRandomWp(false)
-			else if(desire("discover") >= 10 && selQ("discover") <= wpQ("discover")
+			if(!moveGoal.isDefined && desire("discover") >= 10 && selQ("discover") <= wpQ("discover")
 					&& math.random < 0.8)
 				findNewRandomWp()
 

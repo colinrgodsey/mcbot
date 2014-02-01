@@ -50,7 +50,7 @@ import com.colingodsey.mcbot.client.WaypointManager.Waypoint
 import com.colingodsey.collections.VecN
 
 object BotClient {
-	case class Settings(host: String, port: Int)
+	case class Settings(host: String, port: Int, username: String)
 	case object PhysicsTick
 	case object Respawn
 	case object LongTick
@@ -91,8 +91,6 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	implicit def ec = context.system.dispatcher
 
-	val username = "funnybot1"
-
 	val sessionUrl = "https://sessionserver.mojang.com/session/minecraft/join"
 
 	val stream = context.actorOf(Props(classOf[NettyClientProtocolStream],
@@ -108,6 +106,9 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		2.seconds, 1.second, self, PathTick)
 	val waypointSaveTimer = context.system.scheduler.schedule(
 		15.seconds, 10.second, self, SaveWaypoints)
+
+	val waypointFile = new File(s"./$username.wp.dat")
+	val waypointSwapFile = new File(s"./$username.wp.tmp.dat")
 
 	//context.system.scheduler.scheduleOnce(5.seconds, stream, spr.ChatMessage("/kill"))
 

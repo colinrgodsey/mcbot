@@ -68,12 +68,17 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 	def log: LoggingAdapter
 	def desireMap: Map[String, Double]
 	implicit def ec: ExecutionContext
+	def waypointFile: File
+	def waypointSwapFile: File
 
 	def desire = MapVector(desireMap)
 	def γ: Double = 0.8
 	def α0: Double = 0.7
 	def selector = BoltzmannSelector.default
+	def maxVerticalHeight = 256
 	val initialValue: VecN = MapVector.zero
+
+	var savingWaypoints = false
 
 	private val rTree = {
 		val t = new RTree
@@ -86,10 +91,8 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 	private var _waypoints = Map[Int, Waypoint]()
 	private var _nextWaypointId = 1
 
-	var savingWaypoints = false
-
-	val waypointFile = new File("./waypoints.dat")
-	val waypointSwapFile = new File("./waypoints.tmp.dat")
+	def waypoints = _waypoints
+	def nextWaypointId = _nextWaypointId
 
 	def transFrom(trans: WaypointTransition): Set[WaypointTransition] = {
 		val from = waypoints(trans.destId)
@@ -103,7 +106,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		}.toSet
 	}
 
-	def transFrom(wpId: Int, ignoreId: Option[Int]): Set[WaypointTransition] = {
+	def transFrom(wpId: Int, ignoreIds: Set[Int]): Set[WaypointTransition] = {
 		val from = waypoints(wpId)
 
 		waypoints(wpId).connections.iterator.flatMap { case (id, _) =>
@@ -114,7 +117,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 				log.info("bad transFrom connection!")
 				disconnectWaypoints(wpId, id)
 				None
-			} else if(ignoreId == Some(id)) None
+			} else if(ignoreIds(id)) None
 			else Some(WaypointTransition(wpId, id))
 		}.toSet
 	}
@@ -140,11 +143,6 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 			}
 		}
 	}
-
-	def maxVerticalHeight = 256
-
-	def waypoints = _waypoints
-	def nextWaypointId = _nextWaypointId
 
 	def makeWaypointSnapshot =
 		WaypointSnapshot(waypoints.values.toSeq)
@@ -219,10 +217,12 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 	}
 
 	//reward the damn thing
-	def reinforce(trans: WaypointTransition, reward: VecN, ignoreIds: Set[Int]) {
+	def reinforce(trans: WaypointTransition, reward: VecN, ignoreIds0: Set[Int]) {
 		val WaypointTransition(fromId, toId) = trans
 		val from = waypoints(fromId)
 		val to = waypoints(toId)
+
+		val ignoreIds = ignoreIds0 + trans.destId
 
 		if(!from.connectsTo(toId)) return
 
@@ -230,7 +230,8 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		//why the fuck was i filtering fromID
 		val values = transFrom(trans).iterator/*.filter(
 			x => !ignoreIds(x.destId)/* && !ignoreIds(x.fromId)*/)*/.map(qValue)
-		val maxQ = values.toStream.sortBy(-desire.normal * _).headOption.getOrElse(initialValue)
+		val maxQ = values.toStream.sortBy(
+			-desire.normal * _).headOption.getOrElse(initialValue)
 
 		val oldQ = qValue(trans)
 		val newQ = update(trans, reward, maxQ)
@@ -249,6 +250,8 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 
 		val trans = WaypointTransition(fromId, toId)
 
+		val vec = to.pos - from.pos
+
 		if(from.connections.get(toId) == None && fromId != toId) {
 			val path = getShortPath(from.pos, to.pos)
 
@@ -257,7 +260,11 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 				val conn = toId -> Connection(toId, path.length)
 				addWaypoint(from.copy(connections = from.connections + conn))
 
-				reinforce(trans, MapVector("discover" -> 10.0), Set(toId, fromId))
+				reinforce(trans, MapVector(
+					"discover" -> 10.0,
+					"down" -> math.max(0, -vec.y),
+					"up" -> math.max(0, vec.y)
+				), Set(toId, fromId))
 
 				log.info("New connection!")
 			}
@@ -281,7 +288,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		val proc = new TIntProcedure {
 			def execute(x: Int) = {
 				val w = _waypoints(x)
-				if((w.pos - pos).length < radius) {
+				if((w.pos - pos).length <= radius) {
 					list += w
 					n += 1
 				}
