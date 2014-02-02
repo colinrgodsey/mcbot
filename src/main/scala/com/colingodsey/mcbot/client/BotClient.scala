@@ -104,12 +104,14 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	def safeSchedule(dur: FiniteDuration, ref: ActorRef, msg: Any) = {
 		var c: Cancellable = null
 
+		lazy val sched = context.system.scheduler
+
 		def f {
 			ref ! msg
 
-			c = context.system.scheduler.scheduleOnce(dur)(f)
+			c = sched.scheduleOnce(dur)(f)
 		}
-		c = context.system.scheduler.scheduleOnce(dur * 2)(f)
+		c = sched.scheduleOnce(dur * 2)(f)
 
 		new Cancellable {
 			override def cancel(): Boolean = c.cancel

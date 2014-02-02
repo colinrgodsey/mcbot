@@ -31,6 +31,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 	def footBlockPos: Vec3
 	def footBlock: Block
 	def selfEnt: Player
+	def selfId: Int
 
 	def dead: Boolean
 	def joined: Boolean
@@ -232,7 +233,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 					val disc = qValue(lastTransition.get)("discover") * 0.05
 					val reinMap = MapVector("discover" -> -disc)
 					reinforce(lastTransition.get,
-						reinMap, Set(/*from.id, x.id*/))
+						reinMap, Set(from.id, x.id))
 				}
 				lastWaypointId = Some(x.id)
 			case Some(x) =>
@@ -756,7 +757,7 @@ println(selQ -> wpQ, lastTransition)
 			}
 
 			direction = Vec3.zero
-		case PathTick if !dead && joined && !gettingPath => try {
+		case PathTick if !dead && joined && !gettingPath && selfId != -1 => try {
 			//lastCurPath = curPath
 
 			if((curTime - lastPathTime) > 5) {
