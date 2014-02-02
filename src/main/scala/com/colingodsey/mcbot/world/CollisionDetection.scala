@@ -196,7 +196,7 @@ trait CollisionDetection {
 			blockFace = blockCenter - norm * 0.5
 			//faceDist = if(faceDot < 0) 1 + faceDot else faceDot
 			//hitDist = -faceDist / (vec * norm)
-			hitDist = ((blockFace - from) * norm) / (vec.normal * norm)
+			hitDist = math.max(((blockFace - from) * norm) / (vec.normal * norm), 0)
 			if hitDist <= vec.length
 			//vecPart = vec.normal * hitDist
 			endBlock = getBlock(startBlock.globalPos - norm)

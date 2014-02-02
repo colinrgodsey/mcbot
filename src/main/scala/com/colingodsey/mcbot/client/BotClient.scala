@@ -50,7 +50,11 @@ import com.colingodsey.mcbot.client.WaypointManager.Waypoint
 import com.colingodsey.collections.VecN
 
 object BotClient {
-	case class Settings(host: String, port: Int, username: String)
+	case class Settings(host: String, port: Int, username: String,
+			wps: Seq[Waypoint],
+			wpMasterRef: Option[ActorRef]) {
+		def wpMaster = !wpMasterRef.isDefined
+	}
 	case object PhysicsTick
 	case object Respawn
 	case object LongTick
@@ -97,15 +101,32 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		protocol.ClientProtocol, host, port),
 		name = "proto-stream")
 
+	def safeSchedule(dur: FiniteDuration, ref: ActorRef, msg: Any) = {
+		var c: Cancellable = null
+
+		def f {
+			ref ! msg
+
+			c = context.system.scheduler.scheduleOnce(dur)(f)
+		}
+		c = context.system.scheduler.scheduleOnce(dur * 2)(f)
+
+		new Cancellable {
+			override def cancel(): Boolean = c.cancel
+
+			override def isCancelled: Boolean = c.isCancelled
+		}
+	}
+
 	val tickDelta = 50.millis//50.millis
-	val pingTimer = context.system.scheduler.schedule(
-		tickDelta, tickDelta, self, PhysicsTick)
-	val posTimer = context.system.scheduler.schedule(
-		2.seconds, 1.second, self, LongTick)
-	val pathTimer = context.system.scheduler.schedule(
-		2.seconds, 1.second, self, PathTick)
-	val waypointSaveTimer = context.system.scheduler.schedule(
-		15.seconds, 10.second, self, SaveWaypoints)
+	val pingTimer = safeSchedule(
+		tickDelta, self, PhysicsTick)
+	val posTimer = safeSchedule(
+		1.second, self, LongTick)
+	val pathTimer = safeSchedule(
+		1.second, self, PathTick)
+	val waypointSaveTimer = safeSchedule(
+		10.second, self, SaveWaypoints)
 
 	val waypointFile = new File(s"./$username.wp.dat")
 	val waypointSwapFile = new File(s"./$username.wp.tmp.dat")
@@ -139,6 +160,9 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	def footPos = selfEnt.pos - Vec3(0, stanceDelta, 0)
 	def footBlockPos = footPos + Vec3(0, 0.5, 0)
 	def footBlock = getBlock(footBlockPos)
+
+	def isWpMaster = settings.wpMaster
+	def wpMaster = settings.wpMasterRef.get
 
 	val worldView: WorldView = this
 
@@ -417,8 +441,6 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			//if(math.random < 0.3) direction = Point3D(math.random - 0.5, 0, math.random - 0.5).normal
 			//direction = Point3D(1, 0, 0)
 
-
-
 			if(dead) {
 				context.system.scheduler.scheduleOnce(2.5.seconds, self, Respawn)
 				joined = false
@@ -437,6 +459,15 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			if(math.random < 0.2) subscribers.foreach(_ ! makeBotSnapshot)
 
 			log.debug(s"health = ${selfEnt.health}, pos = ${selfEnt.pos},  ground = ${selfEnt.onGround}, velL = ${selfEnt.vel.length}")
+
+		case wp: Waypoint =>
+			addWaypoint(wp, isWpMaster)
+			//subscribers.foreach(_ ! wp)
+
+		case snap: BotSnapshot =>
+			snap.nearWaypoints foreach { x =>
+				addWaypoint(x, false)
+			}
 
 		case Subscribe =>
 			subscribers += sender
@@ -469,7 +500,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	}
 
 	override def preStart {
-		loadWaypoints()
+		//loadWaypoints()
+		settings.wps.foreach(addWaypoint)
 		super.preStart
 	}
 

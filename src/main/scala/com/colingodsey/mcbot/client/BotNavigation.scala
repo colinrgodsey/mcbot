@@ -121,7 +121,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				val targetBlock = takeBlockDown(endTargetBlock)
 				val startBlock = takeBlockDown(endStartBlock)
 
-				roughPathFrom(startBlock, targetBlock, 1900).toSeq.flatten
+				roughPathFrom(startBlock, targetBlock, 700).toSeq.flatten
 			}
 		} catch {
 			case t: FindChunkError => Nil
@@ -129,7 +129,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 	}
 
 	def roughPathFrom(start: Block, to: Block, of: Int = 1000): Option[Seq[Vec3]] = blocking {
-		val finder = new BlockPathFinder(worldView, to, 80)
+		val finder = new BlockPathFinder(worldView, to, 40)
 		val paths = finder.pathsFrom(start)
 
 		val iter = paths.iterator
@@ -201,7 +201,8 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 						//direction = Vec3.random
 						randomPushSelf()
 					} else {
-						val w = new Waypoint(nextWaypointId, selfEnt.pos)
+						//val w = new Waypoint(nextWaypointId, selfEnt.pos)
+						val w = new Waypoint(selfEnt.pos.hashCode, selfEnt.pos)
 						log.info("Adding waypoint " + w)
 						addWaypoint(w)
 
@@ -249,7 +250,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 
 
-	def pathPhysicsTick(dt: Double) = {
+	def pathPhysicsTick(dt: Double) = try {
 		val oldPath = curPath
 
 		if(!curPath.isEmpty) {
@@ -348,6 +349,8 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		}
 
 		if(curPath.isEmpty && !oldPath.isEmpty) moveGoal = None
+	} catch {
+		case x: FindChunkError =>
 	}
 
 	var findingMove = false
@@ -397,7 +400,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 	})
 
 	//pick a random place...
-	def findNewRandomWp(deadend: Boolean = true): Unit = try {
+	def findNewRandomWp(deadend: Boolean = true): Unit = try blocking {
 		val curWpId = lastWaypoint
 		val nearWps = getNearWaypoints(selfEnt.pos, maxNum = 10) filter { x =>
 			val vec = x.pos - selfEnt.pos
@@ -753,7 +756,7 @@ println(selQ -> wpQ, lastTransition)
 			}
 
 			direction = Vec3.zero
-		case PathTick if !dead && joined && !gettingPath =>
+		case PathTick if !dead && joined && !gettingPath => try {
 			//lastCurPath = curPath
 
 			if((curTime - lastPathTime) > 5) {
@@ -768,6 +771,9 @@ println(selQ -> wpQ, lastTransition)
 			}
 
 			if(selfEnt.onGround) checkGoalPath()
+		} catch {
+			case x: FindChunkError =>
+		}
 		case PathTick =>
 	}
 }

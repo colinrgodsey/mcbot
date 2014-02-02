@@ -9,7 +9,7 @@ import com.colingodsey.mcbot.protocol._
 import java.io.{DataOutputStream, FileOutputStream, FileInputStream, File}
 import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.util.Failure
-import akka.actor.ActorLogging
+import akka.actor.{ActorRef, ActorLogging}
 import akka.event.LoggingAdapter
 import java.nio.file.{Paths, Path, StandardCopyOption, Files}
 import com.colingodsey.mcbot.world.{CollisionDetection, FindChunkError}
@@ -70,6 +70,9 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 	implicit def ec: ExecutionContext
 	def waypointFile: File
 	def waypointSwapFile: File
+	def wpMaster: ActorRef
+	def isWpMaster: Boolean
+	def subscribers: Set[ActorRef]
 
 	def desire = MapVector(desireMap)
 	def γ: Double = 0.8
@@ -173,7 +176,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 	}
 
 	def saveWaypoints() {
-		if(savingWaypoints) return
+		if(savingWaypoints || !isWpMaster) return
 		savingWaypoints = true
 
 		val dest = new DataDest {
@@ -199,14 +202,23 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		}
 	}
 
-	def addWaypoint(waypoint: Waypoint) = {
+	def addWaypoint(waypoint: Waypoint, broadCast: Boolean) {
+		val oldWp = waypoints.get(waypoint.id)
 		removeWaypoint(waypoint.id)
 
 		_waypoints += waypoint.id -> waypoint
 		if(waypoint.id >= _nextWaypointId) _nextWaypointId = waypoint.id + 1
 
 		rTree.add(waypoint.rect, waypoint.id)
+
+		if(oldWp != Some(waypoint) && broadCast) {
+			if(!isWpMaster) wpMaster ! waypoint
+			else subscribers.foreach(_ ! waypoint)
+		}
 	}
+
+	def addWaypoint(waypoint: Waypoint): Unit =
+		addWaypoint(waypoint, true)
 
 	def removeWaypoint(id: Int) = _waypoints.get(id) match {
 		case Some(x) =>
@@ -278,7 +290,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 
 		log.info("Removed connection!")
 
-		from.copy(connections = from.connections - toId)
+		addWaypoint(from.copy(connections = from.connections - toId))
 	}
 
 	def getNearWaypoints(pos: Vec3,
