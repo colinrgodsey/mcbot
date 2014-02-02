@@ -236,12 +236,12 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 
 		val ignoreIds = ignoreIds0 + trans.destId
 
-		if(!from.connectsTo(toId)) return
+		if(!from.connectsTo(toId) && from.id != toId) return
 
 		//filter out the immediate recursion value
 		//why the fuck was i filtering fromID
 		val values = transFrom(trans).iterator.filter(
-			x => trans.destId != x.fromId && !ignoreIds(x.fromId)/* && !ignoreIds(x.fromId)*/).map(qValue)
+			x => !ignoreIds(x.fromId)/* && !ignoreIds(x.fromId)*/).map(qValue)
 		val maxQ = values.toStream.sortBy(
 			-desire.normal * _).headOption.getOrElse(initialValue)
 
