@@ -231,9 +231,9 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 				if(from.connectsTo(x.id)) {
 					val disc = qValue(lastTransition.get)("discover") * 0.05
-					val reinMap = MapVector("discover" -> -disc)
+					val reinMap = MapVector()//"discover" -> -disc)
 					reinforce(lastTransition.get,
-						reinMap, Set(from.id, x.id))
+						reinMap, Set())
 				}
 				lastWaypointId = Some(x.id)
 			case Some(x) =>

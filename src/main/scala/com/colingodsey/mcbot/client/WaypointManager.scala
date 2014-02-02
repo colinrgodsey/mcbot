@@ -104,7 +104,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 			val to = waypoints(id)
 			val path = getShortPath(from.pos, to.pos)
 
-			if(path.isEmpty || trans.fromId == id) None
+			if(path.isEmpty || trans.destId == id) None
 			else Some(WaypointTransition(trans.destId, id))
 		}.toSet
 	}
@@ -241,7 +241,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		//filter out the immediate recursion value
 		//why the fuck was i filtering fromID
 		val values = transFrom(trans).iterator.filter(
-			x => !ignoreIds(x.fromId)/* && !ignoreIds(x.fromId)*/).map(qValue)
+			x => trans.destId != x.fromId && !ignoreIds(x.fromId)/* && !ignoreIds(x.fromId)*/).map(qValue)
 		val maxQ = values.toStream.sortBy(
 			-desire.normal * _).headOption.getOrElse(initialValue)
 
