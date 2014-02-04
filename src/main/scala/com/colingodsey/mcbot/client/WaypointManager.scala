@@ -28,7 +28,10 @@ object WaypointManager extends Protocol {
 		def connection(x: Int) =
 			connections.get(x).getOrElse(Connection(x, 0))
 
-		def connectsTo(otherId: Int) = connections.get(otherId).isDefined
+		def connectsTo(otherId: Int) = {
+			require(otherId != id)
+			connections.get(otherId).isDefined
+		}
 
 		//hacky storin this in here...
 		def property(name: String) =
@@ -228,6 +231,21 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		case None => false
 	}
 
+	def reward(trans: WaypointTransition, reward: VecN) {
+		val WaypointTransition(fromId, toId) = trans
+		val from = waypoints(fromId)
+		val to = waypoints(toId)
+
+		val oldQ = qValue(trans)
+		val newQ = oldQ + reward
+		val conn = toId -> from.connection(toId).copy(
+			weights = newQ.weights)
+
+		log.info(s"Rewarding with $reward to $newQ")
+
+		addWaypoint(from.copy(connections = from.connections + conn))
+	}
+
 	//reward the damn thing
 	def reinforce(trans: WaypointTransition, reward: VecN, ignoreIds0: Set[Int]) {
 		val WaypointTransition(fromId, toId) = trans
@@ -236,20 +254,35 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 
 		val ignoreIds = ignoreIds0 + trans.destId
 
-		if(!from.connectsTo(toId) && from.id != toId) return
+		if(!from.connectsTo(toId)) return
 
 		//filter out the immediate recursion value
 		//why the fuck was i filtering fromID
 		val values = transFrom(trans).iterator.filter(
-			x => !ignoreIds(x.fromId)/* && !ignoreIds(x.fromId)*/).map(qValue)
-		val maxQ = values.toStream.sortBy(
-			-desire.normal * _).headOption.getOrElse(initialValue)
+			x => !ignoreIds(x.destId)).map(qValue)
+
+		//TODO: break up maxQ into a per-dimension max, and then mix.
+		/*val maxQ = values.toStream.sortBy(
+			-desire.normal * _).headOption.getOrElse(initialValue)*/
+
+		val maxQPart = desire.weights.keySet map { d =>
+			val w = desire(d)
+
+			val qV = values.toStream.sortBy(_ apply d).headOption.getOrElse(initialValue)
+			val q = qV(d)
+
+			d -> q
+		}
+		val maxQ = MapVector(maxQPart.toMap)
 
 		val oldQ = qValue(trans)
 		val newQ = update(trans, reward, maxQ)
 
 		val conn = toId -> from.connection(toId).copy(
 			weights = newQ.weights)
+
+		if(oldQ == newQ)
+			log.warning("Reinforcing caused no change!")
 
 		log.info(s"Reinforcing with $reward from $oldQ to $newQ")
 
@@ -315,39 +348,4 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		list.result.sortBy(w => (pos - w.pos).length)
 	}
 
-	//TODO: use qleanr
-	/*def reinforce(fromId: Int, toId: Int, props: Set[String]) = {
-		val from = waypoints(fromId)
-		val to = waypoints(toId)
-
-		from.connections.get(to.id) match {
-			case Some(conn) =>
-				conn.weights ++ props.map { prop =>
-					val old = conn.weights.getOrElse(prop, 0.0)
-
-				}
-			case None =>
-		}
-	}*/
-
-
-	//get set of waypoints in radius at least equal to the maxHeight / 2
-	/*def getNearestWaypoint(pos: Point3D, maxRadius: Double = 200) = {
-		var list = Seq[Waypoint]()
-
-		val proc = new TIntProcedure {
-			def execute(x: Int) = {
-				val w = _waypoints(x)
-				if((w.pos - pos).length < maxRadius) {
-					list :+= w
-					false
-				} else true
-			}
-		}
-
-		rTree.nearestN(new Point(pos.x.toFloat, pos.z.toFloat),
-			proc, 100, maxRadius.toFloat)
-
-		list.headOption
-	}*/
 }
