@@ -50,15 +50,18 @@ trait WorldView {
 	def takeBlockDown(block: Block): Block = {
 		var ptr = block.globalPos.toPoint3D
 
-		if(!block.btyp.isPassable) sys.error("block start solid!")
+		if(!block.isPassable) sys.error("block start solid!")
 
-		while(getBlock(ptr).btyp.isPassable && ptr.y > 0)
+		while(getBlock(ptr).isPassable && ptr.y > 0) {
 			ptr -= Vec3(0, 1, 0)
+		}
 
 		ptr += Vec3(0, 1, 0)
 
 		getBlock(ptr)
 	}
+
+	def isPassable(bl: Block) = bl.isPassable
 }
 
 trait World { wv: WorldView =>
@@ -89,7 +92,7 @@ object WorldClient {
 	case class AddChunks(chunks: Set[Chunk])
 
 	//the below can be run async!
-	val processChunks: Function[Any, Any] = blocking {
+	def processChunks(implicit wv: WorldView): Function[Any, Any] = blocking {
 		case cpr.ChunkData(chunkX, chunkZ, groundUp, bitmask, addBitmask, data) =>
 			val decompdData = Chunk.inflateData(data.toArray)
 
@@ -136,6 +139,8 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 	val ticksPerSecond = 20
 	val movementSpeedModifier = ticksPerSecond * 2.15
 	val velocityFactor = 1.0 / 8000 * ticksPerSecond
+
+	implicit def wv: WorldView = this
 
 	def self: ActorRef
 
@@ -276,8 +281,8 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 		retVal
 	}
 
-	def handleChunks(x: Any)(implicit ec: ExecutionContext) = {
-		val fut = Future(WorldClient.processChunks(x))
+	def handleChunks(x: Any)(implicit ec: ExecutionContext, wv: WorldView) = {
+		val fut = Future(WorldClient.processChunks.apply(x))
 
 		fut onFailure { case t: Throwable =>
 			log.error(t, "handleChunks fail!")

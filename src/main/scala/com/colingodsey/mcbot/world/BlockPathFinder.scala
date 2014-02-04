@@ -33,7 +33,7 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 		def localBottom = takeBlockDown(
 			getBlock(state.globalPos.toPoint3D))
 
-		if(!state.btyp.isPassable) return Stream()
+		if(!isPassable(state)) return Stream()
 
 		if(localBottom != state) {
 			val dy = localBottom.globalPos.y - state.globalPos.y
@@ -51,8 +51,8 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 			def topBlock = getBlock(p + Vec3(0, 1, 0))
 			def bottomBlock = getBlock(p + Vec3(0, -1, 0))
 
-			block.btyp.isPassable && topBlock.btyp.isPassable &&
-					!bottomBlock.btyp.isPassable
+			isPassable(block) && topBlock.isPassable &&
+					!isPassable(bottomBlock)
 		}
 
 		val availFlatN = flatN.map(_._2).toSet
@@ -65,9 +65,9 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 			def topBlock = getBlock(p + Vec3(0, 1, 0))
 			def bottomBlock = getBlock(p + Vec3(0, -1, 0))
 
-			val r = !bottomBlock.btyp.isPassable &&
-				topBlock.btyp.isPassable &&
-				block.btyp.isPassable
+			val r = !isPassable(bottomBlock) &&
+				topBlock.isPassable &&
+				block.isPassable
 
 			if(r) Some(block -> corner)
 			else None
@@ -85,16 +85,16 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 				block.globalPos.y - lowerBlock.globalPos.y
 			}
 
-			if(block.btyp.isPassable &&
-					topBlock.btyp.isPassable &&
-					!bottomBlock.btyp.isPassable &&
+			if(block.isPassable &&
+					topBlock.isPassable &&
+					!bottomBlock.isPassable &&
 					dropLength >= 1 && dropLength <= 4)
 				Some(block/*lowerBlock*/, move/* + Vec3(0, -dropLength, 0)*/)
 			else None
 		}
 
 		lazy val upperPossible = getBlock(
-			state.globalPos.toPoint3D + Vec3(0, 2, 0)).btyp.isPassable
+			state.globalPos.toPoint3D + Vec3(0, 2, 0)).isPassable
 		val upperN = posBlocks flatMap { case (block, move) =>
 			if(!upperPossible) Nil
 			else {
@@ -103,8 +103,8 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 				def midBlock = getBlock(p + Vec3(0, 1, 0))
 				//val bottomBlock = block
 
-				if(!block.btyp.isPassable && topBlock.btyp.isPassable &&
-						midBlock.btyp.isPassable)
+				if(!isPassable(block) && topBlock.isPassable &&
+						midBlock.isPassable)
 					Some(midBlock, move + Vec3(0, 1, 0))
 				else None
 			}

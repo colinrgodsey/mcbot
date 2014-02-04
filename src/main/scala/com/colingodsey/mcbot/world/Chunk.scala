@@ -14,7 +14,8 @@ object Chunk {
 	val defaultSkyValue = 15
 
 	def apply(x: Int, z: Int, bitmask: Short, addBitmask: Short,
-			groundUp: Boolean, skylight: Boolean, data: IndexedSeq[Byte]): Seq[Chunk] = {
+			groundUp: Boolean, skylight: Boolean,
+			data: IndexedSeq[Byte])(implicit wv: WorldView): Seq[Chunk] = {
 		val size = chunkSize(skylight)
 
 		require(addBitmask == 0)
@@ -147,6 +148,8 @@ trait Chunk extends Equals { chunk =>
 	def y: Int
 	def z: Int
 
+	implicit def wv: WorldView
+
 	def apply(_x: Int, _y: Int, _z: Int): ChunkBlock =
 		new ChunkBlock(_x, _y, _z, this)
 
@@ -185,7 +188,7 @@ class MutableChunk(val x: Int, val y: Int, val z: Int,
 		private val blockAddData: Array[Byte] = Array(),
 		private val blockBiome: Array[Byte]
 		//data: IndexedSeq[Byte]
-		) extends Chunk {
+		)(implicit val wv: WorldView) extends Chunk {
 	import Chunk._
 
 	def byteSize = dataIdx

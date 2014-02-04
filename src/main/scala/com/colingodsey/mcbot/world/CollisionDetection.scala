@@ -179,7 +179,7 @@ trait CollisionDetection {
 
 		//require(vec.length > 0)
 
-		if(!startBlock.btyp.isPassable) {
+		if(!isPassable(startBlock)) {
 			require(distAcc == 0)
 			return StartSolid
 			//return StartHit(Vec3(1, 0, 0))
@@ -213,12 +213,12 @@ trait CollisionDetection {
 
 		hits.sortBy(_._1.dist).head match {
 			//actual hit
-			case (SurfaceHit(d, norm), endBlock) if !endBlock.btyp.isPassable =>
+			case (SurfaceHit(d, norm), endBlock) if !isPassable(endBlock) =>
 				if(d == 0 && distAcc == 0) StartHit(norm)
 				else TraceHit(d + distAcc, norm)
 			//invis hit
 			case (SurfaceHit(d, _), endBlock) =>
-				require(endBlock.btyp.isPassable)
+				require(endBlock.isPassable)
 				traceRay(from + vec.normal * d,
 					vec.normal * (vec.length - d), endBlock, d + distAcc)
 		}

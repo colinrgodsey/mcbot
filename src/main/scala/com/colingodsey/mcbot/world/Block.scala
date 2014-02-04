@@ -11,9 +11,9 @@ object Block {
 	case object Dirt extends ASolidBlockType(3)
 	//
 	case object Bedrock extends ASolidBlockType(7)
-	case object Water extends ASolidBlockType(8)
+	case object Water extends ABlockType(8)
 	//
-	case object Lava extends ASolidBlockType(10)
+	case object Lava extends ABlockType(10)
 	//
 	case object Sand extends ASolidBlockType(12)
 	case object Gravel extends ASolidBlockType(13)
@@ -22,6 +22,16 @@ object Block {
 	case object Torch extends ABlockType(50)
 	//
 	case object RedstoneWire extends ABlockType(55)
+	//
+	case object WoodDoor extends ABlockType(64)
+	case object Rail extends ABlockType(66)
+	case object IronDoor extends ABlockType(71)
+	//
+	case object Fence extends AFenceBlockType(85)
+	//
+	case object Gate extends AFenceBlockType(107)
+	//
+	case object NetherFence extends AFenceBlockType(113)
 
 	case class Unknown(typ: Int) extends BlockType {
 		//plant block IDs
@@ -36,6 +46,8 @@ object Block {
 	trait BlockType {
 		def typ: Int
 		def isPassable: Boolean
+
+		def isFence = false
 	}
 
 	trait SolidBlockType extends BlockType {
@@ -43,7 +55,8 @@ object Block {
 	}
 
 	val typeSet = Set[BlockType](Air, Stone, Grass, Dirt, Bedrock, Water,
-		Lava, Sand, Gravel, GoldOre, Torch, RedstoneWire)
+		Lava, Sand, Gravel, GoldOre, Torch, RedstoneWire, Fence, Gate,
+		WoodDoor, IronDoor, NetherFence, Rail)
 
 	val halfBlockVec = Vec3.one / 2
 
@@ -51,6 +64,9 @@ object Block {
 		def isPassable: Boolean = true
 	}
 	protected abstract class ASolidBlockType(val typ: Int) extends SolidBlockType
+	protected abstract class AFenceBlockType(val typ: Int) extends SolidBlockType {
+		override def isFence = true
+	}
 
 	val types = {
 		val typeMap = typeSet.iterator.map(x => x.typ -> x).toMap
@@ -65,7 +81,7 @@ object Block {
 }
 
 final case class ChunkBlock private[world] (
-		x: Int, y: Int, z: Int, chunk: Chunk) extends Block {
+		x: Int, y: Int, z: Int, chunk: Chunk)(implicit wv: WorldView) extends Block {
 	import Chunk._
 	
 	require(x >= 0 && x < dims.x, "bad x " + x + " " + chunk.pos)
@@ -77,6 +93,13 @@ final case class ChunkBlock private[world] (
 	def light: Int = chunk.light(x, y, z)
 	def skyLight: Int = chunk.skyLight(x, y, z)
 	def biome: Int = chunk.biome(x, y, z)
+
+	def isPassable: Boolean = {
+		val bel = below
+		btyp.isPassable && !bel.btyp.isFence
+	}
+
+	def below = wv.getBlock(globalPos - Vec3(0, 1, 0))
 
 	lazy val globalPos: IPoint3D = IPoint3D(x + chunk.x * dims.x,
 		y + chunk.y * dims.y, z + chunk.z * dims.z)
@@ -92,6 +115,8 @@ trait Block extends Equals {
 	def biome: Int
 
 	def btyp = Block.types(typ)
+
+	def isPassable: Boolean
 
 	def x: Int
 	def y: Int
@@ -110,6 +135,7 @@ case class NoBlock(x: Int, y: Int, z: Int) extends Block {
 	def light: Int = 0
 	def skyLight: Int = 0
 	def biome: Int = 0
+	def isPassable = true
 
 	def globalPos: IPoint3D = pos
 }

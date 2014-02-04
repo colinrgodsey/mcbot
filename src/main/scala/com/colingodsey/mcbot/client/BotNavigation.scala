@@ -75,7 +75,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 			val startBlock = takeBlockDown(footBlock)
 
-			if(!targetBlock.btyp.isPassable) Nil
+			if(!targetBlock.isPassable) Nil
 			else blocking {
 				val r = finder.pathFrom(startBlock, targetBlock, 1500)
 
@@ -117,7 +117,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			val endTargetBlock = getBlock(to)
 			val endStartBlock = getBlock(from)
 
-			if(!endTargetBlock.btyp.isPassable || !endStartBlock.btyp.isPassable) Nil
+			if(!endTargetBlock.isPassable || !endStartBlock.isPassable) Nil
 			else {
 				val targetBlock = takeBlockDown(endTargetBlock)
 				val startBlock = takeBlockDown(endStartBlock)
@@ -163,7 +163,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 	def checkWaypoints(): Unit = try blocking {
 		val closestA = getNearWaypoints(footBlockPos,
 				waypointMinDistance) filter { x =>
-			getBlock(x.pos).btyp.isPassable
+			getBlock(x.pos).isPassable
 		}
 		val closest = closestA filter { wp =>
 			lazy val p = getShortPath(selfEnt.pos, wp.pos)
@@ -230,8 +230,10 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				val from = lastWaypoint.get
 
 				if(from.connectsTo(x.id)) {
-					val disc = qValue(lastTransition.get)("discover") * 0.05
-					val reinMap = MapVector()//"discover" -> -disc)
+					val dt = math.min(math.max(curTime - from.property("visited"), 1), 3600)
+					val disc = qValue(lastTransition.get)("discover") / (dt)
+					val reinMap = MapVector("discover" -> -disc)
+
 					reinforce(lastTransition.get,
 						reinMap, Set(lastTransition.get.fromId))
 				}
@@ -512,7 +514,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		val sampleBlocks = samplePoints.flatMap { x =>
 			val bl = getBlock(x + footBlockPos + Vec3(0, math.random * 2, 0))
 
-			if(bl.btyp.isPassable)
+			if(bl.isPassable)
 				Some(takeBlockDown(bl))
 			else None
 		}
@@ -589,8 +591,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				randomPushSelf()
 				direction = Vec3.random
 				if(lastTransition.isDefined && deadend) {
-					reinforce(lastTransition.get, MapVector("deadend" -> 10.0),
-						Set(lastTransition.get.destId, lastTransition.get.fromId))
+					reward(lastTransition.get, MapVector("deadend" -> 10.0))
 				}
 		}
 	} catch {
@@ -694,8 +695,8 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			//if(desire("discover") > wpQ("discover") || math.random < 0.1) findNewRandomWp
 			//println(selQ("discover"),  wpQ("discover"), desire("discover"))
 println(selQ -> wpQ, lastTransition)
-			if(wpQ("discover") > 20 || math.random < 0.1) findNewRandomWp(false)
-			if(!moveGoal.isDefined && desire("discover") >= 10 && selQ("discover") <= wpQ("discover")
+			if(wpQ("discover") > 20 || math.random < 0.05) findNewRandomWp(false)
+			if(!moveGoal.isDefined && selQ("discover") <= wpQ("discover")
 					&& math.random < 0.8)
 				findNewRandomWp()
 

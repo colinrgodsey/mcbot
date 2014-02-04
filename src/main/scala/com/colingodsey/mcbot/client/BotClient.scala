@@ -348,7 +348,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case cpr.PluginMessage(chan, data) =>
 			pluginMessage = Some(spr.PluginMessage(chan, data))
 			//stream ! spr.ClientSettings("en_GB", 0, 0, false, 2, false)
-			stream ! spr.ClientSettings("en_US", 16, 0, true, 3, true)
+			stream ! spr.ClientSettings("en_US", 16, 0, true, 0, true)
 			sendPluginMessage
 		case cpr.ChatMessage(msg) => try {
 			val js = msg.asJson
