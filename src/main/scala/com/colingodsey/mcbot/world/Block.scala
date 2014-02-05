@@ -23,9 +23,9 @@ object Block {
 	//
 	case object RedstoneWire extends ABlockType(55)
 	//
-	case object WoodDoor extends ABlockType(64)
+	case object WoodDoor extends ADoorType(64)
 	case object Rail extends ABlockType(66)
-	case object IronDoor extends ABlockType(71)
+	case object IronDoor extends ADoorType(71)
 	//
 	case object Fence extends AFenceBlockType(85)
 	//
@@ -34,6 +34,8 @@ object Block {
 	case object NetherFence extends AFenceBlockType(113)
 
 	case class Unknown(typ: Int) extends BlockType {
+		require(typ >= 0)
+
 		//plant block IDs
 		//val isPassable: Boolean = if(typ >= 31 && typ <= 40) true else false
 		val isPassable: Boolean = typ match {
@@ -48,6 +50,7 @@ object Block {
 		def isPassable: Boolean
 
 		def isFence = false
+		def isDoor = false
 	}
 
 	trait SolidBlockType extends BlockType {
@@ -59,6 +62,11 @@ object Block {
 		WoodDoor, IronDoor, NetherFence, Rail)
 
 	val halfBlockVec = Vec3.one / 2
+
+	protected abstract class ADoorType(val typ: Int) extends BlockType {
+		override def isDoor = true
+		def isPassable: Boolean = false
+	}
 
 	protected abstract class ABlockType(val typ: Int) extends BlockType {
 		def isPassable: Boolean = true
@@ -81,7 +89,7 @@ object Block {
 }
 
 final case class ChunkBlock private[world] (
-		x: Int, y: Int, z: Int, chunk: Chunk)(implicit wv: WorldView) extends Block {
+		x: Int, y: Int, z: Int, chunk: Chunk)(implicit val wv: WorldView) extends Block {
 	import Chunk._
 	
 	require(x >= 0 && x < dims.x, "bad x " + x + " " + chunk.pos)
@@ -96,10 +104,11 @@ final case class ChunkBlock private[world] (
 
 	def isPassable: Boolean = {
 		val bel = below
-		btyp.isPassable && !bel.btyp.isFence
-	}
 
-	def below = wv.getBlock(globalPos - Vec3(0, 1, 0))
+		(if(btyp.isDoor) {
+			!door.isClosed
+		} else btyp.isPassable) && !bel.btyp.isFence
+	}
 
 	lazy val globalPos: IPoint3D = IPoint3D(x + chunk.x * dims.x,
 		y + chunk.y * dims.y, z + chunk.z * dims.z)
@@ -114,6 +123,11 @@ trait Block extends Equals {
 	def skyLight: Int
 	def biome: Int
 
+	def wv: WorldView
+
+	def below = wv.getBlock(globalPos - Vec3(0, 1, 0))
+	def above = wv.getBlock(globalPos.toPoint3D + Vec3(0, 1, 0))
+
 	def btyp = Block.types(typ)
 
 	def isPassable: Boolean
@@ -125,9 +139,20 @@ trait Block extends Equals {
 	def pos = IPoint3D(x, y, z)
 	//def globalPos = IPoint3D(x, y, z)
 	def globalPos: IPoint3D
+
+	object door {
+		//require door
+		def isBottom = //((meta >>> 3) & 0x1) == 0
+			!below.btyp.isDoor
+		def opensRight: Boolean = if(!isBottom) (meta & 0x1) == 0
+		else above.door.opensRight
+
+		def isClosed: Boolean = if(isBottom) ((meta >>> 2) & 0x1) == 0
+		else below.door.isClosed
+	}
 }
 
-case class NoBlock(x: Int, y: Int, z: Int) extends Block {
+case class NoBlock(x: Int, y: Int, z: Int)(implicit val wv: WorldView) extends Block {
 	import Chunk._
 
 	def typ: Int = Block.Air.typ

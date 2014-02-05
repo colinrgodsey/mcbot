@@ -35,7 +35,7 @@ trait WorldView {
 
 	def getBlock(pos: Vec3): Block = {
 		if(pos.y < 0 || pos.y > 255)
-			return NoBlock(pos.x.toInt, pos.y.toInt, pos.z.toInt)
+			return NoBlock(pos.x.toInt, pos.y.toInt, pos.z.toInt)(WorldView.this)
 
 		val chunk = getChunk(pos)
 
@@ -50,7 +50,8 @@ trait WorldView {
 	def takeBlockDown(block: Block): Block = {
 		var ptr = block.globalPos.toPoint3D
 
-		if(!block.isPassable) sys.error("block start solid!")
+		//if(!block.isPassable) sys.error("block start solid!")
+		if(!block.isPassable) return block
 
 		while(getBlock(ptr).isPassable && ptr.y > 0) {
 			ptr -= Vec3(0, 1, 0)
@@ -150,7 +151,7 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 	def loadingChunk()
 	def chunkLoaded()
 
-
+	//TODO: for half blocks, just offset final position  with block depth
 	def move(eid: Int, dt: Double, body: Body): Boolean = {
 		var retVal = true
 		if(dt > epsilon) updateEntity(eid) { ent =>
@@ -281,7 +282,7 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 		retVal
 	}
 
-	def handleChunks(x: Any)(implicit ec: ExecutionContext, wv: WorldView) = {
+	def handleChunks(x: Any) = {
 		val fut = Future(WorldClient.processChunks.apply(x))
 
 		fut onFailure { case t: Throwable =>

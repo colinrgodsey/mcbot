@@ -53,14 +53,14 @@ trait VecLike[Coll <: VecLike[Coll] with Vec] extends VecOps[Coll] with Vec {
 	def - (other: Vec): Coll = companion(other) - toVec
 	def * (other: Vec): Double = companion(other) * toVec
 
+    def toVec: Coll
+
+	def companion: VecCompanion[This]
+
 	def isNormal = length == 1
 	def / (scale: Double): Coll = this * (1.0 / scale)
 
 	def isOrigin: Boolean = (toVec * toVec) == 0
-
-    def toVec: Coll
-
-	def companion: VecCompanion[This]
 
 	//TODO: add isNormal, effecient normals
 
