@@ -263,10 +263,10 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 				//im pretty sure the ignore has to be there...
 				reinforce(lastTransition.get,
-					reinMap, Set())//lastTransition.get.fromId))
+					reinMap, Set(lastTransition.get.fromId))
 
 				reinforce(lastTransition.get.swap,
-					VecN.zero, Set())//lastTransition.get.destId))
+					VecN.zero, Set(lastTransition.get.destId))
 
 				lastWaypointId = Some(x.id)
 			case Some(x) =>
