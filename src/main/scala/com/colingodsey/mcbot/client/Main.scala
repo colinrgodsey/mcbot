@@ -30,14 +30,14 @@ object Main extends App {
 
 	val bot = system.actorOf(BotClient.props(botSettings), name = "bot-client")
 
-	val otherBots = for(i <- 2 to 6) yield {
+	/*val otherBots = for(i <- 2 to 6) yield {
 		Thread.sleep(6000)
 		val ob = system.actorOf(BotClient.props(botSettings.copy(
 			username = "funnybot" + i, wpMasterRef = Some(bot))),
 			name = "bot-client" + i)
 		bot.tell(BotClient.Subscribe, ob)
 		ob
-	}
+	}*/
 
 	implicit val timeout = Timeout(5.seconds)
 

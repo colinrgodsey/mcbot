@@ -138,7 +138,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	var uuid = "?"
 	//var selfEnt = Entity(-1, onGround = false)
 	var selfId = -1
-	var timeOfDay: Long = 0
+	var timeOfDayTicks: Long = 0
 	var stanceDelta = 1.62
 	var joined = false
 	var food = 1.0
@@ -146,14 +146,15 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	var heldItem = 0
 	var lastTime = curTime
 	var subscribers = Set[ActorRef]()
+	var desire = VecN.zero
+	//var discoverTokens: Double = 0
+	var isRaining = false
 
 	var pluginMessage: Option[spr.PluginMessage] = None
 
 	implicit val to = Timeout(30.seconds)
 
 	context watch stream
-
-	def desireMap = Map("discover" -> 10.0, "deadend" -> -10)
 
 	def curTime = System.currentTimeMillis / 1000.0
 
@@ -162,6 +163,9 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	def footPos = selfEnt.pos - Vec3(0, stanceDelta, 0)
 	def footBlockPos = footPos + Vec3(0, 0.5, 0)
 	def footBlock = getBlock(footBlockPos)
+
+	def timeOfDay = (timeOfDayTicks % 24000).toDouble / 24000
+	def dayFac = math.sin(timeOfDay * math.Pi * 2)
 
 	def isWpMaster = settings.wpMaster
 	def wpMaster = settings.wpMasterRef.get
@@ -172,8 +176,15 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	def movementSpeed = selfEnt.prop("generic.movementSpeed") * movementSpeedModifier
 	def maxHealth = selfEnt.prop("generic.maxHealth")
 
-	//this accesses local state in another thread... dangerous
+	def setDesires() {
+		val homeFac = math.max((-dayFac), 0)
+		val rainHome = if(isRaining) 100 else 0
 
+		desire = VecN("discover" -> 12.0 * dayFac, "deadend" -> -10,
+			"home" -> (homeFac * 1000 + rainHome))
+
+		//println("desire " + desire)
+	}
 
 	def lookAt(vec: Vec3) {
 		val alpha1 = -math.asin(vec.normal.x) / math.Pi * 180
@@ -337,7 +348,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case cpr.HeldItemChange(item) =>
 			heldItem = item
 		case cpr.TimeUpdate(newAge, newTimeOfDay) =>
-			timeOfDay = newTimeOfDay
+			timeOfDayTicks = newTimeOfDay
 		case cpr.KeepAlive(id) =>
 			//println(spr.KeepAlive(id))
 			stream ! spr.KeepAlive(id)
@@ -369,7 +380,13 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			stream ! cpr
 
 		case x: cpr.PlayerListItem =>
-		case x: cpr.ChangeGameState =>
+		case cpr.ChangeGameState(reason, value) => reason match {
+			case 1 => //end raining
+				isRaining = false
+			case 2 => //start raining
+				isRaining = true
+			case _ =>
+		}
 
 		case PhysicsTick if joined && (curTime - lastTime) > 0.01 =>
 			val ct = curTime
@@ -443,6 +460,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			//if(math.random < 0.3) direction = Point3D(math.random - 0.5, 0, math.random - 0.5).normal
 			//direction = Point3D(1, 0, 0)
 
+			setDesires()
+
 			if(dead) {
 				context.system.scheduler.scheduleOnce(2.5.seconds, self, Respawn)
 				joined = false
@@ -490,6 +509,16 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			val follow = playerOpt("colinrgodsey")
 			targetingEnt = follow.map(_.id)
 			say("Following")
+		case "mark home" =>
+			if(lastWaypoint.isDefined) {
+				val wp = lastWaypoint.get
+
+				addWaypoint(wp.updateProperty("home", 100.0))
+
+				say("New home at wp " + wp.pos)
+				//println(lastWaypoint.get.property("home"))
+			}
+			println("home " + lastWaypoint)
 		case "stop" =>
 			say("Stopping goal")
 			targetingEnt = None
