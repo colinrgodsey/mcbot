@@ -120,6 +120,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		waypoints(wpId).connections.iterator.flatMap { case (id, _) =>
 			val to = waypoints(id)
 			val path = getShortPath(from.pos, to.pos)
+			//val path = getLongPath(from.pos, to.pos)
 
 			if(id != wpId) {
 				if(path.isEmpty) {
@@ -278,7 +279,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		val oldQ = qValue(trans)
 		val keySet = oldQ.weights.keySet ++ values.flatMap(_.weights.keySet)
 		val maxQPart = keySet map { d =>
-			val qV = values.toStream.sortBy(-(_ apply d)).headOption.getOrElse(initialValue)
+			val qV = values.toStream.sortBy(x => -x(d)).headOption.getOrElse(initialValue)
 			val q = qV(d)
 
 			d -> q
@@ -309,8 +310,8 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		if(from.connections.get(toId) == None && fromId != toId) {
 			val path = getLongPath(from.pos, to.pos)
 
-			if(path.isEmpty) log.warning("Bad connect!")
-			else {
+			/*if(path.isEmpty) log.warning("Bad connect!")
+			else*/ {
 				val conn = toId -> Connection(toId, path.length)
 				addWaypoint(from.copy(connections = from.connections + conn))
 

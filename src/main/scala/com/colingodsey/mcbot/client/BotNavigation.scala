@@ -183,7 +183,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 	def checkWaypoints(): Unit = try blocking {
 		val closestA = getNearWaypoints(footBlockPos,
 				waypointMinDistance) filter { x =>
-			takeBlockDown(getBlock(x.pos)).isPassable
+			getBlock(x.pos).isPassable
 		}
 		//filter out accessible ones
 		val closest = closestA filter { wp =>
@@ -195,8 +195,8 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 			//either super close, or has path smaller than 30
 			//must be slightly smaller than max path search range
-			isSuperClose || (!p.isEmpty && p.length < 30 &&
-					!p2.isEmpty && p2.length < 30)
+			isSuperClose || (!p.isEmpty && p.length < 20 &&
+					!p2.isEmpty && p2.length < 20)
 		}
 
 		closest.headOption match {
@@ -642,9 +642,9 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			log.info("Bailing on current wp")
 			false
 		} else if(trans.isEmpty) {
-			log.info("Failed WP select")
+			log.info("Failed WP select from " + lastWaypoint)
 			false
-		} else {
+		} else if(desire.length > 0) {
 			val selTrans = policy(trans)
 			/*val selTrans = selector.selectFrom(trans) { x =>
 				val destWp = waypoints(x.destId)
@@ -683,7 +683,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 					true
 				}
 			}
-		}
+		} else false
 	}
 
 	def checkGoalPath() {
