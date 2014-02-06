@@ -55,7 +55,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 	var lastTransition: Option[WaypointTransition] = None
 	var lastQ: Option[VecN] = None
 
-	def maxPathLength: Int = 80
+	def maxPathLength: Int = 60
 
 	def waypointMinDistance = 10.0
 
@@ -77,7 +77,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 			if(!targetBlock.isPassable) Nil
 			else blocking {
-				val r = finder.pathFrom(startBlock, targetBlock, 1500)
+				val r = finder.pathFrom(startBlock, targetBlock, 4500)
 
 				val elapsed = -dl.timeLeft.toSeconds
 				if(elapsed > 1) log.info(s"Pathing took $elapsed seconds")
@@ -134,12 +134,12 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			val endTargetBlock = getBlock(to)
 			val endStartBlock = getBlock(from)
 
-			val finder = new BlockPathFinder(worldView, endTargetBlock, maxPathLength)
-
 			if(!endTargetBlock.isPassable || !endStartBlock.isPassable) Nil
 			else {
 				val targetBlock = takeBlockDown(endTargetBlock)
 				val startBlock = takeBlockDown(endStartBlock)
+
+				val finder = new BlockPathFinder(worldView, targetBlock, maxPathLength)
 
 				//roughPathFrom(startBlock, targetBlock, 700).toSeq.flatten
 				finder.pathFrom(startBlock, targetBlock, 1200).toSeq.flatten
@@ -263,10 +263,10 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 				//im pretty sure the ignore has to be there...
 				reinforce(lastTransition.get,
-					reinMap, Set(lastTransition.get.fromId))
+					reinMap, Set())//lastTransition.get.fromId))
 
 				reinforce(lastTransition.get.swap,
-					VecN.zero, Set(lastTransition.get.destId))
+					VecN.zero, Set())//lastTransition.get.destId))
 
 				lastWaypointId = Some(x.id)
 			case Some(x) =>

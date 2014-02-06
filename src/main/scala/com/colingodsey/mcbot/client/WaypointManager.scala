@@ -107,7 +107,8 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 
 		waypoints(trans.destId).connections.iterator.flatMap { case (id, _) =>
 			val to = waypoints(id)
-			val path = getShortPath(from.pos, to.pos)
+			//val path = getShortPath(from.pos, to.pos)
+			val path = getLongPath(from.pos, to.pos)
 
 			if(path.isEmpty || trans.destId == id) None
 			else Some(WaypointTransition(trans.destId, id))
@@ -119,10 +120,10 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 
 		waypoints(wpId).connections.iterator.flatMap { case (id, _) =>
 			val to = waypoints(id)
-			val path = getShortPath(from.pos, to.pos)
-			//val path = getLongPath(from.pos, to.pos)
+			//val path = getShortPath(from.pos, to.pos)
 
 			if(id != wpId) {
+				val path = getLongPath(from.pos, to.pos)
 				if(path.isEmpty) {
 					log.info("bad transFrom connection!")
 					disconnectWaypoints(wpId, id)
@@ -270,7 +271,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 
 		//filter out the immediate recursion value
 		//why the fuck was i filtering fromID
-		val values = transFrom(trans).iterator.filter(
+		val values = transFrom(trans).toSeq.filter(
 			x => !ignoreIds(x.destId)).map(qValue)
 
 		/*val maxQ = values.toStream.sortBy(
@@ -278,12 +279,12 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 
 		val oldQ = qValue(trans)
 		val keySet = oldQ.weights.keySet ++ values.flatMap(_.weights.keySet)
-		val maxQPart = keySet map { d =>
-			val qV = values.toStream.sortBy(x => -x(d)).headOption.getOrElse(initialValue)
-			val q = qV(d)
+		val maxQPart = keySet.map { d =>
+			//val qV = values.toStream.sortBy(x => -x(d)).headOption.getOrElse(initialValue)
+			val q = if(values.isEmpty) 0 else values.toStream.map(_ apply d).max
 
 			d -> q
-		}
+		}.filter(_._2 != 0)
 		val maxQ = MapVector(maxQPart.toMap)
 
 		val newQ = update(trans, reward, maxQ)
@@ -294,7 +295,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		if(oldQ == newQ)
 			log.warning("Reinforcing caused no change!")
 
-		log.info(s"Reinforcing with $reward from $oldQ to $newQ")
+		log.info(s"Reinforcing with $reward from $oldQ to $newQ maxQ $maxQ")
 
 		addWaypoint(from.copy(connections = from.connections + conn))
 	}
