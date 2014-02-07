@@ -21,21 +21,52 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 	}
 
 	def newNeighborsOnly(neighbors: Paths,
-			explored: Set[State]): Paths = neighbors filter {
-		case (block, move) => !explored(block)
+			explored: Set[State]): Paths = neighbors.headOption match {
+		case None => Stream()
+		case Some((state, moves)) if !explored(state) =>
+			Stream(state -> moves) #::: newNeighborsOnly(neighbors.tail, explored + state)
+		case _ => newNeighborsOnly(neighbors.tail, explored)
 	}
+
+
+		/*neighbors filter {
+		case (block, move) => !explored(block)
+	}*/
 
 	def pathsFrom(initial: Paths, explored: Set[State]): Paths = {
 		/*val more = for {
 			(state, moves) <- initial
+			if !explored(state)
 			withHistory = neighborsWithHistory(state, moves)
-			next <- newNeighborsOnly(withHistory, explored)
+			ns = newNeighborsOnly(withHistory, explored)
+			next <- ns
 		} yield next
 
 		if(more.isEmpty) initial
 		else initial #::: pathsFrom(more, explored ++ more.iterator.map(_._1))*/
 
-		val tailStream = for {
+		val more0 = for {
+			(state, moves) <- initial
+			withHistory = neighborsWithHistory(state, moves)
+			ns = newNeighborsOnly(withHistory, explored)
+			next <- ns
+		} yield next
+
+		def uniqueOnly(paths: Paths, expl: Set[State]): Paths = paths.headOption match {
+			case None => Stream()
+			case Some((state, moves)) if !expl(state) =>
+				val nExp = expl + state
+				Stream(state -> moves) #::: uniqueOnly(paths.tail, nExp)
+			case _ => uniqueOnly(paths.tail, expl)
+		}
+
+		val more = uniqueOnly(more0, explored)
+
+		if(more.isEmpty) initial
+		else initial #::: pathsFrom(more, explored ++ more.iterator.map(_._1))
+
+		//TODO: this break. explored set isnt updated correctly
+		/*val tailStream = for {
 			(state, moves) <- initial
 			withHistory = neighborsWithHistory(state, moves)
 			more = newNeighborsOnly(withHistory, explored)
@@ -45,7 +76,7 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 			//add some kind of secondary sorting herew
 		} yield path
 
-		initial #::: tailStream
+		initial #::: tailStream*/
 	}
 
 	def pathsFrom(start: State): Paths =
