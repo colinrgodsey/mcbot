@@ -145,7 +145,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				val finder = new BlockPathFinder(worldView, targetBlock, maxPathLength)
 
 				//roughPathFrom(startBlock, targetBlock, 700).toSeq.flatten
-				finder.pathFrom(startBlock, targetBlock, 180000).toSeq.flatten
+				finder.pathFrom(startBlock, targetBlock, 2800).toSeq.flatten
 			}
 		} catch {
 			case t: FindChunkError => Nil

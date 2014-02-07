@@ -33,50 +33,20 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 		case (block, move) => !explored(block)
 	}*/
 
-	def pathsFrom(initial: Paths, explored: Set[State]): Paths = {
-		/*val more = for {
-			(state, moves) <- initial
-			if !explored(state)
-			withHistory = neighborsWithHistory(state, moves)
-			ns = newNeighborsOnly(withHistory, explored)
-			next <- ns
-		} yield next
+	def pathsFrom(initial0: Paths, explored0: Set[State]): Paths = {
+		var explored = explored0
 
-		if(more.isEmpty) initial
-		else initial #::: pathsFrom(more, explored ++ more.iterator.map(_._1))*/
-
-		val more0 = for {
-			(state, moves) <- initial
-			withHistory = neighborsWithHistory(state, moves)
-			ns = newNeighborsOnly(withHistory, explored)
-			next <- ns
-		} yield next
-
-		def uniqueOnly(paths: Paths, expl: Set[State]): Paths = paths.headOption match {
-			case None => Stream()
-			case Some((state, moves)) if !expl(state) =>
-				val nExp = expl + state
-				Stream(state -> moves) #::: uniqueOnly(paths.tail, nExp)
-			case _ => uniqueOnly(paths.tail, expl)
+		def moreFrom(state: State, moves: List[Move]): Paths = for {
+			(nextState, nextMoves) <- newNeighborsOnly(
+				neighborsWithHistory(state, moves), explored)
+			if !explored(nextState)
+			next <- Stream(state -> moves) #::: moreFrom(nextState, nextMoves)
+		} yield {
+			explored += next._1
+			next
 		}
 
-		val more = uniqueOnly(more0, explored)
-
-		if(more.isEmpty) initial
-		else initial #::: pathsFrom(more, explored ++ more.iterator.map(_._1))
-
-		//TODO: this break. explored set isnt updated correctly
-		/*val tailStream = for {
-			(state, moves) <- initial
-			withHistory = neighborsWithHistory(state, moves)
-			more = newNeighborsOnly(withHistory, explored)
-			newExplored = explored ++ more.iterator.map(_._1)
-			next @ (nextState, nextMoves) <- more
-			path <- pathsFrom(more, newExplored)
-			//add some kind of secondary sorting herew
-		} yield path
-
-		initial #::: tailStream*/
+		moreFrom(initial0.head._1, initial0.head._2)
 	}
 
 	def pathsFrom(start: State): Paths =
@@ -96,6 +66,8 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 		val iter = paths.iterator
 		var n = 0
 		//val res = new VectorBuilder[Seq[Move]]
+
+		if(start == to) return None
 
 		while(iter.hasNext && n < of) {
 			val (state, moves) = iter.next
