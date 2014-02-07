@@ -220,7 +220,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				}
 
 				//if(!lastWaypoint.isDefined || newPath.isEmpty) {
-				if(true) {
+				if(true && selfEnt.onGround) {
 					val posDelta = closestA.headOption.map(
 						_.pos).getOrElse(Vec3.zero) - selfEnt.pos
 
@@ -366,11 +366,11 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 					if i < curPath.length
 					step = curPath(i) + Block.halfBlockVec
 					dir0 = step - footBlockPos
-					//dir = Vec3(dir0.x, 0, dir0.z)
-					dir = dir0
+					dir = Vec3(dir0.x, 0, dir0.z)
+					//dir = dir0
 					len = dir.length / math.pow(i + 1, 6)
-					if dir.length > 0
-				} yield dir.normal * len
+					if dir.length > 0 && dir0.length > 0
+				} yield dir0.normal * len
 
 				val dir = if(dirs.isEmpty) Vec3.zero else dirs.reduce(_ + _)
 
