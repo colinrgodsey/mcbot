@@ -69,13 +69,13 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		val fut = scala.concurrent.future {
 			//TODO: if in water, just pick block closest to goal
 
-			val targetBlock = takeBlockDown(getBlock(goal))
+			val targetBlock = takeBlockDownWater(getBlock(goal))
 
 			val finder = new BlockPathFinder(worldView, targetBlock, maxPathLength)
 
 			val dl = Deadline.now
 
-			val startBlock = takeBlockDown(footBlock)
+			val startBlock = takeBlockDownWater(footBlock)
 
 			if(!targetBlock.isPassable) Nil
 			else blocking {
@@ -121,8 +121,8 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 			if(!endTargetBlock.isPassable || !endStartBlock.isPassable) Nil
 			else {
-				val targetBlock = takeBlockDown(endTargetBlock)
-				val startBlock = takeBlockDown(endStartBlock)
+				val targetBlock = takeBlockDownWater(endTargetBlock)
+				val startBlock = takeBlockDownWater(endStartBlock)
 
 				roughPathFrom(startBlock, targetBlock, 700).toSeq.flatten
 			}
@@ -138,8 +138,8 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 			if(!endTargetBlock.isPassable || !endStartBlock.isPassable) Nil
 			else {
-				val targetBlock = takeBlockDown(endTargetBlock)
-				val startBlock = takeBlockDown(endStartBlock)
+				val targetBlock = takeBlockDownWater(endTargetBlock)
+				val startBlock = takeBlockDownWater(endStartBlock)
 
 				val finder = new BlockPathFinder(worldView, targetBlock, maxPathLength)
 
@@ -306,15 +306,16 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 				if(dy > 0 && dy <= 2)
 					Vec3(dv.x, 0, dv.z).length
-				//else if(p.y.toInt != footBlock.y) 100000
-				else if(dirFac < 0) 10000000
-				else dv.length// * dirFac
+				else if(p.y.toInt != footBlock.globalPos.y) 100000
+				else if(dirFac <= 0) dv.length * 100
+				//else dv.length// * dirFac
+				else dv.length / dirFac
 			}
 
 			val closestIdx = closer.headOption.map(_._2).getOrElse(0)
 
-			if(!closer.isEmpty && closer.head._2 != 0 && !goingUp) {
-				val clVec = curPath(closestIdx) - footBlockPos + Block.halfBlockVec
+			if(!closer.isEmpty && closestIdx >= 1 && !goingUp) {
+				val clVec = curPath(closestIdx - 1) - footBlockPos + Block.halfBlockVec
 				if(clVec.length < 2) {
 					curPath = curPath.drop(closestIdx)
 					lastPathTime = curTime
@@ -512,7 +513,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				case x if x.dist > 1.2 =>
 					val hitPos = pos + vec.normal * (x.dist - 0.2)
 
-					var bl = takeBlockDown(getBlock(hitPos))
+					var bl = takeBlockDownWater(getBlock(hitPos))
 
 					Some(bl.globalPos.toPoint3D + Block.halfBlockVec)
 				case _ => None
@@ -553,7 +554,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			val bl = getBlock(x + footBlockPos + Vec3(0, math.random * 2, 0))
 
 			if(bl.isPassable)
-				Some(takeBlockDown(bl))
+				Some(takeBlockDownWater(bl))
 			else None
 		}
 

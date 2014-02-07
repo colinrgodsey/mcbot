@@ -56,13 +56,36 @@ trait WorldView {
 		//if(!block.isPassable) sys.error("block start solid!")
 		if(!block.isPassable) return block
 
-		while(getBlock(ptr).isPassable && ptr.y > 0 && !getBlock(ptr).btyp.isWater) {
+		while(getBlock(ptr).isPassable && ptr.y > 0) {
 			ptr -= Vec3(0, 1, 0)
 		}
 
 		ptr += Vec3(0, 1, 0)
 
 		getBlock(ptr)
+	}
+
+	def takeBlockDownWater(vec: Vec3): Block =
+		takeBlockDownWater(getBlock(vec))
+
+	def takeBlockDownWater(block: Block): Block = {
+		var ptr = block.globalPos.toPoint3D
+
+		//if(!block.isPassable) sys.error("block start solid!")
+		if(!block.isPassable) return block
+		if(block.btyp.isWater) return block
+
+		while(getBlock(ptr).isPassable && ptr.y > 0 &&
+				!getBlock(ptr).btyp.isWater) {
+			ptr -= Vec3(0, 1, 0)
+		}
+
+		ptr += Vec3(0, 1, 0)
+
+		val bl = getBlock(ptr)
+
+		if(!bl.btyp.isWater && bl.below.btyp.isWater) bl.below
+		else bl
 	}
 
 	def isPassable(bl: Block) = bl.isPassable
@@ -171,13 +194,16 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 
 			//println(ent.pos, ent.onGround, "ENT")
 
-			val (gravity, terminal, drag) = ent match {
+			val (gravity, terminal0, drag0) = ent match {
 				case _: LivingEntity => (32, 78.4, 0.4)
 				//case Minecart(cart) =>
 				case _ => (16, 39.2, 0.4)
 			}
 
-			val gravAcc = if(isWater) Vec3(0, -gravity / 10, 0)
+			val terminal = terminal0//if(isWater) terminal0 / 40 else terminal0
+			val drag = if(isWater) drag0 * 1.2 else drag0
+
+			val gravAcc = if(isWater) Vec3(0, -gravity / 20, 0)
 			else Vec3(0, -gravity, 0)
 
 			var hitGround = false

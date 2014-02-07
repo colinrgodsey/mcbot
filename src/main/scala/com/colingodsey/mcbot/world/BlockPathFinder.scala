@@ -38,13 +38,21 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 			(getBlock(state.globalPos.toPoint3D + x), x)
 		}
 
-		topBlocks.filter { case (bl, mv) =>
+		/*topBlocks.filter { case (bl, mv) =>
 			bl.isPassable && bl.above.isPassable
 		}.sortBy { case (block, moves) =>
 			val vec = destPos - block.globalPos
 
 			vec.length
 		} #::: posBlocks.filter { case (bl, mv) =>
+			bl.isPassable && bl.above.isPassable
+		}.sortBy { case (block, moves) =>
+			val vec = destPos - block.globalPos
+
+			vec.length
+		}*/
+
+		(topBlocks #::: posBlocks).filter { case (bl, mv) =>
 			bl.isPassable && bl.above.isPassable
 		}.sortBy { case (block, moves) =>
 			val vec = destPos - block.globalPos
@@ -61,8 +69,9 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 		val posBlocks = sortedNs.toStream map { x =>
 			(getBlock(state.globalPos.toPoint3D + x), x)
 		}
-		def localBottom = takeBlockDown(
-			getBlock(state.globalPos.toPoint3D))
+		def localBottom =
+			if(!state.btyp.isWater && state.below.btyp.isWater) state.below
+			else takeBlockDownWater(getBlock(state.globalPos.toPoint3D))
 
 		if(!isPassable(state)) return Stream()
 
@@ -108,7 +117,7 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 			val p = block.globalPos.toPoint3D
 			def topBlock = getBlock(p + Vec3(0, 1, 0))
 
-			lazy val lowerBlock = takeBlockDown(block)
+			lazy val lowerBlock = takeBlockDownWater(block)
 			lazy val bottomBlock = getBlock(
 				lowerBlock.globalPos - Vec3(0, 1, 0))
 

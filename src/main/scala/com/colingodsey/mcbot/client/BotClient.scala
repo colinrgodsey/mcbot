@@ -271,8 +271,10 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	def jump(): Unit = {
 		val isWater = footBlock.above.btyp.isWater
-		if(selfEnt.onGround && !isWater) updateEntity(selfId) { case ent: Player =>
-			ent.copy(vel = ent.vel + Vec3(0, jumpSpeed, 0), onGround = false)
+		val footWater = footBlock.btyp.isWater
+		val js = if(footWater) jumpSpeed * 1.1 else jumpSpeed
+		if((selfEnt.onGround) && !isWater) updateEntity(selfId) { case ent: Player =>
+			ent.copy(vel = ent.vel + Vec3(0, js, 0), onGround = false)
 		}/* else if(isWater) updateEntity(selfId) { case ent: Player =>
 			ent.copy(vel = ent.vel + Vec3(0, jumpSpeed / 10, 0), onGround = false)
 		}*/
@@ -450,8 +452,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 				if(walkDir.length > epsilon) {
 					//TODO: should this be dt or dt^2 ?
-					val speed = if(footBlock.btyp.isWater) movementSpeed / 6
-					else movementSpeed
+					/*val speed = if(footBlock.btyp.isWater) movementSpeed / 6
+					else movementSpeed*/
 					val moveVec = walkDir.normal * movementSpeed * dt
 
 					//println(addLen, moveVec, moveLen, movementSpeed)

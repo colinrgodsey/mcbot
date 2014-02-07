@@ -271,7 +271,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 			reward += VecN("home" -> to.property("home"))
 		}
 
-		if(wv.takeBlockDown(wv.getBlock(to.pos)).btyp.isWater && oldQ("water") < 50)
+		if(wv.takeBlockDownWater(wv.getBlock(to.pos)).btyp.isWater && oldQ("water") < 50)
 			reward += VecN("water" -> 1.0)
 
 		//filter out the immediate recursion value
