@@ -67,6 +67,8 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		log.info("getting path")
 		gettingPath = true
 		val fut = scala.concurrent.future {
+			//TODO: if in water, just pick block closest to goal
+
 			val targetBlock = takeBlockDown(getBlock(goal))
 
 			val finder = new BlockPathFinder(worldView, targetBlock, maxPathLength)
@@ -320,6 +322,8 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			}
 		}
 
+		val minLength = if(footBlock.btyp.isWater) 0.7 else 0.15
+
 		//drop head node if we're close
 		if(!curPath.isEmpty) {
 			val nextStep = curPath.head + Block.halfBlockVec
@@ -327,7 +331,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			val goingUp = vec.y > 0
 
 			//CollisionDetection
-			if(vec.length < 0.2) {
+			if(vec.length < minLength) {
 				curPath = curPath.tail
 				lastPathTime = curTime
 				//if(!curPath.isEmpty) say("Next stop, " + curPath.headOption)
@@ -341,6 +345,8 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				log.info("bad path!")
 			}
 		}
+
+		//if(footBlock.btyp.isWater) jump()
 
 		//if we still have a path
 		if(!curPath.isEmpty) {
@@ -360,12 +366,13 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 					if i < curPath.length
 					step = curPath(i) + Block.halfBlockVec
 					dir0 = step - footBlockPos
-					dir = Vec3(dir0.x, 0, dir0.z)
+					//dir = Vec3(dir0.x, 0, dir0.z)
+					dir = dir0
 					len = dir.length / math.pow(i + 1, 6)
 					if dir.length > 0
 				} yield dir.normal * len
 
-				val dir = dirs.reduce(_ + _)
+				val dir = if(dirs.isEmpty) Vec3.zero else dirs.reduce(_ + _)
 
 				val centerVec0 = footBlockPos - lastPathNodePoint
 				val centerVec = Vec3(centerVec0.x, 0, centerVec0.z)
@@ -726,7 +733,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			//if(desire("discover") > wpQ("discover") || math.random < 0.1) findNewRandomWp
 			//println(selQ("discover"),  wpQ("discover"), desire("discover"))
 println(selQ -> wpQ, lastTransition)
-			val discovering = desire("discover") > 10
+			val discovering = desire("discover") > 10 && wpQ("home") > 0.01
 
 			if(discovering && (wpQ("discover") > 20 || math.random < 0.05))
 				findNewRandomWp(false)

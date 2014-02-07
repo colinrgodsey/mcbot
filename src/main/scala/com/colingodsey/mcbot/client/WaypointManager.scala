@@ -12,7 +12,7 @@ import scala.util.Failure
 import akka.actor.{ActorRef, ActorLogging}
 import akka.event.LoggingAdapter
 import java.nio.file.{Paths, Path, StandardCopyOption, Files}
-import com.colingodsey.mcbot.world.{CollisionDetection, FindChunkError}
+import com.colingodsey.mcbot.world.{WorldView, CollisionDetection, FindChunkError}
 import com.colingodsey.collections.{MapVector, VecN, PathFinding}
 import com.colingodsey.ai.{BoltzmannSelector, QLPolicy, QLearning}
 
@@ -74,6 +74,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 	def log: LoggingAdapter
 	def desire: VecN
 	implicit def ec: ExecutionContext
+	implicit def wv: WorldView
 	def waypointFile: File
 	def waypointSwapFile: File
 	def wpMaster: ActorRef
@@ -264,10 +265,14 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		if(!from.connectsTo(toId)) return
 
 		var reward = reward0
+		val oldQ = qValue(trans)
 
-		if(to.property("home") > 0 && qValue(trans)("home") < 1000.0) {
+		if(to.property("home") > 0 && oldQ("home") < 1000.0) {
 			reward += VecN("home" -> to.property("home"))
 		}
+
+		if(wv.takeBlockDown(wv.getBlock(to.pos)).btyp.isWater && oldQ("water") < 50)
+			reward += VecN("water" -> 1.0)
 
 		//filter out the immediate recursion value
 		//why the fuck was i filtering fromID
@@ -277,7 +282,6 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		/*val maxQ = values.toStream.sortBy(
 			-desire.normal * _).headOption.getOrElse(initialValue)*/
 
-		val oldQ = qValue(trans)
 		val keySet = oldQ.weights.keySet ++ values.flatMap(_.weights.keySet)
 		val maxQPart = keySet.map { d =>
 			//val qV = values.toStream.sortBy(x => -x(d)).headOption.getOrElse(initialValue)

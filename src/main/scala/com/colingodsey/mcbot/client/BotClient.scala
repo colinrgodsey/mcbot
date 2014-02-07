@@ -147,8 +147,10 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	var lastTime = curTime
 	var subscribers = Set[ActorRef]()
 	var desire = VecN.zero
-	//var discoverTokens: Double = 0
 	var isRaining = false
+
+	//var discoverTokens: Double = 0
+	var waterTokens: Double = 0
 
 	var pluginMessage: Option[spr.PluginMessage] = None
 
@@ -180,10 +182,13 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		val homeFac = math.max((-dayFac), 0)
 		val rainHome = if(isRaining) 100 else 0
 
-		desire = VecN("discover" -> 12.0 * dayFac, "deadend" -> -10,
-			"home" -> (homeFac * 1000 + rainHome))
+		val water = waterTokens * 10
+		val waterHome = water * 0.01
 
-		//println("desire " + desire)
+		desire = VecN("discover" -> 12.0 * dayFac, "deadend" -> -10 * dayFac,
+			"home" -> (homeFac * 1000 + rainHome + waterHome), "water" -> -(1.0 + water))
+
+		if(math.random < 0.2) log.info("desire " + desire)
 	}
 
 	def lookAt(vec: Vec3) {
@@ -264,10 +269,14 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case Some(x) =>
 	}
 
-	def jump(): Unit = if(selfEnt.onGround) updateEntity(selfId) { case ent: Player =>
-		ent.copy(vel = ent.vel + Vec3(0, jumpSpeed, 0), onGround = false)
+	def jump(): Unit = {
+		val isWater = footBlock.above.btyp.isWater
+		if(selfEnt.onGround && !isWater) updateEntity(selfId) { case ent: Player =>
+			ent.copy(vel = ent.vel + Vec3(0, jumpSpeed, 0), onGround = false)
+		}/* else if(isWater) updateEntity(selfId) { case ent: Player =>
+			ent.copy(vel = ent.vel + Vec3(0, jumpSpeed / 10, 0), onGround = false)
+		}*/
 	}
-
 	def loadingChunk() {
 		context.become(waitingChunkReceive, false)
 	}
@@ -396,43 +405,62 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			val theta = System.currentTimeMillis * 0.0003
 
 			//direction = Point3D(math.cos(theta), 0, math.sin(theta))
-			val moveRes = move(selfId, dt, CollisionDetection.playerBody(stanceDelta))
 
-			if(!moveRes) {
-				updateEntity(selfId) { case ent: Player =>
-					ent.copy(pos = footBlockPos)
+			try {
+				val moveRes = move(selfId, dt, CollisionDetection.playerBody(stanceDelta),
+					footBlock.btyp.isWater)
+
+				if(!moveRes) {
+					updateEntity(selfId) { case ent: Player =>
+						ent.copy(pos = footBlockPos)
+					}
+					log.warning("trying to fix location to block location")
 				}
-				log.warning("trying to fix location to block location")
-			}
 
-			val walkDir = Vec3(direction.x, 0, direction.z)
+				val curBlock = getBlock(selfEnt.pos)
 
-			if(direction !~~ Vec3.zero) {
-				lookAt(direction.normal)
-			}
-
-			if(walkDir !~~ Vec3.zero) {
-				val xzVel = Vec3(selfEnt.vel.x, 0, selfEnt.vel.z)
-				val vecPart = xzVel * walkDir.normal
-				val remVec = xzVel - walkDir.normal * vecPart
-
-				updateEntity(selfId) { case ent: Player =>
-					ent.copy(vel = ent.vel - remVec * 5 * dt)
+				if(curBlock.btyp.isWater) {
+					waterTokens += dt * 1
 				}
-			}
 
-			lastTime = ct
+				waterTokens -= 0.1 * dt
+				waterTokens = math.min(math.max(waterTokens, 0), 100)
 
+				val walkDir = if(footBlock.btyp.isWater) direction
+				else Vec3(direction.x, 0, direction.z)
 
-
-			if(walkDir.length > epsilon) {
-				//TODO: should this be dt or dt^2 ?
-				val moveVec = walkDir.normal * movementSpeed * dt
-
-				//println(addLen, moveVec, moveLen, movementSpeed)
-				updateEntity(selfId) { case ent: Player =>
-					ent.copy(vel = ent.vel + moveVec)
+				if(direction !~~ Vec3.zero) {
+					lookAt(direction.normal)
 				}
+
+				//TODO: try not to max out velocity...
+				if(walkDir !~~ Vec3.zero) {
+					selfEnt.vel * walkDir.normal
+
+					val xzVel = Vec3(selfEnt.vel.x, 0, selfEnt.vel.z)
+					val vecPart = xzVel * walkDir.normal
+					val remVec = xzVel - walkDir.normal * vecPart
+
+					updateEntity(selfId) { case ent: Player =>
+						ent.copy(vel = ent.vel - remVec * 5 * dt)
+					}
+				}
+
+				lastTime = ct
+
+				if(walkDir.length > epsilon) {
+					//TODO: should this be dt or dt^2 ?
+					val speed = if(footBlock.btyp.isWater) movementSpeed / 6
+					else movementSpeed
+					val moveVec = walkDir.normal * movementSpeed * dt
+
+					//println(addLen, moveVec, moveLen, movementSpeed)
+					updateEntity(selfId) { case ent: Player =>
+						ent.copy(vel = ent.vel + moveVec)
+					}
+				}
+			} catch {
+				case x: FindChunkError =>
 			}
 
 			val posChanged = !lastPosEnt.isDefined ||

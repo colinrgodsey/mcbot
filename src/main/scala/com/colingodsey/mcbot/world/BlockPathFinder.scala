@@ -22,7 +22,32 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 		Vec3(-1, 0, -1) -> Set(Vec3(-1, 0, 0), Vec3(0, 0, -1))
 	)
 
-	def legalNeighbors(state: Block): Stream[(Block, Vec3)] = {
+	def legalNeighbors(state: Block): Stream[(Block, Vec3)] =
+		if(state.btyp.isWater) legalNeighborsWater(state)
+		else legalNeighborsLand(state)
+
+	def legalNeighborsWater(state: Block): Stream[(Block, Vec3)] = {
+		val ns = flatNeighbs.toStream #:::
+				flatNeighbs.toStream.map(_ + Vec3(0, 1, 0)) #:::
+				flatNeighbs.toStream.map(_ - Vec3(0, 1, 0))
+
+		val posBlocks = ns map { x =>
+			(getBlock(state.globalPos.toPoint3D + x), x)
+		}
+
+		posBlocks.filter { case (bl, mv) =>
+			bl.isPassable && bl.above.isPassable
+		}.sortBy { case (block, moves) =>
+			/*var moveVec = block.globalPos - state.globalPos
+			val weight = if((moveVec * moveVec) != 0.8) 1 else 1
+			-(moveVec * delta * weight)// - moveVec.length*/
+			val vec = destPos - block.globalPos
+
+			vec.length
+		}
+	}
+
+	def legalNeighborsLand(state: Block): Stream[(Block, Vec3)] = {
 		val delta = destPos - state.globalPos
 
 		val sortedNs = flatNeighbs//.sortBy(_ * delta)

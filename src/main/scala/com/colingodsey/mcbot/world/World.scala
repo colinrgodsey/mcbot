@@ -39,9 +39,12 @@ trait WorldView {
 
 		val chunk = getChunk(pos)
 
-		chunk(math.floor(pos.x).toInt - chunk.x * Chunk.dims.x,
+		/*chunk(math.floor(pos.x).toInt - chunk.x * Chunk.dims.x,
 			math.floor(pos.y).toInt - chunk.y * Chunk.dims.y,
-			math.floor(pos.z).toInt - chunk.z * Chunk.dims.z)
+			math.floor(pos.z).toInt - chunk.z * Chunk.dims.z)*/
+		chunk(math.floor(pos.x).toInt & 15,
+			math.floor(pos.y).toInt & 15,
+			math.floor(pos.z).toInt & 15)
 	}
 
 	def takeBlockDown(vec: Vec3): Block =
@@ -53,7 +56,7 @@ trait WorldView {
 		//if(!block.isPassable) sys.error("block start solid!")
 		if(!block.isPassable) return block
 
-		while(getBlock(ptr).isPassable && ptr.y > 0) {
+		while(getBlock(ptr).isPassable && ptr.y > 0 && !getBlock(ptr).btyp.isWater) {
 			ptr -= Vec3(0, 1, 0)
 		}
 
@@ -152,7 +155,7 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 	def chunkLoaded()
 
 	//TODO: for half blocks, just offset final position  with block depth
-	def move(eid: Int, dt: Double, body: Body): Boolean = {
+	def move(eid: Int, dt: Double, body: Body, isWater: Boolean): Boolean = {
 		var retVal = true
 		if(dt > epsilon) updateEntity(eid) { ent =>
 			import CollisionDetection._
@@ -174,7 +177,8 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 				case _ => (16, 39.2, 0.4)
 			}
 
-			val gravAcc = Vec3(0, -gravity, 0)
+			val gravAcc = if(isWater) Vec3(0, -gravity / 10, 0)
+			else Vec3(0, -gravity, 0)
 
 			var hitGround = false
 
@@ -250,33 +254,37 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 
 			val Some((newPos, postMoveVec)) = moveRes
 
-			try if(traceFunc(newPos, Vec3(1, 1, 1)) contains StartSolid) {
+			val failed = try if(traceFunc(newPos, Vec3(0.1, 0.1, 0.1)) contains StartSolid) {
 				log.warning("possible start solid")
 				ent.entityCopy(vel = Vec3(math.random - 0.5,
 					math.random - 0.5, math.random - 0.5).normal)
-				return false
-			} catch {
+				true
+			} else false catch {
 				case t: Throwable =>
 					log.error(t, "traceFunc fail!")
+				true
 			}
 
-			require(postMoveVec.length <= moveVec.length)
+			if(failed) ent
+			else {
+				require(postMoveVec.length <= moveVec.length)
 
-			val newVec = postMoveVec
+				val newVec = postMoveVec
 
-			val resVel = (newVec / dt)// * dragFac// + gravAcc * dt
+				val resVel = (newVec / dt)// * dragFac// + gravAcc * dt
 
-			val arggggVel = if(resVel.length > terminalVel.length) {
-				//log.error("wbad res length!!! " + (resVel.length - terminalVel.length))
-				terminalVel
-			} else resVel
+				val arggggVel = if(resVel.length > terminalVel.length) {
+					//log.error("wbad res length!!! " + (resVel.length - terminalVel.length))
+					terminalVel
+				} else resVel
 
-			val xzOnly = Vec3(arggggVel.x, 0, arggggVel.z)
+				val xzOnly = Vec3(arggggVel.x, 0, arggggVel.z)
 
-			val finalVel = if(xzOnly.length < 0.1) Vec3(0, arggggVel.y, 0)
-			else arggggVel
+				val finalVel = if(xzOnly.length < 0.1) Vec3(0, arggggVel.y, 0)
+				else arggggVel
 
-			ent.entityCopy(pos = newPos, vel = finalVel, onGround = hitGround)
+				ent.entityCopy(pos = newPos, vel = finalVel, onGround = hitGround)
+			}
 		}
 
 		retVal

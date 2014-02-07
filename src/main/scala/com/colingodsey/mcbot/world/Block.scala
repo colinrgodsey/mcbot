@@ -11,9 +11,15 @@ object Block {
 	case object Dirt extends ASolidBlockType(3)
 	//
 	case object Bedrock extends ASolidBlockType(7)
-	case object Water extends ABlockType(8)
+	case object FlowWater extends ABlockType(8) {
+		override def isWater = true
+	}
+	case object Water extends ABlockType(9) {
+		override def isWater = true
+	}
 	//
-	case object Lava extends ABlockType(10)
+	case object FlowLava extends ABlockType(10)
+	case object Lava extends ABlockType(11)
 	//
 	case object Sand extends ASolidBlockType(12)
 	case object Gravel extends ASolidBlockType(13)
@@ -51,15 +57,16 @@ object Block {
 
 		def isFence = false
 		def isDoor = false
+		def isWater = false
 	}
 
 	trait SolidBlockType extends BlockType {
 		def isPassable: Boolean = false
 	}
 
-	val typeSet = Set[BlockType](Air, Stone, Grass, Dirt, Bedrock, Water,
-		Lava, Sand, Gravel, GoldOre, Torch, RedstoneWire, Fence, Gate,
-		WoodDoor, IronDoor, NetherFence, Rail)
+	val typeSet = Set[BlockType](Air, Stone, Grass, Dirt, Bedrock, FlowWater,
+		FlowLava, Sand, Gravel, GoldOre, Torch, RedstoneWire, Fence, Gate,
+		WoodDoor, IronDoor, NetherFence, Rail, Lava, Water)
 
 	val halfBlockVec = Vec3.one / 2
 
