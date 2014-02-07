@@ -116,9 +116,9 @@ trait CollisionDetection {
 		axisNorms.map(-_) ++ axisNorms
 
 	private def normalFromBlockDelta(start: Block, end: Block) = {
-		val dx = end.globalPos.x - start.globalPos.x
-		val dy = end.globalPos.y - start.globalPos.y
-		val dz = end.globalPos.z - start.globalPos.z
+		val dx = end.pos.x - start.pos.x
+		val dy = end.pos.y - start.pos.y
+		val dz = end.pos.z - start.pos.z
 
 		require((math.abs(dx) + math.abs(dy) + math.abs(dz)) == 1,
 			"bad block delta normal? " + (dx, dy, dz))
@@ -127,9 +127,9 @@ trait CollisionDetection {
 	}
 
 	private def normalsFromBlockDelta(start: Block, end: Block) = {
-		val dx = end.globalPos.x - start.globalPos.x
-		val dy = end.globalPos.y - start.globalPos.y
-		val dz = end.globalPos.z - start.globalPos.z
+		val dx = end.pos.x - start.pos.x
+		val dy = end.pos.y - start.pos.y
+		val dz = end.pos.z - start.pos.z
 
 		var outSet = Set[Vec3]()
 
@@ -193,16 +193,16 @@ trait CollisionDetection {
 			if (vec * norm) < 0
 			//cornerVec = (from - startBlock.globalPos)
 			//faceDot = cornerVec * norm
-			blockCenter = Block.halfBlockVec + startBlock.globalPos
+			blockCenter = Block.halfBlockVec + startBlock.pos
 			blockFace = blockCenter - norm * 0.5
 			//faceDist = if(faceDot < 0) 1 + faceDot else faceDot
 			//hitDist = -faceDist / (vec * norm)
 			hitDist = math.max(((blockFace - from) * norm) / (vec.normal * norm), 0)
 			if hitDist <= vec.length
 			//vecPart = vec.normal * hitDist
-			endBlock = getBlock(startBlock.globalPos - norm)
+			endBlock = getBlock(startBlock.pos - norm)
 			_ = {
-				val blockDelta = endBlock.globalPos - startBlock.globalPos
+				val blockDelta = endBlock.pos - startBlock.pos
 				require(blockDelta.length == 1, (blockDelta, hitDist))
 				require(hitDist >= 0)
 				//require(faceDist >= 0 && faceDist <= 1, faceDist)

@@ -271,8 +271,8 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 			reward += VecN("home" -> to.property("home"))
 		}
 
-		if(wv.takeBlockDownWater(wv.getBlock(to.pos)).btyp.isWater && oldQ("water") < 50)
-			reward += VecN("water" -> 1.0)
+		if(wv.takeBlockDownWater(wv.getBlock(to.pos)).btyp.isWater && oldQ("water") < 100)
+		reward += VecN("water" -> 40.0)
 
 		//filter out the immediate recursion value
 		//why the fuck was i filtering fromID
@@ -315,8 +315,8 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		if(from.connections.get(toId) == None && fromId != toId) {
 			val path = getLongPath(from.pos, to.pos)
 
-			/*if(path.isEmpty) log.warning("Bad connect!")
-			else*/ {
+			if(path.isEmpty) log.warning("Bad connect!")
+			else {
 				val conn = toId -> Connection(toId, path.length)
 				addWaypoint(from.copy(connections = from.connections + conn))
 

@@ -185,8 +185,22 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		val water = waterTokens * 10
 		val waterHome = water * 0.01
 
-		desire = VecN("discover" -> 12.0 * dayFac, "deadend" -> -10 * dayFac,
-			"home" -> (homeFac * 1000 + rainHome + waterHome), "water" -> -(1.0 + water))
+		val isLost = if(lastTransition.isDefined) {
+			val transs = transFrom(lastTransition.get).map(qValue(_)("home"))
+			if(!transs.isEmpty) {
+				val sel = transs.max
+
+				sel == 0
+			} else false
+		} else false
+
+		val lostFac = if(isLost) 15 else 0
+
+		desire = VecN("discover" -> (12.0 * dayFac + lostFac),
+			"deadend" -> -(10 * dayFac + lostFac),
+			"up" -> (if(isLost) 1.0 else 0.0),
+			"home" -> (homeFac * 1000 + rainHome + waterHome),
+			"water" -> -(10.0 + water))
 
 		if(math.random < 0.2) log.info("desire " + desire)
 	}
@@ -270,15 +284,30 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	}
 
 	def jump(): Unit = {
-		val isWater = footBlock.above.btyp.isWater
+		val eyeWater = footBlock.above.btyp.isWater
 		val footWater = footBlock.btyp.isWater
-		val js = if(footWater) jumpSpeed * 1.1 else jumpSpeed
-		if((selfEnt.onGround) && !isWater) updateEntity(selfId) { case ent: Player =>
+		val js = if(footWater) jumpSpeed * 1.1
+		else jumpSpeed
+
+		if(!eyeWater && footWater && !selfEnt.onGround) {
+			updateEntity(selfId) { case ent: Player =>
+				ent.copy(vel = ent.vel + Vec3(0, js * 1.1, 0), onGround = false)
+			}
+		}
+
+		if(selfEnt.onGround && !eyeWater) updateEntity(selfId) { case ent: Player =>
 			ent.copy(vel = ent.vel + Vec3(0, js, 0), onGround = false)
 		}/* else if(isWater) updateEntity(selfId) { case ent: Player =>
 			ent.copy(vel = ent.vel + Vec3(0, jumpSpeed / 10, 0), onGround = false)
 		}*/
 	}
+
+	def addVel(vel: Vec3) {
+		updateEntity(selfId) { ent =>
+			ent.entityCopy(vel = ent.vel + vel)
+		}
+	}
+
 	def loadingChunk() {
 		context.become(waitingChunkReceive, false)
 	}
@@ -428,7 +457,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				waterTokens -= 0.1 * dt
 				waterTokens = math.min(math.max(waterTokens, 0), 100)
 
-				val walkDir = if(footBlock.btyp.isWater) direction
+				val walkDir = if(footBlock.btyp.isWater)
+					Vec3(direction.x, math.max(direction.y, 0), direction.z)
 				else Vec3(direction.x, 0, direction.z)
 
 				if(direction !~~ Vec3.zero) {

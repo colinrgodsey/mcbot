@@ -96,18 +96,18 @@ object Block {
 }
 
 final case class ChunkBlock private[world] (
-		x: Int, y: Int, z: Int, chunk: Chunk)(implicit val wv: WorldView) extends Block {
+		cx: Int, cy: Int, cz: Int, chunk: Chunk)(implicit val wv: WorldView) extends Block {
 	import Chunk._
 	
-	require(x >= 0 && x < dims.x, "bad x " + x + " " + chunk.pos)
-	require(y >= 0 && y < dims.y, "bad y " + y + " " + chunk.pos)
-	require(z >= 0 && z < dims.z, "bad z " + z + " " + chunk.pos)
+	require(cx >= 0 && cx < dims.x, "bad x " + cx + " " + chunk.pos)
+	require(cy >= 0 && cy < dims.y, "bad y " + cy + " " + chunk.pos)
+	require(cz >= 0 && cz < dims.z, "bad z " + cz + " " + chunk.pos)
 
-	def typ: Int = chunk.typ(x, y, z)
-	def meta: Int = chunk.meta(x, y, z)
-	def light: Int = chunk.light(x, y, z)
-	def skyLight: Int = chunk.skyLight(x, y, z)
-	def biome: Int = chunk.biome(x, y, z)
+	def typ: Int = chunk.typ(cx, cy, cz)
+	def meta: Int = chunk.meta(cx, cy, cz)
+	def light: Int = chunk.light(cx, cy, cz)
+	def skyLight: Int = chunk.skyLight(cx, cy, cz)
+	def biome: Int = chunk.biome(cx, cy, cz)
 
 	def isPassable: Boolean = {
 		val bel = below
@@ -117,8 +117,8 @@ final case class ChunkBlock private[world] (
 		} else btyp.isPassable) && !bel.btyp.isFence
 	}
 
-	lazy val globalPos: IPoint3D = IPoint3D(x + chunk.x * dims.x,
-		y + chunk.y * dims.y, z + chunk.z * dims.z)
+	lazy val pos: IPoint3D = IPoint3D(cx + chunk.x * dims.x,
+		cy + chunk.y * dims.y, cz + chunk.z * dims.z)
 }
 
 trait Block extends Equals {
@@ -132,20 +132,19 @@ trait Block extends Equals {
 
 	def wv: WorldView
 
-	def below = wv.getBlock(globalPos - Vec3(0, 1, 0))
-	def above = wv.getBlock(globalPos.toPoint3D + Vec3(0, 1, 0))
+	def below = wv.getBlock(pos - Vec3(0, 1, 0))
+	def above = wv.getBlock(pos.toPoint3D + Vec3(0, 1, 0))
 
 	def btyp = Block.types(typ)
 
 	def isPassable: Boolean
 
-	def x: Int
-	def y: Int
-	def z: Int
+	def cx: Int
+	def cy: Int
+	def cz: Int
 
-	def pos = IPoint3D(x, y, z)
-	//def globalPos = IPoint3D(x, y, z)
-	def globalPos: IPoint3D
+	def chunkPos = IPoint3D(cx, cy, cz)
+	def pos: IPoint3D
 
 	object door {
 		//require door
@@ -159,7 +158,7 @@ trait Block extends Equals {
 	}
 }
 
-case class NoBlock(x: Int, y: Int, z: Int)(implicit val wv: WorldView) extends Block {
+case class NoBlock(cx: Int, cy: Int, cz: Int)(implicit val wv: WorldView) extends Block {
 	import Chunk._
 
 	def typ: Int = Block.Air.typ
@@ -169,5 +168,5 @@ case class NoBlock(x: Int, y: Int, z: Int)(implicit val wv: WorldView) extends B
 	def biome: Int = 0
 	def isPassable = true
 
-	def globalPos: IPoint3D = pos
+	def pos: IPoint3D = chunkPos
 }

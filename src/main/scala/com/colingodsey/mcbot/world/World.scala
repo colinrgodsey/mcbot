@@ -14,6 +14,7 @@ import scala.concurrent.{ExecutionContext, Future, blocking}
 case class FindChunkError(x: Int, y: Int, z: Int, point: IPoint3D) extends Exception(
 	s"chunk not found: $point for point $x, $y, $z")
 
+//thread safe view of the mutable world
 trait WorldView {
 	def entities: Map[Int, Entity]
 	def chunks: Map[IPoint3D, Chunk]
@@ -51,7 +52,7 @@ trait WorldView {
 		takeBlockDown(getBlock(vec))
 
 	def takeBlockDown(block: Block): Block = {
-		var ptr = block.globalPos.toPoint3D
+		var ptr = block.pos.toPoint3D
 
 		//if(!block.isPassable) sys.error("block start solid!")
 		if(!block.isPassable) return block
@@ -69,7 +70,7 @@ trait WorldView {
 		takeBlockDownWater(getBlock(vec))
 
 	def takeBlockDownWater(block: Block): Block = {
-		var ptr = block.globalPos.toPoint3D
+		var ptr = block.pos.toPoint3D
 
 		//if(!block.isPassable) sys.error("block start solid!")
 		if(!block.isPassable) return block
@@ -200,8 +201,8 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 				case _ => (16, 39.2, 0.4)
 			}
 
-			val terminal = terminal0//if(isWater) terminal0 / 40 else terminal0
-			val drag = if(isWater) drag0 * 1.2 else drag0
+			val terminal = if(isWater) terminal0 / 2 else terminal0
+			val drag = if(isWater) drag0 * 1.3 else drag0
 
 			val gravAcc = if(isWater) Vec3(0, -gravity / 20, 0)
 			else Vec3(0, -gravity, 0)
@@ -236,7 +237,7 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 
 						val off = Vec3(0, minY - 0.5 + 0.1, 0)
 
-						val blPos = Block.halfBlockVec + off + getBlock(ent.pos).globalPos
+						val blPos = Block.halfBlockVec + off + getBlock(ent.pos).pos
 
 						//None
 						Some(blPos, Vec3.zero)
