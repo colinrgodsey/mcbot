@@ -681,7 +681,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				getPath(sel.pos)
 
 				if(path.length < 2) {
-					disconnectWaypoints(lastWaypointId.get, sel.id)
+					//disconnectWaypoints(lastWaypointId.get, sel.id)
 
 					log.info("bad wp sel!")
 					moveGoal = None
