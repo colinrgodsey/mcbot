@@ -145,7 +145,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 				val finder = new BlockPathFinder(worldView, targetBlock, maxPathLength)
 
 				//roughPathFrom(startBlock, targetBlock, 700).toSeq.flatten
-				finder.pathFrom(startBlock, targetBlock, 4800).toSeq.flatten
+				finder.pathFrom(startBlock, targetBlock, 80800).toSeq.flatten
 			}
 		} catch {
 			case t: FindChunkError => Nil
@@ -153,7 +153,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 	}
 
 	def roughPathFrom(start: Block, to: Block, of: Int = 1000): Option[Seq[Vec3]] = blocking {
-		val finder = new BlockPathFinder(worldView, to, 40)
+		val finder = new BlockPathFinder(worldView, to, 35)
 		val paths = finder.pathsFrom(start)
 
 		val iter = paths.iterator
@@ -198,8 +198,8 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 			//either super close, or has path smaller than 30
 			//must be slightly smaller than max path search range
-			isSuperClose || (!p.isEmpty && p.length < 20 &&
-					!p2.isEmpty && p2.length < 20)
+			isSuperClose || (!p.isEmpty && p.length < 13 &&
+					!p2.isEmpty && p2.length < 13)
 		}
 
 		closest.headOption match {
@@ -324,7 +324,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			}
 		}
 
-		val minLength = if(footBlock.btyp.isWater) 0.7 else 0.15
+		val minLength = if(footBlock.btyp.isWater) 0.7 else 0.233
 
 		//drop head node if we're close
 		if(!curPath.isEmpty) {

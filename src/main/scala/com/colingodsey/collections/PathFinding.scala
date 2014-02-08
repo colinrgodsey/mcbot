@@ -37,13 +37,18 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 		var explored = Set[State](initial0.head._1)
 
 		def moreFrom(state: State, moves: List[Move]): Paths = for {
-			nextPath @ (nextState, nextMoves) <- neighborsWithHistory(state, moves)
-			if !explored(nextState)
-			//_ = explored += nextState
-			next <- Stream(nextPath) #::: moreFrom(nextState, nextMoves)
+			nextPath @ (nextState, nextMoves) <- {
+				val ns = neighborsWithHistory(state, moves).filter(x => !explored(x._1))
+
+				explored ++= ns.map(_._1)
+
+				ns
+			}
+			next <- Stream(nextPath) append moreFrom(nextState, nextMoves)
 			//if !explored(next._1)
 		} yield {
-			explored += next._1
+			//explored += next._1
+
 			next
 		}
 
