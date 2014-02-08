@@ -39,11 +39,11 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 		def moreFrom(state: State, moves: List[Move]): Paths = for {
 			nextPath @ (nextState, nextMoves) <- neighborsWithHistory(state, moves)
 			if !explored(nextState)
-			_ = explored += nextState
+			//_ = explored += nextState
 			next <- Stream(nextPath) #::: moreFrom(nextState, nextMoves)
 			//if !explored(next._1)
 		} yield {
-			//explored += next._1
+			explored += next._1
 			next
 		}
 
