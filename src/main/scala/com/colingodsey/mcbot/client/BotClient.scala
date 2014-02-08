@@ -185,7 +185,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		val water = waterTokens * 10
 		val waterHome = water * 0.01
 
-		val isLost = if(lastTransition.isDefined) {
+		val isLost0 = if(lastTransition.isDefined) {
 			val transs = transFrom(lastTransition.get).map(qValue(_)("home"))
 			if(!transs.isEmpty) {
 				val sel = transs.max
@@ -193,6 +193,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				sel == 0
 			} else false
 		} else false
+
+		var isLost = false
 
 		val lostFac = if(isLost) 15 else 0
 

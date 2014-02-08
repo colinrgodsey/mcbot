@@ -144,8 +144,20 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 				else None
 			}
 		}*/
+		val upperNRes = posBlocks flatMap { case (block, move) =>
+			if(!upperPossible) Nil
+			else {
+				val p = block.pos.toPoint3D
+				def topBlock = getBlock(p + Vec3(0, 2, 0))
+
+				if(!block.isPassable && topBlock.isPassable &&
+						block.above.isPassable)
+					Some(block.above, move + Vec3(0, 1, 0))
+				else None
+			}
+		}
 		//use bock directly above us
-		val upperN = if(upperPossible) Stream(state.above -> Vec3(0, 1, 0))
+		val upperN = if(upperPossible && !upperNRes.isEmpty) Stream(state.above -> Vec3(0, 1, 0))
 		else Stream()
 
 		val dropB = if(state.below.isPassable) Stream(state.below -> Vec3(0, -1, 0))

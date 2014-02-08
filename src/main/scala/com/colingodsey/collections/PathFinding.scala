@@ -33,20 +33,21 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 		case (block, move) => !explored(block)
 	}*/
 
-	def pathsFrom(initial0: Paths, explored0: Set[State]): Paths = {
-		var explored = explored0
+	def pathsFrom(initial0: Paths, explored0asdsad: Set[State]): Paths = {
+		var explored = Set[State]()
 
 		def moreFrom(state: State, moves: List[Move]): Paths = for {
-			(nextState, nextMoves) <- newNeighborsOnly(
-				neighborsWithHistory(state, moves), explored)
+			nextPath @ (nextState, nextMoves) <- neighborsWithHistory(state, moves)
 			if !explored(nextState)
-			next <- Stream(state -> moves) #::: moreFrom(nextState, nextMoves)
+			_ = explored += nextState
+			next <- Stream(nextPath) #::: moreFrom(nextState, nextMoves)
+			//if !explored(next._1)
 		} yield {
 			explored += next._1
 			next
 		}
 
-		moreFrom(initial0.head._1, initial0.head._2)
+		initial0 #::: moreFrom(initial0.head._1, initial0.head._2)
 	}
 
 	def pathsFrom(start: State): Paths =
