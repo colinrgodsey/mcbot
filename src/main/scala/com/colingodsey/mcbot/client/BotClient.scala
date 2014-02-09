@@ -198,13 +198,17 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 		val lostFac = if(isLost) 15 else 0
 
-		desire = VecN("discover" -> (12.0 * dayFac + lostFac),
+		desire = VecN("discover" -> (20.0 * dayFac + lostFac),
 			"deadend" -> -(10 * dayFac + lostFac),
 			"up" -> (if(isLost) 1.0 else 0.0),
 			"home" -> (homeFac * 1000 + rainHome + waterHome),
 			"water" -> -(10.0 + water))
 
 		if(math.random < 0.2) log.info("desire " + desire)
+	}
+
+	def breakBlock(bl: Block) {
+
 	}
 
 	def lookAt(vec: Vec3) {
@@ -475,9 +479,10 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 					val vecPart = xzVel * walkDir.normal
 					val remVec = xzVel - walkDir.normal * vecPart
 
-					updateEntity(selfId) { case ent: Player =>
-						ent.copy(vel = ent.vel - remVec * 5 * dt)
-					}
+					if(remVec.length > 0.01)
+						updateEntity(selfId) { case ent: Player =>
+							ent.copy(vel = ent.vel - remVec)
+						}
 				}
 
 				lastTime = ct

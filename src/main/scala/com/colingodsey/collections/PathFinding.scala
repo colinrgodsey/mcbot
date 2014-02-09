@@ -45,12 +45,7 @@ trait PathFinding[State <: Equals, Move <: Equals] {
 				ns
 			}
 			next <- Stream(nextPath) append moreFrom(nextState, nextMoves)
-			//if !explored(next._1)
-		} yield {
-			//explored += next._1
-
-			next
-		}
+		} yield next
 
 		initial0 #::: moreFrom(initial0.head._1, initial0.head._2)
 	}

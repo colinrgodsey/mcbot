@@ -267,7 +267,7 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		var reward = reward0
 		val oldQ = qValue(trans)
 
-		if(to.property("home") > 0 && oldQ("home") < 1000.0) {
+		if(to.property("home") > 0 && oldQ("home") < 10000.0) {
 			reward += VecN("home" -> to.property("home"))
 		}
 

@@ -32,3 +32,48 @@ Exploration-
 *All nodes have a familiarity property to them, moving from this node spreads its property
 *Going to the most unfamiliar places
 *Enforce a 'craving' for new Wps, if exploring and getting nowere, increase explore
+
+
+
+2-7-2014  -- Pathing milestone! Capability to handle multiple goals.
+Most of the above has been implemented.
+
+
+
+
+Waypoint/Goal Refactor
+*Real state -> action association.
+*Waypoints hold connections to non-terrestrial states
+  *Waypoints are terrestrial goal states whose action is simply the move to that location.
+  *Terrestrial waypoints may link to non-terrestrial goals
+    *eg Waypoint may connect to a 'mining' state
+    *Any action state always has a link back to the last waypoint
+  *Non-terrestrial goals allow concepts to be built independant of location
+
+*Include random actions within the policy selection process
+
+Block Manipulation
+*Use WorldView to mock up potential changes and simulate from there.
+  *Test for potential breaking of paths.
+  *Test if changes expose additional paths
+  *Test possibles changes to see if it increases the maxQ (with respect to desire) of last waypoint.
+  *
+*When seeing a player, signal a 'player' reward that is a detractor when doing block manipulation.
+*When manipulating blocks, signal a reward for 'own'
+*When seeing strange blocks away from 'own' or 'home', reward 'player'
+*Manipulation weight = own - home - player
+
+Path Coherence Q-learning (unnecessary, use static logic)
+*Learn to follow a path with a simple reward system
+  *Current state is the current block we are in.
+    //*Discrete state(isCentered: Boolean,
+    //    solid for: neighbors in a 3x3x3 area), goingTo: Which neighbor)
+    *Corner - blocked
+    *Corner - open
+    *Jump - Corner - block
+  *Actions
+    *Nudge - nudge to last target (center)
+    *Jump
+    *Move - 1 of 4 directions
+  *An action may not result in a state change, in which case, repeat.
+

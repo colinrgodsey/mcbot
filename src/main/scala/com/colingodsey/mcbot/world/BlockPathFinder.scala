@@ -6,7 +6,7 @@ import com.colingodsey.logos.collections.Vec3
 class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: Int) extends PathFinding[Block, Vec3] {
 	import worldView._
 
-	val destPos = dest.pos.toPoint3D
+	val destPos = dest.pos.toVec3
 
 	private val flatNeighbs = Seq(
 		Vec3(-1, 0, 0),
@@ -28,14 +28,14 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 
 	def legalNeighborsWater(state: Block): Stream[(Block, Vec3)] = {
 		val topBlocks = flatNeighbs.toStream.map(_ + Vec3(0, 1, 0)) map { x =>
-			(getBlock(state.pos.toPoint3D + x), x)
+			(getBlock(state.pos.toVec3 + x), x)
 		}
 
 		val ns = flatNeighbs.toStream #:::
 				flatNeighbs.toStream.map(_ - Vec3(0, 1, 0))
 
 		val posBlocks = ns map { x =>
-			(getBlock(state.pos.toPoint3D + x), x)
+			(getBlock(state.pos.toVec3 + x), x)
 		}
 
 		/*topBlocks.filter { case (bl, mv) =>
@@ -67,7 +67,7 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 		val sortedNs = flatNeighbs//.sortBy(x => (state.pos + x - destPos).length)
 
 		val posBlocks = sortedNs.toStream map { x =>
-			(getBlock(state.pos.toPoint3D + x), x)
+			(getBlock(state.pos.toVec3 + x), x)
 		}
 
 		val onGround = !state.below.isPassable
@@ -98,7 +98,7 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 		val cornerN = corners.toStream filter { case (corner, reqs) =>
 			(reqs -- availFlatN).isEmpty
 		} flatMap { case (corner, reqs) =>
-			val p = state.pos.toPoint3D + corner
+			val p = state.pos.toVec3 + corner
 			val block = getBlock(p)
 
 			val r = !block.below.isPassable &&
@@ -110,7 +110,7 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 		}
 
 		val lowerN = posBlocks flatMap { case (block, move) =>
-			val p = block.pos.toPoint3D
+			val p = block.pos.toVec3
 			//def topBlock = getBlock(p + Vec3(0, 1, 0))
 
 			lazy val lowerBlock = takeBlockDownWater(block)
@@ -129,7 +129,7 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 		}
 
 		lazy val upperPossible = getBlock(
-			state.pos.toPoint3D + Vec3(0, 2, 0)).isPassable &&
+			state.pos.toVec3 + Vec3(0, 2, 0)).isPassable &&
 			onGround
 
 		/*val upperN = posBlocks flatMap { case (block, move) =>
@@ -147,7 +147,7 @@ class BlockPathFinder(val worldView: WorldView, dest: Block, val maxPathLength: 
 		val upperNRes = posBlocks flatMap { case (block, move) =>
 			if(!upperPossible) Nil
 			else {
-				val p = block.pos.toPoint3D
+				val p = block.pos.toVec3
 				def topBlock = getBlock(p + Vec3(0, 2, 0))
 
 				if(!block.isPassable && topBlock.isPassable &&

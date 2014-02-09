@@ -133,7 +133,7 @@ trait Block extends Equals {
 	def wv: WorldView
 
 	def below = wv.getBlock(pos - Vec3(0, 1, 0))
-	def above = wv.getBlock(pos.toPoint3D + Vec3(0, 1, 0))
+	def above = wv.getBlock(pos.toVec3 + Vec3(0, 1, 0))
 
 	def btyp = Block.types(typ)
 
@@ -145,6 +145,15 @@ trait Block extends Equals {
 
 	def chunkPos = IPoint3D(cx, cy, cz)
 	def pos: IPoint3D
+
+	def center: Vec3 = pos.toVec3 + Block.halfBlockVec
+
+	def canEqual(that: Any) = that.isInstanceOf[Block]
+
+	override def equals(that: Any) = that match {
+		case x: Block if x.pos == pos => true
+		case _ => false
+	}
 
 	object door {
 		//require door

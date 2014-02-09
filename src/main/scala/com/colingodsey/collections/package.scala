@@ -14,10 +14,10 @@ package object collections {
 	}
 
 	final case class IPoint3D(x: Int, y: Int, z: Int) {
-		def toPoint3D = Vec3(x, y, z)
+		def toVec3 = Vec3(x, y, z)
 	}
 
-	implicit def IPoint3DToPoint3D(x: IPoint3D) = x.toPoint3D
+	implicit def IPoint3DToPoint3D(x: IPoint3D) = x.toVec3
 
 	implicit final class ChannelBufferSeq(buf: ChannelBuffer) extends
 	immutable.IndexedSeq[Byte] with IndexedSeqOptimized[Byte, immutable.IndexedSeq[Byte]] {

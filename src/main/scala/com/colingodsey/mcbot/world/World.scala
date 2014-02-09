@@ -52,7 +52,7 @@ trait WorldView {
 		takeBlockDown(getBlock(vec))
 
 	def takeBlockDown(block: Block): Block = {
-		var ptr = block.pos.toPoint3D
+		var ptr = block.pos.toVec3
 
 		//if(!block.isPassable) sys.error("block start solid!")
 		if(!block.isPassable) return block
@@ -70,7 +70,7 @@ trait WorldView {
 		takeBlockDownWater(getBlock(vec))
 
 	def takeBlockDownWater(block: Block): Block = {
-		var ptr = block.pos.toPoint3D
+		var ptr = block.pos.toVec3
 
 		//if(!block.isPassable) sys.error("block start solid!")
 		if(!block.isPassable) return block
