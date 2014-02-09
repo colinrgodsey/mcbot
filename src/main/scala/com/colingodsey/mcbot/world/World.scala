@@ -202,7 +202,9 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 			}
 
 			val terminal = if(isWater) terminal0 / 2 else terminal0
-			val drag = if(isWater) drag0 * 1.3 else drag0
+			val drag = if(isWater) drag0 * 1.3
+			else if(ent.onGround) drag0 * 1.1
+			else drag0
 
 			val gravAcc = if(isWater) Vec3(0, -gravity / 20, 0)
 			else Vec3(0, -gravity, 0)

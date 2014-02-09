@@ -334,14 +334,14 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 			val goingUp = vec.y > 0
 
 			//CollisionDetection
-			if(vec.length < minLength || (!selfEnt.onGround && goingUp)) {
+			if(vec.length < minLength) {
 				lastPathNodePoint = curPath.head + Block.halfBlockVec
 				curPath = curPath.tail
 				lastPathTime = curTime
 				//if(!curPath.isEmpty) say("Next stop, " + curPath.headOption)
 				/*if(curPath.isEmpty) */direction = Vec3.zero
 				//log.info("visited path node")
-			} else if(vec.length > 4 && math.abs(vec.y) < epsilon) {
+			} else if(vec.length > 2 && math.abs(vec.y) < epsilon) {
 				direction = Vec3.zero
 				randomPushSelf()
 				curPath = Stream()
@@ -395,7 +395,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 		}
 
 		//ignore directly above blocks
-		if(!curPath.isEmpty) {
+		if(!curPath.isEmpty && !footBlock.btyp.isWater) {
 			if(getBlock(curPath.head).below.isPassable) curPath = curPath.tail
 		}
 

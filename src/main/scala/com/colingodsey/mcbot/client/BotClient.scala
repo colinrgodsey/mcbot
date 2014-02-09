@@ -481,7 +481,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 					if(remVec.length > 0.01)
 						updateEntity(selfId) { case ent: Player =>
-							ent.copy(vel = ent.vel - remVec)
+							ent.copy(vel = ent.vel - remVec / 2)
 						}
 				}
 
