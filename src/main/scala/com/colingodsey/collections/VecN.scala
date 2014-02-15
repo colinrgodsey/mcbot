@@ -1,6 +1,6 @@
 package com.colingodsey.collections
 
-import com.colingodsey.logos.collections.{VecCompanion, VecLike, Vec}
+import com.colingodsey.logos.collections.{VecNumeric, VecCompanion, VecLike, Vec}
 
 trait MapVectorCompanion[+T >: MapVector <: Vec] extends VecCompanion[T] {
 	val origin: T = MapVector()
@@ -12,7 +12,7 @@ trait MapVectorCompanion[+T >: MapVector <: Vec] extends VecCompanion[T] {
 	def apply(weights: Map[String, Double]): T
 }
 
-object MapVector extends MapVectorCompanion[MapVector] {
+object MapVector extends MapVectorCompanion[MapVector] with VecNumeric[MapVector] {
 	def unit: MapVector = sys.error("No unit MapVector!")
 }
 
@@ -37,7 +37,7 @@ case class VecNUnit(scale: Double = 1, offset: Double = 0) extends VecN {
 	override def keySet: Set[String] = sys.error("Infinite keys for unit VecN")
 }
 
-object VecN extends MapVectorCompanion[VecN] {
+object VecN extends MapVectorCompanion[VecN] with VecNumeric[VecN] {
 	def unit: VecN = VecNUnit()//sys.error("No VecNOne vec... yet if ever!")
 
 	override def apply(weights: Map[String, Double]): VecN = MapVector(weights)

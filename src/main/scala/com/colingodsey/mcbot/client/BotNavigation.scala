@@ -262,7 +262,8 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 
 				val dt = math.min(math.max(curTime - from.property("visited"), 1), 3600)
 				val disc = qValue(lastTransition.get)("discover") / (dt)
-				val reinMap = VecN("discover" -> -disc)
+				val water = qValue(lastTransition.get)("water") / 200
+				val reinMap = VecN("discover" -> -disc, "water" -> -water)
 
 				//im pretty sure the ignore has to be there...
 				reinforce(lastTransition.get,

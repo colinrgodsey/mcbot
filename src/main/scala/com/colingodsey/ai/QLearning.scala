@@ -45,7 +45,7 @@ case class BoltzmannSelector(temperature: Double = 0.1) extends Selector {
 
 		val pl = policy//.toSeq.sortBy(_ => math.random)
 		val distribution = pl map { case (key, x) =>
-				val v = math.exp((x - pl.head._2) / temperature) + 0.01
+				val v = math.exp((x - pl.head._2) / temperature)
 				(key, v)
 			}
 

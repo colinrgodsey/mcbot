@@ -14,6 +14,11 @@ trait Vec extends VecOps[Vec] {
 	def toVecN: VecN*/
 
 	def toVecN: VecN
+
+	def to[U <: Vec](implicit vb: VecCompanion[U]): U = vb(toVecN)
+
+	def values = toVecN.weights.values
+	def keys = toVecN.weights.keys
 }
 
 trait VecOps[+Repr <: Vec] {
@@ -94,6 +99,34 @@ trait VecLike[Coll <: VecLike[Coll] with Vec] extends VecOps[Coll] with Vec {
 		!this.~~(other)
 }
 
+trait VecNumeric[T <: Vec] extends VecCompanion[T] with Numeric[T] {
+	implicit def comp: VecNumeric[T] = this
+
+	def plus(x: T, y: T): T = (x + y).to[T]
+	def minus(x: T, y: T): T = (x - y).to[T]
+	def times(x: T, y: T): T = ???
+	def negate(x: T): T = (-x).to[T]
+	def fromInt(x: Int): T = (one * x).to[T]
+	def toInt(x: T): Int = x.length.toInt
+	def toLong(x: T): Long = x.length.toLong
+	def toFloat(x: T): Float = x.length.toFloat
+	def toDouble(x: T): Double = x.length
+
+	def compare(x: T, y: T): Int = {
+		val dl = x.length - y.length
+
+		if(dl > 0) 1
+		else if (dl < 0) -1
+		else 0
+	}
+
+	//def zero = fromInt(0)
+	//def one = fromInt(1)
+
+	override def zero: T = origin
+	override def one: T = unit
+}
+
 trait VecCompanion[+VecType <: Vec] {
     def origin: VecType
 	def unit: VecType
@@ -102,8 +135,8 @@ trait VecCompanion[+VecType <: Vec] {
 
     //def dimensions: Dimensions
 
-	def one = unit
-	def zero = origin
+	def one: VecType// = unit
+	def zero: VecType// = origin
 }
 
 case class Epsilon(e: Double)
@@ -112,7 +145,7 @@ object Epsilon {
     implicit val default = Epsilon(1e-13)
 }
 
-object Vec1 extends VecCompanion[Vec1] {
+object Vec1 extends VecCompanion[Vec1] with VecNumeric[Vec1] {
 	val origin = Vec1(0)
 	val unit = Vec1(1)
 
@@ -148,7 +181,7 @@ final case class Vec1(x: Double) extends Vec with VecLike[Vec1] {
 	def toVecN = MapVector("x" -> x)
 }
 
-object Vec2 extends VecCompanion[Vec2] {
+object Vec2 extends VecCompanion[Vec2] with VecNumeric[Vec2] {
     val origin = Vec2(0, 0)
     val unit = Vec2(1, 1)
 
@@ -182,7 +215,7 @@ final case class Vec2(x: Double, y: Double) extends Vec with VecLike[Vec2] {
 	def toVecN = MapVector("x" -> x, "y" -> y)
 }
 
-object Vec3 extends VecCompanion[Vec3] {
+object Vec3 extends VecCompanion[Vec3] with VecNumeric[Vec3] {
 	val origin = Vec3(0, 0, 0)
 	val unit = Vec3(1, 1, 1)
 

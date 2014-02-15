@@ -1,6 +1,6 @@
 package com.colingodsey.mcbot.world
 
-import com.colingodsey.logos.collections.{IPoint3D, Vec3}
+import com.colingodsey.logos.collections.{IVec3, Vec3}
 import com.colingodsey.mcbot.protocol
 import com.colingodsey.mcbot.protocol._
 import com.colingodsey.mcbot.protocol.{ClientProtocol => cpr, ServerProtocol => spr, _}
@@ -11,17 +11,17 @@ import akka.pattern._
 import akka.event.LoggingAdapter
 import scala.concurrent.{ExecutionContext, Future, blocking}
 
-case class FindChunkError(x: Int, y: Int, z: Int, point: IPoint3D) extends Exception(
+case class FindChunkError(x: Int, y: Int, z: Int, point: IVec3) extends Exception(
 	s"chunk not found: $point for point $x, $y, $z")
 
 //thread safe view of the mutable world
 trait WorldView {
 	def entities: Map[Int, Entity]
-	def chunks: Map[IPoint3D, Chunk]
+	def chunks: Map[IVec3, Chunk]
 	def players: Map[String, Int]
 
 	def getChunk(x: Int, y: Int, z: Int): Chunk = {
-		val point = IPoint3D(
+		val point = IVec3(
 			math.floor(x.toDouble / Chunk.dims.x).toInt,
 			math.floor(y.toDouble / Chunk.dims.y).toInt,
 			math.floor(z.toDouble / Chunk.dims.z).toInt)
@@ -32,7 +32,7 @@ trait WorldView {
 
 	def getChunk(pos: Vec3): Chunk = getChunk(math.floor(pos.x).toInt,
 		math.floor(pos.y).toInt, math.floor(pos.z).toInt)
-	def getChunk(pos: IPoint3D): Chunk = getChunk(pos.x, pos.y, pos.z)
+	def getChunk(pos: IVec3): Chunk = getChunk(pos.x, pos.y, pos.z)
 
 	def getBlock(pos: Vec3): Block = {
 		if(pos.y < 0 || pos.y > 255)
@@ -96,7 +96,7 @@ trait World { wv: WorldView =>
 	def log: LoggingAdapter
 
 	var entities = Map[Int, Entity]()
-	@volatile var chunks = Map[IPoint3D, Chunk]()
+	@volatile var chunks = Map[IVec3, Chunk]()
 	var players = Map[String, Int]()
 
 	def player(name: String) = entities(players(name)).asInstanceOf[Player]
@@ -116,7 +116,7 @@ trait World { wv: WorldView =>
 }
 
 object WorldClient {
-	case class RemoveChunks(poss: Set[IPoint3D])
+	case class RemoveChunks(poss: Set[IVec3])
 	case class AddChunks(chunks: Set[Chunk])
 
 	//the below can be run async!
@@ -332,7 +332,7 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 
 	val blockChange: Actor.Receive = {
 		case a @ cpr.BlockChange(x, y, z, blockID, blockMeta) => try {
-			val bpos = IPoint3D(x, y & 0xFF, z)
+			val bpos = IVec3(x, y & 0xFF, z)
 			val chunk = getChunk(bpos)
 
 			chunk.setTyp(bpos.x.toInt - chunk.x * Chunk.dims.x,

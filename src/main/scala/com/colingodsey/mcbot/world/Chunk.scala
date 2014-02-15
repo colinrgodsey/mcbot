@@ -6,7 +6,7 @@ import java.util.zip.{InflaterInputStream, Inflater}
 import scala.collection.immutable.VectorBuilder
 
 object Chunk {
-	val dims = IPoint3D(16, 16, 16)
+	val dims = IVec3(16, 16, 16)
 	val numBlocks = dims.x * dims.y * dims.z
 
 	val biomeArrSize = dims.x * dims.y
@@ -73,7 +73,7 @@ object Chunk {
 		val z = idx >>> 4 & 0x0F
 		val x = idx & 0x0F
 
-		IPoint3D(x, y, z)
+		IVec3(x, y, z)
 	}
 
 	def xyzHalfIdxGet(x: Int, y: Int, z: Int, arr: Array[Byte]): Int = {
@@ -167,7 +167,7 @@ trait Chunk extends Equals { chunk =>
 	def setSkyLight(x: Int, y: Int, z: Int, value: Int): Chunk
 	//def setBiome(x: Int, y: Int, z: Int, value: Int): Chunk
 
-	lazy val pos: IPoint3D = IPoint3D(x, y, z)
+	lazy val pos: IVec3 = IVec3(x, y, z)
 
 	override def equals(that: Any) = that match {
 		case x: Chunk => pos == x.pos

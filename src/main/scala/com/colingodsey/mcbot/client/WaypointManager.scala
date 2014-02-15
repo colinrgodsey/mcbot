@@ -291,7 +291,8 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 		}.filter(_._2 != 0)
 		val maxQ = MapVector(maxQPart.toMap)
 
-		val newQ = update(trans, reward, maxQ)
+		val newQ0 = update(trans, reward, maxQ)
+		val newQ = MapVector(newQ0.weights.filter(_._2 != 0))
 
 		val conn = toId -> from.connection(toId).copy(
 			weights = newQ.weights)

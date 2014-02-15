@@ -1,6 +1,6 @@
 package com.colingodsey.mcbot.world
 
-import com.colingodsey.logos.collections.{Vec3, IPoint3D}
+import com.colingodsey.logos.collections.{Vec3, IVec3}
 import com.colingodsey.mcbot.world
 
 object Block {
@@ -117,7 +117,7 @@ final case class ChunkBlock private[world] (
 		} else btyp.isPassable) && !bel.btyp.isFence
 	}
 
-	lazy val pos: IPoint3D = IPoint3D(cx + chunk.x * dims.x,
+	lazy val pos: IVec3 = IVec3(cx + chunk.x * dims.x,
 		cy + chunk.y * dims.y, cz + chunk.z * dims.z)
 }
 
@@ -143,8 +143,8 @@ trait Block extends Equals {
 	def cy: Int
 	def cz: Int
 
-	def chunkPos = IPoint3D(cx, cy, cz)
-	def pos: IPoint3D
+	def chunkPos = IVec3(cx, cy, cz)
+	def pos: IVec3
 
 	def center: Vec3 = pos.toVec3 + Block.halfBlockVec
 
@@ -177,5 +177,5 @@ case class NoBlock(cx: Int, cy: Int, cz: Int)(implicit val wv: WorldView) extend
 	def biome: Int = 0
 	def isPassable = true
 
-	def pos: IPoint3D = chunkPos
+	def pos: IVec3 = chunkPos
 }

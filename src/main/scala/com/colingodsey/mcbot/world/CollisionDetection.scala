@@ -1,6 +1,6 @@
 package com.colingodsey.mcbot.world
 
-import com.colingodsey.logos.collections.{IPoint3D, Epsilon, Vec3}
+import com.colingodsey.logos.collections.{IVec3, Epsilon, Vec3}
 
 object CollisionDetection {
 	sealed trait TraceResult {

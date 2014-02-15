@@ -9,15 +9,15 @@ import akka.event.LoggingAdapter
 import java.io.InputStream
 
 package object collections {
-	object IPoint3D {
+	object IVec3 {
 		def apply(point: Vec3) = Vec3(point.x.toInt, point.y.toInt, point.z.toInt)
 	}
 
-	final case class IPoint3D(x: Int, y: Int, z: Int) {
+	final case class IVec3(x: Int, y: Int, z: Int) {
 		def toVec3 = Vec3(x, y, z)
 	}
 
-	implicit def IPoint3DToPoint3D(x: IPoint3D) = x.toVec3
+	implicit def IPoint3DToPoint3D(x: IVec3) = x.toVec3
 
 	implicit final class ChannelBufferSeq(buf: ChannelBuffer) extends
 	immutable.IndexedSeq[Byte] with IndexedSeqOptimized[Byte, immutable.IndexedSeq[Byte]] {
