@@ -107,14 +107,17 @@ object QLearning {
 	}*/
 }
 
-//cue, behavior, reward
-trait QLearning[T, U <: VecLike[U]] {
+trait QLearningValues {
 	def γ: Double //gamma, how much the max q of associated state is blended in
 	def α0: Double //alpha, familiarity
-	def initialValue: U //best at 0 usually
 
 	def gamma = γ
 	def alpha0 = α0
+}
+
+//cue, behavior, reward
+trait QLearning[T, U <: VecLike[U]] extends QLearningValues {
+	def initialValue: U //best at 0 usually
 
 	def qValue(transition: T): U
 	def desire: U

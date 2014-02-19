@@ -104,7 +104,7 @@ trait VecNumeric[T <: Vec] extends VecCompanion[T] with Numeric[T] {
 
 	def plus(x: T, y: T): T = (x + y).to[T]
 	def minus(x: T, y: T): T = (x - y).to[T]
-	def times(x: T, y: T): T = ???
+	def times(x: T, y: T): T = Vec1(x * y).to[T] //TODO: this is sorta weird
 	def negate(x: T): T = (-x).to[T]
 	def fromInt(x: Int): T = (one * x).to[T]
 	def toInt(x: T): Int = x.length.toInt
