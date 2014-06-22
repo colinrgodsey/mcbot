@@ -208,7 +208,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	override def isSane(sa: StateAction): Boolean = (sa.fromState, sa.action) match {
 		case (s: WorldTile.TileState, t @ WorldTile.TileTransition(dest)) =>
-			s.neighborMoves(t) && !getShortPath(s.tilePos, dest.tilePos).isEmpty
+			s.neighborMoves(t) && !getShortPath(s.pos, dest.pos).isEmpty
 	}
 
 	override def resetGoal(): Unit = finishGoal
@@ -225,6 +225,23 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	def finishGoal() {
 		actionFinished(1.0) //TODO: real time delta
 		maybeSelectGoal()
+	}
+
+	def actionSelected(action: BotLearn.Action) = action match {
+		case WorldTile.TileTransition(toTile) =>
+			val path = pathTo(footBlock.center, toTile)
+
+			if(path.isEmpty || true) {
+				log.warning("Failed path action!")
+				currentAction = None
+			} else {
+				log.info("Following new path " + path)
+				curPath = path.toStream
+				lastPathTime = curTime
+			}
+		case _ =>
+			log.warning("dont know how to do " + action)
+			currentAction = None
 	}
 
 	def setDesires() {
@@ -428,6 +445,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			sendPositionAndLook
 
 			lastPosEnt = None
+			direction = Vec3.zero
 
 			//0.1 or greater than 1.65
 			if(!joined) {
@@ -478,7 +496,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 		case x: cpr.PlayerListItem =>
 
-		case PhysicsTick if joined && (curTime - lastTime) > 0.01 =>
+		case PhysicsTick if joined && (curTime - lastTime) > 0.07 =>
 			val ct = curTime
 			//val dt = tickDelta.toMillis / 1000.0
 			val dt = math.min(ct - lastTime, 0.1)
@@ -492,13 +510,13 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 					footBlock.btyp.isWater)
 
 				if(!moveRes) {
-					updateEntity(selfId) { case ent: Player =>
-						ent.copy(pos = footBlockPos)
+					/*updateEntity(selfId) { case ent: Player =>
+						ent.copy(pos = footBlock.center + Vec3(0, stanceDelta - 0.5, 0))
 					}
-					log.warning("trying to fix location to block location")
+					log.warning("trying to fix location to block location")*/
 				}
 
-				val curBlock = getBlock(selfEnt.pos)
+				val curBlock = footBlock//getBlock(selfEnt.pos)
 
 				if(curBlock.btyp.isWater) {
 					waterTokens += dt * 1
@@ -572,6 +590,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			//direction = Point3D(1, 0, 0)
 
 			setDesires()
+			maybeSelectGoal()
 
 			if(dead) {
 				context.system.scheduler.scheduleOnce(2.5.seconds, self, Respawn)

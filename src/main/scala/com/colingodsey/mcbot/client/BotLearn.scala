@@ -229,11 +229,12 @@ object BotThink {
 	case class BlockPath(start: Block, moves: Seq[Vec3])
 }
 
-trait BotThink extends WorldTile with BotLearn with BotPathing with Actor with ActorLogging {
+trait BotThink extends WorldTile with BotLearn with Actor with ActorLogging {
 	import BotLearn._
 	import WorldTile._
 
 	def isSane(sa: StateAction): Boolean
+	def actionSelected(action: Action)
 	def desire: VecN
 
 	implicit val worldView: WorldView
@@ -257,21 +258,14 @@ trait BotThink extends WorldTile with BotLearn with BotPathing with Actor with A
 		map.getOrElse(action, VecN.zero)
 	}
 
-	def pathTo(from: Vec3, to: TileState): Seq[Block] = {
-		val startBlock = takeBlockDownWater(Block(from))
-		val endBlock = getBlock(from)
-
-		getPath(startBlock, endBlock, 300)(bl => to.contains(bl.center) > 0)
-	}
-
 	//should be exhaustive
 	def possibleControls(state: State): Set[StateAction] = state match {
 		case x: TileState => x.neighborMoves.map(StateAction(state, _))
 	}
 
-	def controls(state: State): Set[StateAction] = (for {
+	def controls(state: State): Set[StateAction] = ((for {
 		(action, q) <- stateActionsFor(state)
-	} yield StateAction(state, action)).toSet ++ possibleControls(state)
+	} yield StateAction(state, action)).toSet ++ possibleControls(state)).filter(isSane)
 
 	def setQValue(sa: StateAction, q: VecN) {
 		val StateAction(state, action) = sa
@@ -312,8 +306,11 @@ trait BotThink extends WorldTile with BotLearn with BotPathing with Actor with A
 	}
 
 	def maybeSelectGoal() = if(currentAction == None) {
-		currentAction = policy(lastStates, desire)
+		currentAction = policy(currentTileStates, desire)
 		log.info("Selecting new action " + currentAction)
 		rewardAcc = VecN.zero
+
+		if(currentAction != None)
+			actionSelected(currentAction.get)
 	}
 }

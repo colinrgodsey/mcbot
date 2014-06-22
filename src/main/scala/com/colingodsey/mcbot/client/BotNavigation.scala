@@ -12,6 +12,7 @@ import scala.util.Failure
 import scala.Some
 import com.colingodsey.mcbot.world.Player
 import com.colingodsey.collections.{VecN, MapVector}
+import com.colingodsey.mcbot.client.WorldTile.TileState
 
 object BotNavigation {
 	case class PathFound(path: Seq[Vec3])
@@ -31,6 +32,12 @@ trait BotMovement extends BotClientView with BotClientControl
 
 	def pathPhysicsTick(dt: Double) = try {
 		val oldPath = curPath
+
+		if((curTime - lastPathTime) > 5) {
+			log.info("Path timed out")
+			lastPathTime = curTime
+			curPath = Stream.empty
+		}
 
 		//find closest next step
 		if(!curPath.isEmpty) {
@@ -180,6 +187,13 @@ trait BotPathing extends BotClientView {
 		}
 
 		Nil
+	}
+
+	def pathTo(from: Vec3, to: TileState): Seq[Block] = {
+		val startBlock = takeBlockDownWater(Block(from))
+		val endBlock = getBlock(to.pos)
+
+		getPath(startBlock, endBlock, 500)(bl => to.contains(bl.center) > 0)
 	}
 
 	def getShortPath(from: Vec3, to: Vec3): Seq[Block] = blocking {

@@ -20,7 +20,8 @@ object BoltzmannSelector {
 			k -> math.max(num toDouble v, 0)
 		}
 		val (keys0, values) = chances.unzip
-		val keys = keys0.toSeq.sortBy(_ => math.random)
+		val rnd = math.random
+		val keys = keys0.toSeq.sortBy(x => (x, rnd).hashCode)
 		val sel = math.random * values.sum
 
 		@tailrec def iter(acc: Double, keyList: Iterable[K]): K = {

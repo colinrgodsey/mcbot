@@ -187,7 +187,8 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 			else drag0
 
 			val gravAcc = if(isWater) Vec3(0, -gravity / 20, 0)
-			else Vec3(0, -gravity, 0)
+			else if(!ent.onGround) Vec3(0, -gravity, 0)
+			else Vec3.zero
 
 			var hitGround = false
 
@@ -221,8 +222,8 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 
 						val blPos = Block.halfBlockVec + off + getBlock(ent.pos).pos
 
-						//None
-						Some(blPos, Vec3.zero)
+						None
+						//Some(blPos, Vec3.zero)
 					case SurfaceHit(d, norm)/* if d > 0*/ =>
 						if((norm * Vec3(0, 1, 0)) == 1) hitGround = true
 
@@ -263,7 +264,7 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 
 			val Some((newPos, postMoveVec)) = moveRes
 
-			val failed = try if(traceFunc(newPos, Vec3(0.1, 0.1, 0.1)) contains StartSolid) {
+			val failed = false/*try if(traceFunc(newPos, Vec3(0.0, 0.06, 0.0)) contains StartSolid) {
 				log.warning("possible start solid")
 				ent.entityCopy(vel = Vec3(math.random - 0.5,
 					math.random - 0.5, math.random - 0.5).normal)
@@ -272,7 +273,7 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 				case t: Throwable =>
 					log.error(t, "traceFunc fail!")
 				true
-			}
+			}*/
 
 			if(failed) ent
 			else {

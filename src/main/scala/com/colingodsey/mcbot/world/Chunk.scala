@@ -70,11 +70,16 @@ object Chunk {
 		numBlocks * 2 + (if(skylight) numBlocks / 2 else 0)// + numBlocks / 2
 
 	def xyzToIdx(x: Int, y: Int, z: Int) = // 0000YYYY ZZZZXXXX
-		(y * dims.z + z) * dims.x + x // y * 16 * 16 + z * 16 + x
+		//(y * dims.z + z) * dims.x + x // y * 16 * 16 + z * 16 + x
+		(
+			((y & 0xF) << 8) |
+				((z & 0xF) << 4) |
+				(x & 0xF)
+		).toInt
 
 	def idxToXyz(idx: Int) = {
-		val y = idx >>> 8 & 0x0F
-		val z = idx >>> 4 & 0x0F
+		val y = (idx >>> 8) & 0x0F
+		val z = (idx >>> 4) & 0x0F
 		val x = idx & 0x0F
 
 		IVec3(x, y, z)

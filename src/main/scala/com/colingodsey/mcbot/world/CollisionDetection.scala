@@ -1,6 +1,15 @@
 package com.colingodsey.mcbot.world
 
 import com.colingodsey.logos.collections.{IVec3, Epsilon, Vec3}
+import com.colingodsey.collections.{MapVector, VecN}
+
+/**
+ *
+ * TODO: even newer col detection
+ *
+ * for each step, find the dimensional movement that will first intersect integer bounds.
+ * move cursor to their, should be at least 1 whole number dim. check bounds at that exact point
+ */
 
 object CollisionDetection {
 	sealed trait TraceResult {
@@ -164,13 +173,63 @@ trait CollisionDetection {
 		(getBlock(bl), centerCorVec)
 	}
 
-	def traceRay(from: Vec3, vec: Vec3, center: Vec3): TraceResult = {
+	/*def traceRay(from: Vec3, vec: Vec3, center: Vec3): TraceResult = {
 		val (startBlock, _) = blockSelect(from, center)
 		traceRay(from, vec, startBlock)
+	}*/
+
+	def getBlockStream(pos: Vec3, vecNormal: Vec3, startBlock: Block,
+			vecStartUnits: Double = 0.0): Stream[(Block, Double, Vec3)] = {
+		val nextCross = (for {
+			dim <- Stream("x", "y", "z")
+			scale <- Stream(-1.0, 1.0)
+			sNorm = VecN(dim -> scale).to[Vec3]
+			normDot = sNorm * vecNormal
+			if normDot <= 0 //are facing
+			surfCenter = startBlock.center - sNorm * 0.5
+			/*surfD = (pos - surfCenter) * sNorm
+			hitLen = surfD / normDot*/
+			hitLen = ((surfCenter - pos) * sNorm) / normDot
+			if hitLen >= 0
+		} yield (dim, sNorm, hitLen)).sortBy(_._3).headOption
+
+		if(nextCross == None) Stream.empty
+		else {
+			val (dim, sNorm, hitLen) = nextCross.get
+			val dNorm = -sNorm
+
+			val newPos0 = (pos + vecNormal * hitLen).toVecN
+			//lock to lbock boundry
+			val newEntry: (String, Double) = dim -> math.round(newPos0(dim))
+			val newDims = newPos0.weights + newEntry
+			val newPos = MapVector(newDims).to[Vec3]
+			val newBlock = getBlock(startBlock.center + dNorm)
+			val newLen = vecStartUnits + hitLen
+
+			(newBlock, newLen, sNorm) #:: getBlockStream(newPos, vecNormal, newBlock, newLen)
+		}
+	}
+
+	def traceRay(from: Vec3, vec: Vec3, center: Vec3): TraceResult = {
+		val (startBlock, _) = blockSelect(from, center)
+
+		val blockStream = getBlockStream(from, vec.normal, startBlock)
+
+		val filtered = blockStream.filter {
+			case (block, len, _) if !block.isPassable && len < vec.length => true
+			case (_, len, _) if len > vec.length => true
+			case _ => false
+		}
+
+		filtered.headOption match {
+			case Some((block, len, norm)) if !block.isPassable =>
+				TraceHit(len, norm)
+			case _ => NoHit(0)
+		}
 	}
 
 	//always clip to the closest surface, move from there
-	def traceRay(from: Vec3, vec: Vec3,
+	/*def traceRay(from: Vec3, vec: Vec3,
 			startBlock: Block, distAcc: Double = 0): TraceResult = {
 		//val (startBlock, _) = blockSelect(from, centerPoint)
 
@@ -222,5 +281,5 @@ trait CollisionDetection {
 					vec.normal * (vec.length - d), endBlock, d + distAcc)
 		}
 
-	}
+	}*/
 }
