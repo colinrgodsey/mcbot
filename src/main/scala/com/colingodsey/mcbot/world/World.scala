@@ -20,33 +20,10 @@ trait WorldView {
 	def chunks: Map[IVec3, Chunk]
 	def players: Map[String, Int]
 
-	def getChunk(x: Int, y: Int, z: Int): Chunk = {
-		val point = IVec3(
-			math.floor(x.toDouble / Chunk.dims.x).toInt,
-			math.floor(y.toDouble / Chunk.dims.y).toInt,
-			math.floor(z.toDouble / Chunk.dims.z).toInt)
+	def getChunkAt(pos: IVec3): Chunk = chunks.getOrElse(pos, Chunk(pos.x, pos.y, pos.z))
+		//throw FindChunkError(pos.x, pos.y, pos.z, pos))
 
-		chunks.getOrElse(point,
-			throw FindChunkError(x, y, z, point))
-	}
-
-	def getChunk(pos: Vec3): Chunk = getChunk(math.floor(pos.x).toInt,
-		math.floor(pos.y).toInt, math.floor(pos.z).toInt)
-	def getChunk(pos: IVec3): Chunk = getChunk(pos.x, pos.y, pos.z)
-
-	def getBlock(pos: Vec3): Block = {
-		if(pos.y < 0 || pos.y > 255)
-			return NoBlock(pos.x.toInt, pos.y.toInt, pos.z.toInt)(WorldView.this)
-
-		val chunk = getChunk(pos)
-
-		/*chunk(math.floor(pos.x).toInt - chunk.x * Chunk.dims.x,
-			math.floor(pos.y).toInt - chunk.y * Chunk.dims.y,
-			math.floor(pos.z).toInt - chunk.z * Chunk.dims.z)*/
-		chunk(math.floor(pos.x).toInt & 15,
-			math.floor(pos.y).toInt & 15,
-			math.floor(pos.z).toInt & 15)
-	}
+	def getBlock(pos: Vec3): Block = Block(pos)
 
 	def takeBlockDown(vec: Vec3): Block =
 		takeBlockDown(getBlock(vec))
@@ -98,6 +75,7 @@ trait World { wv: WorldView =>
 	var entities = Map[Int, Entity]()
 	@volatile var chunks = Map[IVec3, Chunk]()
 	var players = Map[String, Int]()
+	var isRaining = false
 
 	def player(name: String) = entities(players(name)).asInstanceOf[Player]
 	def playerOpt(name: String) = players.get(name).flatMap(entities.get(_).map(_.asInstanceOf[Player]))
@@ -333,7 +311,7 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 	val blockChange: Actor.Receive = {
 		case a @ cpr.BlockChange(x, y, z, blockID, blockMeta) => try {
 			val bpos = IVec3(x, y & 0xFF, z)
-			val chunk = getChunk(bpos)
+			val chunk = getChunkAt(bpos)
 
 			chunk.setTyp(bpos.x.toInt - chunk.x * Chunk.dims.x,
 				bpos.y.toInt - chunk.y * Chunk.dims.y,
@@ -437,6 +415,14 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 		case x: cpr.MapChunkBulk =>
 			handleChunks(x)
 			loadingChunk
+
+		case cpr.ChangeGameState(reason, value) => reason match {
+			case 1 => //end raining
+				isRaining = false
+			case 2 => //start raining
+				isRaining = true
+			case _ =>
+		}
 
 		case AddChunks(x) =>
 			chunkLoaded

@@ -2,6 +2,7 @@ package com.colingodsey.mcbot.world
 
 import com.colingodsey.mcbot.protocol
 import com.colingodsey.logos.collections._
+import scala.concurrent.blocking
 import java.util.zip.{InflaterInputStream, Inflater}
 import scala.collection.immutable.VectorBuilder
 
@@ -12,6 +13,9 @@ object Chunk {
 	val biomeArrSize = dims.x * dims.y
 
 	val defaultSkyValue = 15
+
+	def apply(x: Int, y: Int, z: Int): Chunk =
+		new MutableChunk(x, y, z)
 
 	def apply(x: Int, z: Int, bitmask: Short, addBitmask: Short,
 			groundUp: Boolean, skylight: Boolean,
@@ -38,7 +42,7 @@ object Chunk {
 		val light = read(nChunks * numBlocks / 2)
 		val slight = if(skylight) Some(read(nChunks * numBlocks / 2)) else None
 		//val add = read(nChunks * numBlocks / 2) only if bitmask values
-		val biome = if(groundUp) read(biomeArrSize).toArray else Array.fill[Byte](255)(0)
+		val biome = if(groundUp) Some(read(biomeArrSize).toArray) else None//Array.fill[Byte](255)(0)
 
 		var yChunkIdx = 0
 		for(y <- 0 until 16) yield {
@@ -103,29 +107,7 @@ object Chunk {
 		n
 	}
 
-	def inflateData(bytes: Iterable[Byte]) = {
-		/*val inflater = new Inflater
-
-		inflater.setInput(bytes)
-
-		require(!inflater.needsInput, "bad deflate data!")
-
-		val builder = new VectorBuilder[Byte]
-		var building = true
-		val arr = new Array[Byte](100)
-		while(building) {
-			val l = inflater.inflate(arr)
-
-			if(l == 0) building = false
-			else if(l == arr.length)
-				builder ++= arr.iterator
-			else builder ++= arr.iterator.take(l)
-		}
-
-		inflater.end
-
-		builder.result*/
-
+	def inflateData(bytes: Iterable[Byte]) = blocking {
 		val is = new InflaterInputStream(bytes)
 		val builder = new VectorBuilder[Byte]
 
@@ -149,9 +131,6 @@ trait Chunk extends Equals { chunk =>
 	def z: Int
 
 	implicit def wv: WorldView
-
-	def apply(_x: Int, _y: Int, _z: Int): ChunkBlock =
-		new ChunkBlock(_x, _y, _z, this)
 
 	def typ(x: Int, y: Int, z: Int): Int
 	def meta(x: Int, y: Int, z: Int): Int
@@ -186,7 +165,7 @@ class MutableChunk(val x: Int, val y: Int, val z: Int,
 		private var blockLight: Option[Array[Byte]] = None,
 		private var blockSkylight: Option[Array[Byte]] = None,
 		private val blockAddData: Array[Byte] = Array(),
-		private val blockBiome: Array[Byte]
+		private val blockBiome: Option[Array[Byte]] = None
 		//data: IndexedSeq[Byte]
 		)(implicit val wv: WorldView) extends Chunk {
 	import Chunk._
@@ -206,7 +185,7 @@ class MutableChunk(val x: Int, val y: Int, val z: Int,
 	def skyLight(x: Int, y: Int, z: Int): Int =
 		blockSkylight.map(xyzHalfIdxGet(x, y, z, _)).getOrElse(Chunk.defaultSkyValue)
 	def biome(x: Int, y: Int, z: Int): Int =
-		blockBiome(z * dims.x + x) & 0xFF
+		blockBiome.map(_(z * dims.x + x) & 0xFF).getOrElse(0)
 
 	require(255.toInt.toByte == -1, "mind... melting....")
 

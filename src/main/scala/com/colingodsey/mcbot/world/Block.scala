@@ -92,24 +92,26 @@ object Block {
 		res.toArray
 	}
 
-	def apply(id: Int) = types(id)
+	def apply(pos: Vec3): Block = new Block(IVec3(pos))
 }
 
-final case class ChunkBlock private[world] (
-		cx: Int, cy: Int, cz: Int, chunk: Chunk)(implicit val wv: WorldView) extends Block {
+final case class Block(pos: IVec3) extends Equals {
 	import Chunk._
-	
-	require(cx >= 0 && cx < dims.x, "bad x " + cx + " " + chunk.pos)
-	require(cy >= 0 && cy < dims.y, "bad y " + cy + " " + chunk.pos)
-	require(cz >= 0 && cz < dims.z, "bad z " + cz + " " + chunk.pos)
 
-	def typ: Int = chunk.typ(cx, cy, cz)
-	def meta: Int = chunk.meta(cx, cy, cz)
-	def light: Int = chunk.light(cx, cy, cz)
-	def skyLight: Int = chunk.skyLight(cx, cy, cz)
-	def biome: Int = chunk.biome(cx, cy, cz)
+	def chunk(implicit wv: WorldView) = wv.getChunkAt(chunkCoord)
 
-	def isPassable: Boolean = {
+	def typ(implicit wv: WorldView): Int = chunk.typ(cx, cy, cz)
+	def meta(implicit wv: WorldView): Int = chunk.meta(cx, cy, cz)
+	def light(implicit wv: WorldView): Int = chunk.light(cx, cy, cz)
+	def skyLight(implicit wv: WorldView): Int = chunk.skyLight(cx, cy, cz)
+	def biome(implicit wv: WorldView): Int = chunk.biome(cx, cy, cz)
+
+	def below(implicit wv: WorldView) = wv.getBlock(pos - Vec3(0, 1, 0))
+	def above(implicit wv: WorldView) = wv.getBlock(pos.toVec3 + Vec3(0, 1, 0))
+
+	def btyp(implicit wv: WorldView) = Block.types(typ)
+
+	def isPassable(implicit wv: WorldView): Boolean = {
 		val bel = below
 
 		(if(btyp.isDoor) {
@@ -117,34 +119,21 @@ final case class ChunkBlock private[world] (
 		} else btyp.isPassable) && !bel.btyp.isFence
 	}
 
-	lazy val pos: IVec3 = IVec3(cx + chunk.x * dims.x,
-		cy + chunk.y * dims.y, cz + chunk.z * dims.z)
-}
+	def x = pos.x
+	def y = pos.y
+	def z = pos.z
 
-trait Block extends Equals {
-	import Chunk._
+	def cx = chunkPos.x
+	def cy = chunkPos.y
+	def cz = chunkPos.z
 
-	def typ: Int
-	def meta: Int
-	def light: Int
-	def skyLight: Int
-	def biome: Int
+	//require(Chunk.dims = IVec3(16, 16, 16))
+	lazy val chunkPos = IVec3(x & 15, y & 15, z & 15)
 
-	def wv: WorldView
-
-	def below = wv.getBlock(pos - Vec3(0, 1, 0))
-	def above = wv.getBlock(pos.toVec3 + Vec3(0, 1, 0))
-
-	def btyp = Block.types(typ)
-
-	def isPassable: Boolean
-
-	def cx: Int
-	def cy: Int
-	def cz: Int
-
-	def chunkPos = IVec3(cx, cy, cz)
-	def pos: IVec3
+	lazy val chunkCoord = IVec3(
+		math.floor(x.toDouble / Chunk.dims.x).toInt,
+		math.floor(y.toDouble / Chunk.dims.y).toInt,
+		math.floor(z.toDouble / Chunk.dims.z).toInt)
 
 	def center: Vec3 = pos.toVec3 + Block.halfBlockVec
 
@@ -157,25 +146,12 @@ trait Block extends Equals {
 
 	object door {
 		//require door
-		def isBottom = //((meta >>> 3) & 0x1) == 0
+		def isBottom(implicit wv: WorldView) = //((meta >>> 3) & 0x1) == 0
 			!below.btyp.isDoor
-		def opensRight: Boolean = if(!isBottom) (meta & 0x1) == 0
+		def opensRight(implicit wv: WorldView): Boolean = if(!isBottom) (meta & 0x1) == 0
 		else above.door.opensRight
 
-		def isClosed: Boolean = if(isBottom) ((meta >>> 2) & 0x1) == 0
+		def isClosed(implicit wv: WorldView): Boolean = if(isBottom) ((meta >>> 2) & 0x1) == 0
 		else below.door.isClosed
 	}
-}
-
-case class NoBlock(cx: Int, cy: Int, cz: Int)(implicit val wv: WorldView) extends Block {
-	import Chunk._
-
-	def typ: Int = Block.Air.typ
-	def meta: Int = 0
-	def light: Int = 0
-	def skyLight: Int = 0
-	def biome: Int = 0
-	def isPassable = true
-
-	def pos: IVec3 = chunkPos
 }

@@ -2,8 +2,8 @@ import sbt._
 
 import Keys._
 
-import sbtassembly.Plugin.AssemblyKeys._
-import sbtassembly.Plugin.assemblySettings
+//import sbtassembly.Plugin.AssemblyKeys._
+//import sbtassembly.Plugin.assemblySettings
 
 import spray.revolver.RevolverPlugin.Revolver
 
@@ -49,7 +49,7 @@ object General {
 			"spray repo" at "http://repo.spray.io/",
 			"jsi repo" at "http://sourceforge.net/projects/jsi/files/m2_repo"
 		)
-	) ++ assemblySettings ++ Revolver.settings ++ atmosSettings
+	) /*++ assemblySettings*/ ++ Revolver.settings ++ atmosSettings
 
 	val akkaV = "2.2.3"
 	val sprayV = "1.2.0"

@@ -85,8 +85,24 @@ object BotClient {
 	val jumpSpeed = 11
 }
 
+trait BotClientView {
+	def uuid: String
+	def timeOfDayTicks: Long
+	def stanceDelta: Double
+	def joined: Boolean
+	def food: Double
+	def dead: Boolean
+	def heldItem: Int
+	def desire: VecN
+	def footBlock: Block
+	def selfEnt: Player
+
+	def footPos: Vec3 = selfEnt.pos - Vec3(0, stanceDelta, 0)
+	def footBlockPos = footPos + Vec3(0, 0.5, 0)
+}
+
 class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
-		with Stash with WorldClient with BotNavigation {
+		with Stash with WorldClient with BotNavigation with BotClientView {
 	import settings._
 	import BotClient._
 	import BotNavigation._
@@ -147,7 +163,6 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	var lastTime = curTime
 	var subscribers = Set[ActorRef]()
 	var desire = VecN.zero
-	var isRaining = false
 
 	//var discoverTokens: Double = 0
 	var waterTokens: Double = 0
@@ -162,12 +177,10 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	def selfEnt = entities(selfId).asInstanceOf[Player]
 
-	def footPos = selfEnt.pos - Vec3(0, stanceDelta, 0)
-	def footBlockPos = footPos + Vec3(0, 0.5, 0)
-	def footBlock = getBlock(footBlockPos)
-
 	def timeOfDay = (timeOfDayTicks % 24000).toDouble / 24000
 	def dayFac = math.sin(timeOfDay * math.Pi * 2)
+
+	def footBlock = getBlock(footBlockPos)
 
 	def isWpMaster = settings.wpMaster
 	def wpMaster = settings.wpMasterRef.get
@@ -405,7 +418,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case cpr.PluginMessage(chan, data) =>
 			pluginMessage = Some(spr.PluginMessage(chan, data))
 			//stream ! spr.ClientSettings("en_GB", 0, 0, false, 2, false)
-			stream ! spr.ClientSettings("en_US", 16, 0, true, 0, true)
+			stream ! spr.ClientSettings("en_US", 16, 0,
+				chatColours = true, 0, showCape = true)
 			sendPluginMessage
 		case cpr.ChatMessage(msg) => try {
 			val js = msg.asJson
@@ -426,13 +440,6 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			stream ! cpr
 
 		case x: cpr.PlayerListItem =>
-		case cpr.ChangeGameState(reason, value) => reason match {
-			case 1 => //end raining
-				isRaining = false
-			case 2 => //start raining
-				isRaining = true
-			case _ =>
-		}
 
 		case PhysicsTick if joined && (curTime - lastTime) > 0.01 =>
 			val ct = curTime
@@ -597,13 +604,13 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case x => log.info("chat: " + x)
 	}
 
-	override def preStart {
+	override def preStart() {
 		//loadWaypoints()
 		settings.wps.foreach(addWaypoint)
 		super.preStart
 	}
 
-	override def postStop {
+	override def postStop() {
 		context.system.shutdown()
 		super.postStop
 	}

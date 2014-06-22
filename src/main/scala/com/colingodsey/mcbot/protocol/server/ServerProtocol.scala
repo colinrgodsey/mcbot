@@ -119,7 +119,7 @@ trait ServerProtocol {
 		val codec = codecFrom6(ClientSettings.apply)
 	}
 	case class ClientSettings(locale: String, viewdistance: Byte, chatflags: Byte,
-			chatcolours: Boolean, difficulty: Byte, showCape: Boolean) extends ClientSettings.Packet
+			chatColours: Boolean, difficulty: Byte, showCape: Boolean) extends ClientSettings.Packet
 
 	implicit object ClientStatus extends LocalPacketCompanion[ClientStatus](22) {
 		val codec = codecFrom1(ClientStatus.apply)

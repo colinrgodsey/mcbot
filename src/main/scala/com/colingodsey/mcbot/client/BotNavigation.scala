@@ -19,7 +19,7 @@ object BotNavigation {
 	case class MoveFound(move: Option[Vec3])
 }
 
-trait BotNavigation extends WaypointManager with CollisionDetection {
+trait BotNavigation extends WaypointManager with CollisionDetection with BotClientView {
 	import BotNavigation._
 	import WaypointManager._
 	import BotClient._
@@ -27,14 +27,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection {
 	val worldView: WorldView
 	import worldView._
 
-	def footPos: Vec3
-	def footBlockPos: Vec3
-	def footBlock: Block
-	def selfEnt: Player
 	def selfId: Int
-
-	def dead: Boolean
-	def joined: Boolean
 
 	def jump()
 	def lookAt(vec: Vec3)

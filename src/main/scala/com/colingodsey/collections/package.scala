@@ -10,7 +10,7 @@ import java.io.InputStream
 
 package object collections {
 	object IVec3 {
-		def apply(point: Vec3) = Vec3(point.x.toInt, point.y.toInt, point.z.toInt)
+		def apply(point: Vec3): IVec3 = IVec3(point.x.toInt, point.y.toInt, point.z.toInt)
 	}
 
 	final case class IVec3(x: Int, y: Int, z: Int) {
