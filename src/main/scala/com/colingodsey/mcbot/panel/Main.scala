@@ -15,7 +15,6 @@ import akka.event.{BusLogging, Logging, LogSource, LoggingAdapter}
 import akka.dispatch.{ExecutorServiceFactory, ExecutorServiceConfigurator, DispatcherPrerequisites}
 import java.util.concurrent.{AbstractExecutorService, ExecutorService, ThreadFactory}
 import java.util
-import com.colingodsey.mcbot.client.WaypointManager.Waypoint
 import javafx.scene.shape.{Line, Circle}
 import com.colingodsey.mcbot.client.BotClient.{BotPosition, BotSnapshot}
 import com.colingodsey.mcbot.client.BotClient
@@ -36,11 +35,11 @@ class Main extends Application {
 		"akka.tcp://MCBotClient@192.168.0.102:3488/user/bot-client")
 
 	override def start(primaryStage: Stage) {
-		val uiProps = Props(classOf[UIStageActor],
+		/*val uiProps = Props(classOf[UIStageActor],
 			primaryStage, botSel).withDispatcher("jfx-dispatcher")
 		val ui = system.actorOf(uiProps, "ui")
 
-		ui ! UIStageActor.Show
+		ui ! UIStageActor.Show*/
 	}
 
 	override def stop {
@@ -52,7 +51,7 @@ class Main extends Application {
 object Main extends App {
 	Application.launch(classOf[Main], args: _*)
 }
-
+/*
 object UIStageActor {
 	case object Show
 	case object SubTimer
@@ -286,4 +285,4 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 			selfCircle.setTranslateY(curPos.z)
 			selfCircle.setTranslateZ(-curPos.y)
 	}
-}
+}*/

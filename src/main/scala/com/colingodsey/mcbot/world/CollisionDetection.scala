@@ -161,9 +161,7 @@ trait CollisionDetection {
 
 		val bl = centerCorVec + point
 
-		(if(bl.y < 0 || bl.y > 255)
-			NoBlock(bl.x.toInt, bl.y.toInt, bl.z.toInt)
-		else getBlock(bl), centerCorVec)
+		(getBlock(bl), centerCorVec)
 	}
 
 	def traceRay(from: Vec3, vec: Vec3, center: Vec3): TraceResult = {

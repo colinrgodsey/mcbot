@@ -14,9 +14,8 @@ import akka.event.LoggingAdapter
 import java.nio.file.{Paths, Path, StandardCopyOption, Files}
 import com.colingodsey.mcbot.world.{WorldView, CollisionDetection, FindChunkError}
 import com.colingodsey.collections.{MapVector, VecN, PathFinding}
-import com.colingodsey.ai.{BoltzmannSelector, QLPolicy, QLearning}
 
-object WaypointManager extends Protocol {
+/*object WaypointManager extends Protocol {
 	case class Connection(destId: Int, distance: Double, weights: Map[String, Double] = Map()) {
 		def weight(str: String) = weights.getOrElse(str, 0.0)
 	}
@@ -370,3 +369,4 @@ trait WaypointManager extends QLPolicy[WaypointManager.WaypointTransition, VecN]
 	}
 
 }
+*/

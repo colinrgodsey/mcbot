@@ -16,6 +16,8 @@ case class FindChunkError(x: Int, y: Int, z: Int, point: IVec3) extends Exceptio
 
 //thread safe view of the mutable world
 trait WorldView {
+	private implicit def wv: WorldView = this
+
 	def entities: Map[Int, Entity]
 	def chunks: Map[IVec3, Chunk]
 	def players: Map[String, Int]

@@ -6,12 +6,11 @@ import scala.concurrent.duration.Deadline
 import scala.concurrent.{Future, ExecutionContext, blocking}
 import akka.event.LoggingAdapter
 import scala.util.Failure
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{ActorLogging, Actor, ActorRef}
 import akka.pattern._
 import scala.util.Failure
 import scala.Some
 import com.colingodsey.mcbot.world.Player
-import com.colingodsey.ai.{QLPolicy, QLearning}
 import com.colingodsey.collections.{VecN, MapVector}
 
 object BotNavigation {
@@ -19,6 +18,191 @@ object BotNavigation {
 	case class MoveFound(move: Option[Vec3])
 }
 
+trait BotMovement extends BotClientView with BotClientControl
+		with CollisionDetection with ActorLogging with Actor {
+	implicit val worldView: WorldView
+	import worldView._
+
+	var curPath: Stream[Block] = Stream()
+	var lastPathNodePoint = Vec3.zero
+	var lastPathTime = 0.0
+
+	private def curTime = System.currentTimeMillis / 1000.0
+
+	def pathPhysicsTick(dt: Double) = try {
+		val oldPath = curPath
+
+		//find closest next step
+		if(!curPath.isEmpty) {
+			val nextStep = curPath.head.center
+			val vec = nextStep - footBlockPos
+			val goingUp = vec.y > 0
+
+			val closer = curPath.take(3).zipWithIndex.sortBy { case (p, idx) =>
+				val dy = footBlock.pos.y - p.y
+				val dv = p.center - footBlockPos
+
+				val abD = Vec3(selfEnt.vel.x, 0, selfEnt.vel.z)
+
+				val dirFac = if(abD.length > 0) {
+					dv * abD.normal
+				} else 0
+
+				if(dy > 0 && dy <= 2)
+					Vec3(dv.x, 0, dv.z).length
+				else if(p.y.toInt != footBlock.pos.y) 100000
+				else if(dirFac <= 0) dv.length * 100
+				//else dv.length// * dirFac
+				else dv.length / dirFac
+			}
+
+			val closestIdx = closer.headOption.map(_._2).getOrElse(0)
+
+			/*if(!closer.isEmpty && closestIdx >= 1 && !goingUp) {
+				val clVec = curPath(closestIdx - 1) - footBlockPos + Block.halfBlockVec
+				if(clVec.length < 2) {
+					curPath = curPath.drop(closestIdx)
+					lastPathTime = curTime
+				}
+			}*/
+		}
+
+		val minLength = if(footBlock.btyp.isWater) 0.7 else 0.2
+
+		//drop head node if we're close
+		if(!curPath.isEmpty) {
+			val nextStep = curPath.head.center
+			val vec = nextStep - footBlockPos
+			val goingUp = vec.y > 0
+
+			//CollisionDetection
+			if(vec.length < minLength) {
+				lastPathNodePoint = curPath.head.center
+				curPath = curPath.tail
+				lastPathTime = curTime
+				//if(!curPath.isEmpty) say("Next stop, " + curPath.headOption)
+				/*if(curPath.isEmpty) */setDirection(Vec3.zero)
+				//log.info("visited path node")
+			} else if(vec.length > 2 && math.abs(vec.y) < epsilon) {
+				setDirection(Vec3.zero)
+				randomPushSelf()
+				curPath = Stream()
+				lastPathTime = curTime
+				log.info("ditching path!")
+			}
+		}
+
+		//if(footBlock.btyp.isWater) jump()
+
+		//if we still have a path
+		if(!curPath.isEmpty) {
+			val nextStep = curPath.head
+
+			//get really close to the center of our block
+			/*if(nextStep.y != footPos.y && dv.length > 0.18 && selfEnt.onGround) {
+				direction = dv
+
+			} else */{
+				if(nextStep.y > footPos.y) jump()
+
+				//make round movements
+				val dirs = for {
+					i <- 0 until 3
+					if i < curPath.length
+					step = curPath(i).center
+					dir0 = step - footBlockPos
+					dir = Vec3(dir0.x, 0, dir0.z)
+					//dir = dir0
+					len = dir.length / math.pow(i + 1, 6)
+					if dir.length > 0 && dir0.length > 0
+				} yield dir0.normal * len
+
+				//val dir = if(dirs.isEmpty) Vec3.zero else dirs.reduce(_ + _)
+				val dir = nextStep.center - footBlockPos
+
+				val centerVec0 = lastPathNodePoint - footBlockPos
+				//val centerVec0 = footBlock.center - footBlockPos
+				val centerVec = Vec3(centerVec0.x, 0, centerVec0.z)
+
+				if(centerVec.length > 0 && centerVec0.y == 0 &&
+						selfEnt.vel.length < 0.2 && selfEnt.onGround) {
+					addVel(centerVec.normal * 0.02 * dt)
+					//direction = Vec3.zero
+				}
+
+				//val centerAddDir2 = footBlockPos - (Block.halfBlockVec + footBlock.pos)
+
+				setDirection(dir.normal * 40)// + centerAddDir + centerAddDir2 * 10
+			}
+		}
+
+		//ignore directly above blocks
+		if(!curPath.isEmpty && !footBlock.btyp.isWater) {
+			if(curPath.head.below.isPassable) curPath = curPath.tail
+		}
+
+		//if(curPath.isEmpty && footBlock.btyp.isWater) direction += Vec3(0, 1, 0)
+
+		if(curPath.isEmpty && !oldPath.isEmpty) resetGoal()
+	} catch {
+		case x: FindChunkError =>
+	}
+}
+
+trait BotPathing extends BotClientView {
+	implicit val worldView: WorldView
+	import worldView._
+
+	def shortPathLength = 700
+	def defaultMaxPathLength = 35
+
+	//always need a to, atleast for heuristics
+	def getPath(start: Block, to: Block, maxIter: Int = shortPathLength,
+			maxLength: Int = defaultMaxPathLength)
+			(cond: Block => Boolean = _ == to): Seq[Block] = blocking {
+		val finder = new BlockPathFinder(worldView, to, maxLength)
+		val paths = finder pathsFrom start
+
+		val iter = paths.iterator
+		var n = 0
+		//val res = new VectorBuilder[Seq[Move]]
+
+		if(start == to) return Nil
+
+		while(iter.hasNext && n < maxIter) {
+			val (state, moves) = iter.next
+
+			if(cond(state)) {
+				return moves.reverse
+			}
+
+			n += 1
+		}
+
+		Nil
+	}
+
+	def getShortPath(from: Vec3, to: Vec3): Seq[Block] = blocking {
+		try {
+			val endTargetBlock = getBlock(to)
+			val endStartBlock = getBlock(from)
+
+			if(!endTargetBlock.isPassable || !endStartBlock.isPassable) Nil
+			else {
+				val targetBlock = takeBlockDownWater(endTargetBlock)
+				val startBlock = takeBlockDownWater(endStartBlock)
+
+				getPath(startBlock, targetBlock, 700)()
+			}
+		} catch {
+			case t: FindChunkError =>
+				Nil
+		}
+	}
+
+
+}
+/*
 trait BotNavigation extends WaypointManager with CollisionDetection with BotClientView {
 	import BotNavigation._
 	import WaypointManager._
@@ -170,7 +354,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection with BotClie
 		None
 	}
 
-	def visitWaypoint(id: Int) = {
+	/*def visitWaypoint(id: Int) = {
 		waypoints(id).updateProperty("visited", curTime)
 		waypoints(id).updateProperty("nvisits",
 			waypoints(id).property("nvisits") + 1)
@@ -277,7 +461,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection with BotClie
 	} catch {
 		case x: FindChunkError =>
 			log.info("waypoint stop " + x)
-	}
+	}*/
 
 
 
@@ -399,7 +583,7 @@ trait BotNavigation extends WaypointManager with CollisionDetection with BotClie
 	} catch {
 		case x: FindChunkError =>
 	}
-
+/*
 	var findingMove = false
 	def findMove() {
 		if(findingMove) return
@@ -825,5 +1009,5 @@ println(selQ -> wpQ, lastTransition)
 			case x: FindChunkError =>
 		}
 		case PathTick =>
-	}
-}
+	}*/
+}*/

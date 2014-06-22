@@ -4,7 +4,7 @@ import com.colingodsey.collections._
 import com.colingodsey.logos.collections.{Vec3, IVec3}
 import com.colingodsey.ai.{BoltzmannSelector, QLearningValues, Selector}
 import com.colingodsey.mcbot.world.{Block, BlockPathFinder, WorldView}
-import akka.actor.Actor
+import akka.actor.{ActorLogging, Actor}
 
 /*
 
@@ -49,6 +49,7 @@ object BotLearn {
 	case class StateAction(fromState: State, action: Action) {
 		//lazy val id = (toString, fromState.hashCode, action.hashCode).hashCode
 	}
+
 
 	//case class Transition(toState: State) extends Action
 
@@ -99,25 +100,25 @@ trait BotLearn extends QLearningValues {
 	}
 
 	//initial value, reward, maxQ of dest, weight
-	def update(q0: VecN, reward: VecN, maxQ: VecN, w: Double = 1): VecN = {
+	def calcQ(q0: VecN, reward: VecN, maxQ: VecN, w: Double): VecN = {
 		val α = α0 * (1.0 - w)
 		val q1 = maxQ * γ
 
 		reward + q0 * α + q1 * (1.0 - α)
 	}
 
-	def update(sa: StateAction, reward: VecN, controls: Set[StateAction], w: Double = 1): VecN =
-		update(qValue(sa), reward, maxQ(controls), w)
+	def calcQ(sa: StateAction, reward: VecN, controls: Set[StateAction], w: Double): VecN =
+		calcQ(qValue(sa), reward, maxQ(controls), w)
 
-	def update(sa: StateAction, reward: VecN, reverse: StateAction, w: Double = 1): VecN = {
+	def calcQ(sa: StateAction, reward: VecN, reverse: StateAction, w: Double): VecN = {
 		//val StateAction(fromState, action) = sa
 		val StateAction(toState, rAction) = reverse
 
-		update(sa, reward, controls(toState) - reverse, w)
+		calcQ(sa, reward, controls(toState) - reverse, w)
 	}
 
-	def update(sa: StateAction, reward: VecN, dest: State, w: Double = 1): VecN =
-		update(sa, reward, controls(dest), w)
+	def calcQ(sa: StateAction, reward: VecN, dest: State, w: Double): VecN =
+		calcQ(sa, reward, controls(dest), w)
 
 	def policy(states: States, desire: VecN): Option[Action] = {
 		val actionPairs = for {
@@ -139,7 +140,7 @@ trait BotLearn extends QLearningValues {
 	}
 
 	//use maxQ of all trans that ignore fromStates
-	def update(tran: StateAction, reward: VecN = VecN.zero, maxQForDest: VecN): VecN
+	//def update(tran: StateAction, reward: VecN = VecN.zero, maxQForDest: VecN): VecN
 
 
 }
@@ -206,6 +207,7 @@ object WorldTile {
 			if(max <= tileD) 1.0 - max / tileD
 			else 0.0
 		}
+
 	}
 }
 
@@ -217,34 +219,22 @@ trait WorldTile extends BotLearn {
 	import clientView._
 
 	def tileStatesFor = TileState statesFor _
-	
+
 	def currentTileStates = tileStatesFor(selfEnt.pos)
 	def currentTileState = currentTileStates.toSeq.sortBy(-_._2).head._1
 
-}
-
-/**
- * This is the main state machine that selects behaviors,
- * follows through with them, can go back on them,
- * and then select other behavior.
- */
-class BotActor extends Actor with BotThink with WorldTile {
-	def baseReceive: Receive
-
-	def followPath(path: Seq[Block]) {
-
-	}
 }
 
 object BotThink {
 	case class BlockPath(start: Block, moves: Seq[Vec3])
 }
 
-trait BotThink extends WorldTile with BotLearn {
+trait BotThink extends WorldTile with BotLearn with BotPathing with Actor with ActorLogging {
 	import BotLearn._
 	import WorldTile._
 
 	def isSane(sa: StateAction): Boolean
+	def desire: VecN
 
 	implicit val worldView: WorldView
 	import worldView._
@@ -253,9 +243,11 @@ trait BotThink extends WorldTile with BotLearn {
 	var stateActions: Map[State, Map[Action, VecN]] = Map.empty
 	var currentAction: Option[Action] = None
 	var rewardAcc = VecN.zero
-	var desire = VecN.zero
 
 	def selector: Selector = BoltzmannSelector.default
+
+	def stateActionsFor(state: State) =
+		stateActions.getOrElse(state, Map.empty)
 
 	def qValue(sa: StateAction): VecN = {
 		val StateAction(state, action) = sa
@@ -265,26 +257,20 @@ trait BotThink extends WorldTile with BotLearn {
 		map.getOrElse(action, VecN.zero)
 	}
 
-	def pathTo(from: Vec3, to: TileState): List[Block] = {
+	def pathTo(from: Vec3, to: TileState): Seq[Block] = {
 		val startBlock = takeBlockDownWater(Block(from))
+		val endBlock = getBlock(from)
 
-		if(!startBlock.isPassable) Nil
-		else {
-			val finder = new BlockPathFinder(worldView, Block(to.pos), (tileD.toInt + 1) * 3)
-			val paths = finder pathsFrom startBlock
-
-			paths.take(200).dropWhile { case (end, moves) =>
-				(to contains end.pos.toVec3) > 0.0
-			}.headOption.map(_._2).toList.flatten
-		}
+		getPath(startBlock, endBlock, 300)(bl => to.contains(bl.center) > 0)
 	}
 
+	//should be exhaustive
 	def possibleControls(state: State): Set[StateAction] = state match {
 		case x: TileState => x.neighborMoves.map(StateAction(state, _))
 	}
 
 	def controls(state: State): Set[StateAction] = (for {
-		(action, q) <- stateActions.getOrElse(state, Map.empty)
+		(action, q) <- stateActionsFor(state)
 	} yield StateAction(state, action)).toSet ++ possibleControls(state)
 
 	def setQValue(sa: StateAction, q: VecN) {
@@ -309,19 +295,25 @@ trait BotThink extends WorldTile with BotLearn {
 			(oldState, w0) <- oldStates
 			sa = StateAction(oldState, action)
 			if isSane(sa)
-			newQ = update(sa, reward, ctrs, w0)
+			newQ = calcQ(sa, reward, ctrs, w0)
 		} setQValue(sa, newQ)
 	}
 
 	//finished on action complete
-	def stateUpdate(dt: Double) {
+	def actionFinished(dt: Double = 1) {
 		val curStates = currentTileStates
 
 		if(currentAction.isDefined)
 			updateStates(lastStates, curStates, currentAction.get, rewardAcc, dt)
 
-		currentAction = policy(curStates, desire)
-		rewardAcc = VecN.zero
 		lastStates = curStates
+		currentAction = None
+		maybeSelectGoal()
+	}
+
+	def maybeSelectGoal() = if(currentAction == None) {
+		currentAction = policy(lastStates, desire)
+		log.info("Selecting new action " + currentAction)
+		rewardAcc = VecN.zero
 	}
 }

@@ -46,12 +46,12 @@ import com.colingodsey.mcbot.world._
 import scala.Some
 import com.colingodsey.mcbot.world.Player
 import akka.event.LoggingReceive
-import com.colingodsey.mcbot.client.WaypointManager.Waypoint
 import com.colingodsey.collections.VecN
+import com.colingodsey.mcbot.client.BotLearn.StateAction
 
 object BotClient {
 	case class Settings(host: String, port: Int, username: String,
-			wps: Seq[Waypoint],
+			//wps: Seq[Waypoint],
 			wpMasterRef: Option[ActorRef]) {
 		def wpMaster = !wpMasterRef.isDefined
 	}
@@ -63,7 +63,7 @@ object BotClient {
 	case object Subscribe
 
 	case class BotSnapshot(
-		nearWaypoints: Set[Waypoint],
+		//nearWaypoints: Set[Waypoint],
 		curPos: Vec3,
 		desire: VecN
 	)
@@ -99,10 +99,26 @@ trait BotClientView {
 
 	def footPos: Vec3 = selfEnt.pos - Vec3(0, stanceDelta, 0)
 	def footBlockPos = footPos + Vec3(0, 0.5, 0)
+
+	implicit val worldView: WorldView
+
+	//def botClient: ActorRef
+}
+
+trait BotClientControl {
+	def jump()
+	def lookAt(vec: Vec3)
+	def setDirection(vec: Vec3)
+	def randomPushSelf()
+	def addVel(vel: Vec3)
+	def resetGoal()
+	def finishGoal()
+
 }
 
 class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
-		with Stash with WorldClient with BotNavigation with BotClientView {
+		with Stash with WorldClient with BotThink with BotPathing
+		with BotMovement with BotClientView {
 	import settings._
 	import BotClient._
 	import BotNavigation._
@@ -136,6 +152,9 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		}
 	}
 
+	def γ: Double = 0.8
+	def α0: Double = 0.7
+
 	val tickDelta = 50.millis//50.millis
 	val pingTimer = safeSchedule(
 		tickDelta, self, PhysicsTick)
@@ -163,6 +182,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	var lastTime = curTime
 	var subscribers = Set[ActorRef]()
 	var desire = VecN.zero
+	var direction = Vec3.zero
+	var targetingEnt: Option[Int] = None
 
 	//var discoverTokens: Double = 0
 	var waterTokens: Double = 0
@@ -185,11 +206,26 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	def isWpMaster = settings.wpMaster
 	def wpMaster = settings.wpMasterRef.get
 
+	override def isSane(sa: StateAction): Boolean = (sa.fromState, sa.action) match {
+		case (s: WorldTile.TileState, t @ WorldTile.TileTransition(dest)) =>
+			s.neighborMoves(t) && !getShortPath(s.tilePos, dest.tilePos).isEmpty
+	}
+
+	override def resetGoal(): Unit = finishGoal
+
+	override def setDirection(vec: Vec3): Unit = direction = vec
+
+	implicit val clientView: BotClientView = this
 	val worldView: WorldView = this
 
 	def dead = selfEnt.health <= 0
 	def movementSpeed = selfEnt.prop("generic.movementSpeed") * movementSpeedModifier
 	def maxHealth = selfEnt.prop("generic.maxHealth")
+
+	def finishGoal() {
+		actionFinished(1.0) //TODO: real time delta
+		maybeSelectGoal()
+	}
 
 	def setDesires() {
 		val homeFac = math.max((-dayFac), 0)
@@ -198,14 +234,14 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		val water = waterTokens * 10
 		val waterHome = water * 0.01
 
-		val isLost0 = if(lastTransition.isDefined) {
+		/*val isLost0 = if(lastTransition.isDefined) {
 			val transs = transFrom(lastTransition.get).map(qValue(_)("home"))
 			if(!transs.isEmpty) {
 				val sel = transs.max
 
 				sel == 0
 			} else false
-		} else false
+		} else false*/
 
 		var isLost = false
 
@@ -344,10 +380,11 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		stream ! spr.ChatMessage(str)
 	}
 
-	def makeBotSnapshot = {
-		val wps = getNearWaypoints(selfEnt.pos, radius = 600, maxNum = 500)
+	def makeBotSnapshot: BotSnapshot = {
+		/*val wps = getNearWaypoints(selfEnt.pos, radius = 600, maxNum = 500)
 		BotSnapshot(nearWaypoints = wps.toSet,
-			curPos = selfEnt.pos, desire = desire)
+			curPos = selfEnt.pos, desire = desire)*/
+		???
 	}
 
 	def normal: Receive = worldClientReceive orElse blockChange orElse clientThink orElse unhandled
@@ -357,7 +394,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			log.info("Unhandled packet " + packet)
 	}
 
-	val clientThink: Receive = pathReceive orElse {
+	val clientThink: Receive = {
 		case cpr.EntityStatus(eid, 2) if eid == selfId => //we died??
 			/*updateEntity(selfId) { e =>
 				e.copy(health = 0)
@@ -401,7 +438,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				lastTime = curTime
 
 				joined = true
-				getPath(selfEnt.pos)
+				//getPath(selfEnt.pos)
 			} else
 				log.info(s"Correction packet: ${selfEnt.pos - lastPos}. $lastPos -> ${selfEnt.pos}")
 		case cpr.HeldItemChange(item) =>
@@ -555,14 +592,14 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 			log.debug(s"health = ${selfEnt.health}, pos = ${selfEnt.pos},  ground = ${selfEnt.onGround}, velL = ${selfEnt.vel.length}")
 
-		case wp: Waypoint =>
+/*		case wp: Waypoint =>
 			addWaypoint(wp, isWpMaster)
-			//subscribers.foreach(_ ! wp)
+			//subscribers.foreach(_ ! wp)*/
 
 		case snap: BotSnapshot =>
-			snap.nearWaypoints foreach { x =>
+			/*snap.nearWaypoints foreach { x =>
 				addWaypoint(x, false)
-			}
+			}*/
 
 		case Subscribe =>
 			subscribers += sender
@@ -584,7 +621,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			targetingEnt = follow.map(_.id)
 			say("Following")
 		case "mark home" =>
-			if(lastWaypoint.isDefined) {
+			/*if(lastWaypoint.isDefined) {
 				val wp = lastWaypoint.get
 
 				addWaypoint(wp.updateProperty("home", 100.0))
@@ -592,12 +629,13 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				say("New home at wp " + wp.pos)
 				//println(lastWaypoint.get.property("home"))
 			}
-			println("home " + lastWaypoint)
+			println("home " + lastWaypoint)*/
+
 		case "stop" =>
 			say("Stopping goal")
 			targetingEnt = None
 			curPath = Stream()
-			moveGoal = None
+			//moveGoal = None
 		case "die" => stream ! spr.ChatMessage("/kill")
 		case x if x.startsWith("echo ") =>
 			stream ! spr.ChatMessage(x.substring(5))
@@ -606,7 +644,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	override def preStart() {
 		//loadWaypoints()
-		settings.wps.foreach(addWaypoint)
+		//settings.wps.foreach(addWaypoint)
 		super.preStart
 	}
 

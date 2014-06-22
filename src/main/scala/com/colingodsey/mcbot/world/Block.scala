@@ -92,32 +92,11 @@ object Block {
 		res.toArray
 	}
 
-	def apply(pos: Vec3): Block = new Block(IVec3(pos))
+	def apply(pos: Vec3): Block = new WVBlock(IVec3(pos))
 }
 
-final case class Block(pos: IVec3) extends Equals {
-	import Chunk._
-
-	def chunk(implicit wv: WorldView) = wv.getChunkAt(chunkCoord)
-
-	def typ(implicit wv: WorldView): Int = chunk.typ(cx, cy, cz)
-	def meta(implicit wv: WorldView): Int = chunk.meta(cx, cy, cz)
-	def light(implicit wv: WorldView): Int = chunk.light(cx, cy, cz)
-	def skyLight(implicit wv: WorldView): Int = chunk.skyLight(cx, cy, cz)
-	def biome(implicit wv: WorldView): Int = chunk.biome(cx, cy, cz)
-
-	def below(implicit wv: WorldView) = wv.getBlock(pos - Vec3(0, 1, 0))
-	def above(implicit wv: WorldView) = wv.getBlock(pos.toVec3 + Vec3(0, 1, 0))
-
-	def btyp(implicit wv: WorldView) = Block.types(typ)
-
-	def isPassable(implicit wv: WorldView): Boolean = {
-		val bel = below
-
-		(if(btyp.isDoor) {
-			!door.isClosed
-		} else btyp.isPassable) && !bel.btyp.isFence
-	}
+trait Block extends Equals {
+	def pos: IVec3
 
 	def x = pos.x
 	def y = pos.y
@@ -144,6 +123,27 @@ final case class Block(pos: IVec3) extends Equals {
 		case _ => false
 	}
 
+	def chunk(implicit wv: WorldView) = wv.getChunkAt(chunkCoord)
+
+	def typ(implicit wv: WorldView): Int = chunk.typ(cx, cy, cz)
+	def meta(implicit wv: WorldView): Int = chunk.meta(cx, cy, cz)
+	def light(implicit wv: WorldView): Int = chunk.light(cx, cy, cz)
+	def skyLight(implicit wv: WorldView): Int = chunk.skyLight(cx, cy, cz)
+	def biome(implicit wv: WorldView): Int = chunk.biome(cx, cy, cz)
+
+	def below(implicit wv: WorldView) = wv.getBlock(pos - Vec3(0, 1, 0))
+	def above(implicit wv: WorldView) = wv.getBlock(pos.toVec3 + Vec3(0, 1, 0))
+
+	def btyp(implicit wv: WorldView) = Block.types(typ)
+
+	def isPassable(implicit wv: WorldView): Boolean = {
+		val bel = below
+
+		(if(btyp.isDoor) {
+			!door.isClosed
+		} else btyp.isPassable) && !bel.btyp.isFence
+	}
+
 	object door {
 		//require door
 		def isBottom(implicit wv: WorldView) = //((meta >>> 3) & 0x1) == 0
@@ -155,3 +155,5 @@ final case class Block(pos: IVec3) extends Equals {
 		else below.door.isClosed
 	}
 }
+
+final case class WVBlock(val pos: IVec3) extends Block

@@ -53,7 +53,7 @@ case class BoltzmannSelector(temperature: Double = 0.1) extends Selector {
 	}
 
 }
-
+/*
 object QLPolicy {
 	def apply[T, U <: VecLike[U]](initialValue: U, desire: U,
 			gamma: Double = 0.8, alphaScale: Double = 1.0,
@@ -107,14 +107,6 @@ object QLearning {
 	}*/
 }
 
-trait QLearningValues {
-	def γ: Double //gamma, how much the max q of associated state is blended in
-	def α0: Double //alpha, familiarity
-
-	def gamma = γ
-	def alpha0 = α0
-}
-
 //cue, behavior, reward
 trait QLearning[T, U <: VecLike[U]] extends QLearningValues {
 	def initialValue: U //best at 0 usually
@@ -150,4 +142,12 @@ trait QLearning[T, U <: VecLike[U]] extends QLearningValues {
 		//remainingQ0 + alignedQ0 * α + (alignedAdjMaxQ + reward) * (1.0 - α)
 		//remainingQ0 + alignedQ0 * α + (q1 + reward) * (1.0 - α)
 	}
+}*/
+
+trait QLearningValues {
+	def γ: Double //gamma, how much the max q of associated state is blended in
+	def α0: Double //alpha, familiarity
+
+	def gamma = γ
+	def alpha0 = α0
 }

@@ -14,7 +14,7 @@ object Chunk {
 
 	val defaultSkyValue = 15
 
-	def apply(x: Int, y: Int, z: Int): Chunk =
+	def apply(x: Int, y: Int, z: Int)(implicit wv: WorldView): Chunk =
 		new MutableChunk(x, y, z)
 
 	def apply(x: Int, z: Int, bitmask: Short, addBitmask: Short,

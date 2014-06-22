@@ -5,6 +5,7 @@ import com.colingodsey.logos.collections.Vec3
 
 class BlockPathFinder(val worldView: WorldView, dest: Block,
 		val maxPathLength: Int) extends PathFinding[Block, Block] {
+	implicit def wv = worldView
 	import worldView._
 
 	val destPos = dest.pos.toVec3
@@ -23,9 +24,9 @@ class BlockPathFinder(val worldView: WorldView, dest: Block,
 		Vec3(-1, 0, -1) -> Set(Vec3(-1, 0, 0), Vec3(0, 0, -1))
 	)
 
-	def legalNeighbors(state: Block): Stream[Block] =
-		if(state.btyp.isWater) legalNeighborsWater(state)
-		else legalNeighborsLand(state)
+	def legalNeighbors(state: Block): Stream[(Block, Block)] =
+		(if(state.btyp.isWater) legalNeighborsWater(state)
+		else legalNeighborsLand(state)).map(x => x -> x)
 
 	def legalNeighborsWater(state: Block): Stream[Block] = {
 		val flatNeighbs = flatNeighbs0.map(x => Block(state.pos.toVec3 + x))
@@ -175,6 +176,6 @@ class BlockPathFinder(val worldView: WorldView, dest: Block,
 			val vec = destPos - block.pos
 
 			vec.length
-		}.map(x => x -> x)
+		}
 	}
 }

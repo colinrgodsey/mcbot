@@ -6,7 +6,6 @@ import akka.util.Timeout
 import com.colingodsey.mcbot.network.ProtocolStream
 import java.io.{FileInputStream, File}
 import com.colingodsey.mcbot.protocol.DataSource
-import com.colingodsey.mcbot.client.WaypointManager.WaypointSnapshot
 
 object Main extends App {
 	val host = "192.168.0.2"
@@ -14,16 +13,16 @@ object Main extends App {
 
 	val waypointFile = new File("funnybot1.wp.dat")
 
-	val wps = if(!waypointFile.canRead) Nil
+	/*val wps = if(!waypointFile.canRead) Nil
 	else {
 		val src = DataSource(new FileInputStream(waypointFile))
 
 		try src.read[WaypointSnapshot](
 			WaypointSnapshot.codec).waypoints finally src.close
-	}
+	}*/
 
 
-	val botSettings = BotClient.Settings(host, port, "funnybot1", wps, None)
+	val botSettings = BotClient.Settings(host, port, "funnybot1", None)
 
 	// we need an ActorSystem to host our application in
 	implicit val system = ActorSystem("MCBotClient")
