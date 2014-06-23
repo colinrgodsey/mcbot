@@ -185,7 +185,7 @@ trait CollisionDetection {
 			scale <- Stream(-1.0, 1.0)
 			sNorm = VecN(dim -> scale).to[Vec3]
 			normDot = sNorm * vecNormal
-			if normDot <= 0 //are facing
+			if normDot < 0 //are facing
 			surfCenter = startBlock.center - sNorm * 0.5
 			/*surfD = (pos - surfCenter) * sNorm
 			hitLen = surfD / normDot*/
