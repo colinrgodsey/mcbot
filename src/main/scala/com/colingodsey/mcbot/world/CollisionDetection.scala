@@ -158,10 +158,11 @@ trait CollisionDetection {
 		val centerVec = point - centerPoint
 
 		var centerCorVec = Vec3.zero
-		if((point.x.toInt == point.x) && centerVec.x > 0) centerCorVec += Vec3(-1, 0, 0)
-		if((point.y.toInt == point.y) && centerVec.y > 0) centerCorVec += Vec3(0, -1, 0)
-		if((point.z.toInt == point.z) && centerVec.z > 0) centerCorVec += Vec3(0, 0, -1)
+		if((point.x.toInt == point.x) && centerVec.x > 0) centerCorVec += Vec3(-0.1, 0, 0)
+		if((point.y.toInt == point.y) && centerVec.y > 0) centerCorVec += Vec3(0, -0.1, 0)
+		if((point.z.toInt == point.z) && centerVec.z > 0) centerCorVec += Vec3(0, 0, -0.1)
 
+		if(centerCorVec != Vec3.zero) println("center vec " + centerCorVec)
 
 		//below makes no sense
 		/*if((point.x == 1) && centerVec.x < 0) centerCorVec += Point3D(1, 0, 0)
@@ -178,9 +179,8 @@ trait CollisionDetection {
 		traceRay(from, vec, startBlock)
 	}*/
 
-	def getBlockStream(pos0: Vec3, vecNormal: Vec3, startBlock: Block,
-			vecStartUnits: Double = 0.0): Stream[(Block, Double, Vec3)] = {
-		val pos = pos0// + vecNormal * vecStartUnits
+	def getBlockStream(pos0: Vec3, vecNormal: Vec3, startBlock: Block): Stream[(Block, Double, Vec3)] = {
+		val pos = pos0
 
 		val nextCross = (for {
 			dim <- Stream("x", "y", "z")
@@ -191,7 +191,8 @@ trait CollisionDetection {
 			surfCenter = startBlock.center - sNorm * 0.5
 			/*surfD = (pos - surfCenter) * sNorm
 			hitLen = surfD / normDot*/
-			hitLen = ((surfCenter - pos) * sNorm) / normDot
+			surfD = (surfCenter - pos)
+			hitLen = (surfD * sNorm) / normDot
 			if hitLen >= 0
 		} yield (dim, sNorm, hitLen)).sortBy(_._3).headOption
 
@@ -207,9 +208,10 @@ trait CollisionDetection {
 			val newPos = MapVector(newDims).to[Vec3]
 			//val newPos = newPos0.to[Vec3]*/
 			val newBlock = getBlock(startBlock.center + dNorm)
-			val newLen = vecStartUnits + hitLen
+			//val (newBlock, _) = blockSelect(from, center)
+			//val newLen = hitLen
 
-			(newBlock, newLen, sNorm) #:: getBlockStream(pos0, vecNormal, newBlock, newLen)
+			(newBlock, hitLen, sNorm) #:: getBlockStream(pos0, vecNormal, newBlock)
 		}
 	}
 
@@ -218,17 +220,29 @@ trait CollisionDetection {
 
 		val blockStream = getBlockStream(from, vec.normal, startBlock)
 
-		val filtered = blockStream.filter {
-			case (block, len, _) if !block.isPassable && len < vec.length => true
-			case (_, len, _) if len > vec.length => true
-			case _ => false
+		val filtered = blockStream.takeWhile {
+			case (_, len, _)  => len < vec.length
+		}.filter {
+			case (block, len, _) => !block.isPassable
 		}
 
-		filtered.headOption match {
+		val r = filtered.headOption match {
+			case _ if !startBlock.isPassable =>
+				println(s"start solid block ${startBlock.pos} ${startBlock.btyp} from $from")
+				StartSolid
+			case a @ Some((block, len, norm))
+					if !getBlock(from + vec.normal * len).isPassable &&
+							block.isPassable =>
+				println(s"weird col $a for vec $vec from pos $from")
+				StartSolid //should nver happen....
 			case Some((block, len, norm)) if !block.isPassable =>
 				TraceHit(len, norm)
-			case _ => NoHit(0)
+			case _ => NoHit(vec.length)
 		}
+
+		//println(from, vec.normal, r, from + vec.normal * r.dist)
+
+		r
 	}
 
 	//always clip to the closest surface, move from there

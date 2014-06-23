@@ -231,7 +231,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case WorldTile.TileTransition(toTile) =>
 			val path = pathTo(footBlock.center, toTile)
 
-			if(path.isEmpty || true) {
+			if(path.isEmpty) {
 				log.warning("Failed TileTransition action!")
 				currentAction = None
 				//direction = Vec3.random //debugging
@@ -440,7 +440,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			val lastPos = selfEnt.pos
 
 			updateEntity(selfId) { case e: Player =>
-				e.copy(pos = pos, yaw = yaw, //vel = Vec3.zero,
+				e.copy(pos = pos, yaw = yaw, vel = Vec3.zero,
 					pitch = pitch, onGround = onGround)
 			}
 
@@ -510,7 +510,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case PhysicsTick if joined && (curTime - lastTime) > 0.1 =>
 			val ct = curTime
 			//val dt = tickDelta.toMillis / 1000.0
-			val dt = ct - lastTime
+			val dt = ct - lastTime//math.min(ct - lastTime, 2)
 
 			lastTime = ct
 

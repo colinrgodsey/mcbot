@@ -31,7 +31,10 @@ object Block {
 	//
 	case object WoodDoor extends ADoorType(64)
 	case object Rail extends ABlockType(66)
+	//
 	case object IronDoor extends ADoorType(71)
+	//
+	case object Snow extends ABlockType(78)
 	//
 	case object Fence extends AFenceBlockType(85)
 	//
@@ -66,7 +69,7 @@ object Block {
 
 	val typeSet = Set[BlockType](Air, Stone, Grass, Dirt, Bedrock, FlowWater,
 		FlowLava, Sand, Gravel, GoldOre, Torch, RedstoneWire, Fence, Gate,
-		WoodDoor, IronDoor, NetherFence, Rail, Lava, Water)
+		WoodDoor, IronDoor, NetherFence, Rail, Lava, Water, Snow)
 
 	val halfBlockVec = Vec3.one / 2
 
@@ -108,11 +111,7 @@ trait Block extends Equals {
 
 	//require(Chunk.dims = IVec3(16, 16, 16))
 	lazy val chunkPos = IVec3(x & 15, y & 15, z & 15)
-
-	lazy val chunkCoord = IVec3(
-		math.floor(x.toDouble / Chunk.dims.x).toInt,
-		math.floor(y.toDouble / Chunk.dims.y).toInt,
-		math.floor(z.toDouble / Chunk.dims.z).toInt)
+	lazy val chunkCoord = IVec3(x >> 4, y >> 4, z >> 4)
 
 	def center: Vec3 = pos.toVec3 + Block.halfBlockVec
 

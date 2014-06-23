@@ -71,11 +71,9 @@ object Chunk {
 
 	def xyzToIdx(x: Int, y: Int, z: Int) = // 0000YYYY ZZZZXXXX
 		//(y * dims.z + z) * dims.x + x // y * 16 * 16 + z * 16 + x
-		(
 			((y & 0xF) << 8) |
 				((z & 0xF) << 4) |
 				(x & 0xF)
-		).toInt
 
 	def idxToXyz(idx: Int) = {
 		val y = (idx >>> 8) & 0x0F
@@ -88,7 +86,7 @@ object Chunk {
 	def xyzHalfIdxGet(x: Int, y: Int, z: Int, arr: Array[Byte]): Int = {
 		val idx = xyzToIdx(x, y, z)
 		val isOdd = (idx & 1) == 1
-		val hidx = idx / 2
+		val hidx = idx >>> 1
 
 		if(!isOdd) (arr(hidx) >>> 4) & 0xF
 		else arr(hidx) & 0xF
@@ -97,7 +95,7 @@ object Chunk {
 	def xyzHalfIdxSet(x: Int, y: Int, z: Int, value: Int, arr: Array[Byte]) {
 		val idx = xyzToIdx(x, y, z)
 		val isOdd = (idx & 1) == 1
-		val hidx = idx / 2
+		val hidx = idx >>> 1
 		val cur = arr(hidx)
 
 		val maskedValue = value & 0x0F

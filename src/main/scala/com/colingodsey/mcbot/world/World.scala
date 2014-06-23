@@ -257,9 +257,9 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 				//(ent.pos + terminalVel * dt, terminalVel * dt)
 			}
 
-			val Some((newPos, postMoveVec)) = moveRes
+			lazy val Some((newPos, postMoveVec)) = moveRes
 
-			val failed = try if(traceFunc(newPos, Vec3(0.0, 0.06, 0.0)) contains StartSolid) {
+			lazy val failed = false/*try if(traceFunc(newPos, Vec3(0.0, 0.06, 0.0)) contains StartSolid) {
 				log.warning("possible start solid")
 				ent.entityCopy(vel = Vec3(math.random - 0.5,
 					math.random - 0.5, math.random - 0.5).normal)
@@ -268,7 +268,7 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 				case t: Throwable =>
 					log.error(t, "traceFunc fail!")
 				true
-			}
+			}*/
 
 			if(!moveRes.isDefined) {
 				log.warning("Failed move!")

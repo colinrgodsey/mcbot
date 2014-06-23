@@ -10,7 +10,10 @@ import java.io.InputStream
 
 package object collections {
 	object IVec3 {
-		def apply(point: Vec3): IVec3 = IVec3(point.x.toInt, point.y.toInt, point.z.toInt)
+		def apply(point: Vec3): IVec3 = IVec3(
+			math.floor(point.x).toInt,
+			math.floor(point.y).toInt,
+			math.floor(point.z).toInt)
 	}
 
 	final case class IVec3(x: Int, y: Int, z: Int) {
@@ -20,7 +23,7 @@ package object collections {
 	implicit def IPoint3DToPoint3D(x: IVec3) = x.toVec3
 
 	implicit final class ChannelBufferSeq(buf: ChannelBuffer) extends
-	immutable.IndexedSeq[Byte] with IndexedSeqOptimized[Byte, immutable.IndexedSeq[Byte]] {
+			immutable.IndexedSeq[Byte] with IndexedSeqOptimized[Byte, immutable.IndexedSeq[Byte]] {
 		val offset = buf.readerIndex
 		val length = buf.readableBytes
 
