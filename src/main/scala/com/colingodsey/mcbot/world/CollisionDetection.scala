@@ -178,8 +178,10 @@ trait CollisionDetection {
 		traceRay(from, vec, startBlock)
 	}*/
 
-	def getBlockStream(pos: Vec3, vecNormal: Vec3, startBlock: Block,
+	def getBlockStream(pos0: Vec3, vecNormal: Vec3, startBlock: Block,
 			vecStartUnits: Double = 0.0): Stream[(Block, Double, Vec3)] = {
+		val pos = pos0// + vecNormal * vecStartUnits
+
 		val nextCross = (for {
 			dim <- Stream("x", "y", "z")
 			scale <- Stream(-1.0, 1.0)
@@ -198,15 +200,16 @@ trait CollisionDetection {
 			val (dim, sNorm, hitLen) = nextCross.get
 			val dNorm = -sNorm
 
-			val newPos0 = (pos + vecNormal * hitLen).toVecN
+			//val newPos0 = (pos + vecNormal * hitLen).toVecN
 			//lock to lbock boundry
-			val newEntry: (String, Double) = dim -> math.round(newPos0(dim))
+			/*val newEntry: (String, Double) = dim -> math.round(newPos0(dim))
 			val newDims = newPos0.weights + newEntry
 			val newPos = MapVector(newDims).to[Vec3]
+			//val newPos = newPos0.to[Vec3]*/
 			val newBlock = getBlock(startBlock.center + dNorm)
 			val newLen = vecStartUnits + hitLen
 
-			(newBlock, newLen, sNorm) #:: getBlockStream(newPos, vecNormal, newBlock, newLen)
+			(newBlock, newLen, sNorm) #:: getBlockStream(pos0, vecNormal, newBlock, newLen)
 		}
 	}
 

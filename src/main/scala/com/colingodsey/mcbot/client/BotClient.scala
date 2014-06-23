@@ -232,8 +232,11 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			val path = pathTo(footBlock.center, toTile)
 
 			if(path.isEmpty || true) {
-				log.warning("Failed path action!")
+				log.warning("Failed TileTransition action!")
 				currentAction = None
+				//direction = Vec3.random //debugging
+				val t = 0.3
+				direction = Vec3(math.cos(curTime * t), 0, math.sin(curTime * t))
 			} else {
 				log.info("Following new path " + path)
 				curPath = path.toStream
@@ -437,7 +440,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			val lastPos = selfEnt.pos
 
 			updateEntity(selfId) { case e: Player =>
-				e.copy(pos = pos, yaw = yaw, vel = Vec3.zero,
+				e.copy(pos = pos, yaw = yaw, //vel = Vec3.zero,
 					pitch = pitch, onGround = onGround)
 			}
 
@@ -455,10 +458,18 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 				lastTime = curTime
 
+				updateEntity(selfId) {
+					case e: Player =>
+						e.copy(vel = Vec3.zero)
+				}
+
 				joined = true
 				//getPath(selfEnt.pos)
-			} else
+			} else {
 				log.info(s"Correction packet: ${selfEnt.pos - lastPos}. $lastPos -> ${selfEnt.pos}")
+
+			}
+
 		case cpr.HeldItemChange(item) =>
 			heldItem = item
 		case cpr.TimeUpdate(newAge, newTimeOfDay) =>
@@ -496,10 +507,12 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 		case x: cpr.PlayerListItem =>
 
-		case PhysicsTick if joined && (curTime - lastTime) > 0.07 =>
+		case PhysicsTick if joined && (curTime - lastTime) > 0.1 =>
 			val ct = curTime
 			//val dt = tickDelta.toMillis / 1000.0
-			val dt = math.min(ct - lastTime, 0.1)
+			val dt = ct - lastTime
+
+			lastTime = ct
 
 			val theta = System.currentTimeMillis * 0.0003
 
@@ -546,8 +559,6 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 							ent.copy(vel = ent.vel - remVec / 2)
 						}
 				}
-
-				lastTime = ct
 
 				if(walkDir.length > epsilon) {
 					//TODO: should this be dt or dt^2 ?
