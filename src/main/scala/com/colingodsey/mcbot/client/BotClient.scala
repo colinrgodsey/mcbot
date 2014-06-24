@@ -37,7 +37,7 @@ import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
 import org.bouncycastle.crypto.{KeyGenerationParameters, CipherKeyGenerator}
 import akka.util.Timeout
 import akka.pattern._
-import com.colingodsey.logos.collections.{Vec3, Dimensions}
+import com.colingodsey.logos.collections.{IVec3, Vec3, Dimensions}
 import Dimensions.Three._
 import protocol.ClientProtocol
 import protocol.{ClientProtocol => cpr}
@@ -83,6 +83,19 @@ object BotClient {
 	}
 
 	val jumpSpeed = 11
+}
+
+trait BotClientViewReceiver extends Actor {
+	var uuid: String = ""
+	var timeOfDayTicks: Long = 0
+	var stanceDelta: Double = 1.62
+	var joined: Boolean = false
+	var food: Double = 1
+	var dead: Boolean = false
+	var heldItem: Int = 0
+	var desire: VecN = VecN.zero
+	var footBlock: Block = WVBlock(IVec3(Vec3.zero))
+	var selfEnt: Player = Player(0)
 }
 
 trait BotClientView {
@@ -415,11 +428,11 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	}
 
 	val clientThink: Receive = {
-		case cpr.EntityStatus(eid, 2) if eid == selfId => //we died??
+		/*case cpr.EntityStatus(eid, 2) if eid == selfId => //we died??
 			/*updateEntity(selfId) { e =>
 				e.copy(health = 0)
 			}*/
-			log.info("We died?")
+			log.info("We died?")*/
 		case x: cpr.UpdateHealth =>
 			updateEntity(selfId) { case e: Player =>
 				e.copy(health = x.health)
@@ -496,7 +509,10 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			//log.error(t, "failed to parse chat msg " + msg)
 			log.info("failed to parse chat msg " + msg)
 		}
+
 		case x: cpr.SoundEffect =>
+		case x: cpr.PlayerListItem =>
+
 		case x: login.client.EncryptionRequest =>
 			generateClientHash(x)
 		case login.client.LoginSuccess(_uuid, usr) =>
@@ -505,7 +521,6 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			uuid = _uuid
 			stream ! cpr
 
-		case x: cpr.PlayerListItem =>
 
 		case PhysicsTick if joined && (curTime - lastTime) > 0.1 =>
 			val ct = curTime

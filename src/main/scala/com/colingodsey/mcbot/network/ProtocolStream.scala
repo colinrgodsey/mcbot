@@ -15,12 +15,13 @@ import scala.util.Success
 import org.jboss.netty.handler.timeout.IdleStateHandler
 import java.net.InetSocketAddress
 import com.colingodsey.logos.collections._
-import com.mediamath.vad.collections.Cord
+import akka.util.ByteString
 
 object ProtocolStream {
 	case class UnparsedData(data: IndexedSeq[Byte])
 }
 
+//TODO: switch to akka IO TCP
 trait ProtocolStream
 		extends Actor with ActorLogging with Stash {
 	import ProtocolStream._
@@ -30,7 +31,7 @@ trait ProtocolStream
 
 	val checkEncodingDecoding = true
 
-	var buffer = Cord[Byte]()
+	var buffer = ByteString.empty
 
 	def src = DataSource(buffer)
 	def ref = context.parent
@@ -43,7 +44,7 @@ trait ProtocolStream
 
 			val lengthBuf = view take size
 			val (packetData, tail) = view.drop(size) splitAt length
-			buffer = Cord(tail.toIndexedSeq)
+			buffer = ByteString.empty ++ tail.toIndexedSeq
 
 			//println(length, size, packetData.length)
 			log.ifdebug(s"Recved packet of length $length (size $size. Remaining: ${buffer.length}")

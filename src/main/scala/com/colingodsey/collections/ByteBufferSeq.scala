@@ -2,7 +2,7 @@ package com.colingodsey.logos.collections
 
 import java.nio.ByteBuffer
 import scala.collection.IndexedSeqOptimized
-import com.mediamath.vad.collections.Cord
+import akka.util.ByteString
 
 final class ByteBufferSeq(buf: ByteBuffer) extends IndexedSeq[Byte]
 		with IndexedSeqOptimized[Byte, IndexedSeq[Byte]] {
@@ -13,7 +13,8 @@ final class ByteBufferSeq(buf: ByteBuffer) extends IndexedSeq[Byte]
 
 	override def seq = this
 
-	override def slice(start: Int, end: Int): IndexedSeq[Byte] = Cord(this).slice(start, end)
+	override def slice(start: Int, end: Int): IndexedSeq[Byte] =
+		(ByteString.empty ++ this).slice(start, end)
 
 	//protected[this] def newBuilder: mutable.Builder[Byte, IndexedSeq[Byte]] = IndexedSeq.newBuilder[Byte]
 
