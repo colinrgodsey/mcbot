@@ -162,7 +162,7 @@ trait CollisionDetection {
 		if((point.y.toInt == point.y) && centerVec.y > 0) centerCorVec += Vec3(0, -0.1, 0)
 		if((point.z.toInt == point.z) && centerVec.z > 0) centerCorVec += Vec3(0, 0, -0.1)
 
-		if(centerCorVec != Vec3.zero) println("center vec " + centerCorVec)
+		//if(centerCorVec != Vec3.zero) println("center vec " + centerCorVec)
 
 		//below makes no sense
 		/*if((point.x == 1) && centerVec.x < 0) centerCorVec += Point3D(1, 0, 0)

@@ -88,6 +88,8 @@ trait BotLearn extends QLearningValues {
 		}).sum
 	}
 
+	def qValueForPolicy(sa: StateAction): VecN = qValue(sa)
+
 	def maxQ(set: Set[StateAction]): VecN = {
 		val values = set.toSeq.map(qValue)
 
@@ -124,7 +126,7 @@ trait BotLearn extends QLearningValues {
 		val actionPairs = for {
 			(fromState, w0) <- states.toSeq
 			ctr @ StateAction(_, action) <- controls(fromState)
-			q = qValue(ctr)
+			q = qValueForPolicy(ctr)
 			w1 = (desire * q) * w0
 			w1c = math.max(w1, 0)
 		} yield action -> w1c
@@ -234,8 +236,9 @@ trait BotThink extends WorldTile with BotLearn with Actor with ActorLogging {
 	import WorldTile._
 
 	def isSane(sa: StateAction): Boolean
-	def actionSelected(action: Action)
+	def actionSelected(states: States, action: Action)
 	def desire: VecN
+	def desire_=(x: VecN)
 
 	implicit val worldView: WorldView
 	import worldView._
@@ -253,9 +256,17 @@ trait BotThink extends WorldTile with BotLearn with Actor with ActorLogging {
 	def qValue(sa: StateAction): VecN = {
 		val StateAction(state, action) = sa
 
+		//allow defaults for discovery mechanics
 		val map = stateActions.getOrElse(state, Map.empty)
 
 		map.getOrElse(action, VecN.zero)
+	}
+
+	override def qValueForPolicy(sa: StateAction): VecN = {
+		val q = qValue(sa)
+
+		if(q == Vec3.zero) VecN("discover" -> 1000.0)
+		else q
 	}
 
 	//should be exhaustive
@@ -263,6 +274,7 @@ trait BotThink extends WorldTile with BotLearn with Actor with ActorLogging {
 		case x: TileState => x.neighborMoves.map(StateAction(state, _))
 	}
 
+	//only sane controls
 	def controls(state: State): Set[StateAction] = ((for {
 		(action, q) <- stateActionsFor(state)
 	} yield StateAction(state, action)).toSet ++ possibleControls(state)).filter(isSane)
@@ -272,7 +284,31 @@ trait BotThink extends WorldTile with BotLearn with Actor with ActorLogging {
 
 		val map = stateActions.getOrElse(state, Map.empty)
 
-		stateActions += state -> (map + (action -> q))
+		val isNew = action match {
+			case TileTransition(to) =>
+				//if target is not recognized
+				stateActions.get(state) == None
+			case _ => false
+		}
+
+		val q2 = if(isNew) {
+			//rewardAcc += VecN("discover" -> 1.0)
+			desire -= VecN("discover" -> 1.0)
+
+			log.info("new state action " + sa)
+
+			q + VecN("discover" -> 10.0)
+		} else {
+			q - VecN("discover" -> (q("discover") * 0.08))
+		}
+
+		val oldQ = map.getOrElse(action, VecN.zero)
+
+		val dq = q2 - oldQ
+
+		log.info(s"Q updated for $sa delta $dq qval $q2")
+
+		stateActions += state -> (map + (action -> q2))
 	}
 
 	def updateStates(oldStates: States, newStates: States,
@@ -311,6 +347,6 @@ trait BotThink extends WorldTile with BotLearn with Actor with ActorLogging {
 		rewardAcc = VecN.zero
 
 		if(currentAction != None)
-			actionSelected(currentAction.get)
+			actionSelected(currentTileStates, currentAction.get)
 	}
 }

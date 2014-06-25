@@ -221,7 +221,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	override def isSane(sa: StateAction): Boolean = (sa.fromState, sa.action) match {
 		case (s: WorldTile.TileState, t @ WorldTile.TileTransition(dest)) =>
-			s.neighborMoves(t) && !getShortPath(s.pos, dest.pos).isEmpty
+			s.neighborMoves(t) && !getShortPath(s.pos, dest.pos).isEmpty && s != dest
+		case _ => false
 	}
 
 	override def resetGoal(): Unit = finishGoal
@@ -240,9 +241,17 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		maybeSelectGoal()
 	}
 
-	def actionSelected(action: BotLearn.Action) = action match {
+	def actionSelected(states: BotLearn.States, action: BotLearn.Action) = action match {
 		case WorldTile.TileTransition(toTile) =>
 			val path = pathTo(footBlock.center, toTile)
+
+			if(footBlock.btyp.isWater)
+				rewardAcc += VecN("water" -> 0.1)
+
+			val q = qValue(states.map(pair =>
+				StateAction(pair._1, action) -> pair._2))
+
+			log.info("Selected action with q " + q)
 
 			if(path.isEmpty) {
 				log.warning("Failed TileTransition action!")
@@ -250,6 +259,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				//direction = Vec3.random //debugging
 				val t = 0.3
 				direction = Vec3(math.cos(curTime * t), 0, math.sin(curTime * t))
+				//desire += VecN("discover" -> 0.05)
+				rewardAcc += VecN("deadend" -> 0.1)
 			} else {
 				log.info("Following new path " + path)
 				curPath = path.toStream
@@ -258,6 +269,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case _ =>
 			log.warning("dont know how to do " + action)
 			currentAction = None
+			desire += VecN("discover" -> 0.05)
 	}
 
 	def setDesires() {
@@ -675,6 +687,9 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				//println(lastWaypoint.get.property("home"))
 			}
 			println("home " + lastWaypoint)*/
+
+			say("home at " + selfEnt.pos)
+			rewardAcc += VecN("home" -> 100.0)
 
 		case "stop" =>
 			say("Stopping goal")
