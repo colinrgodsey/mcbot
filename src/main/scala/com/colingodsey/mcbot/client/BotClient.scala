@@ -70,6 +70,10 @@ object BotClient {
 
 	case class BotPosition(curPos: Vec3)
 
+	case class ActionSelected(states: BotLearn.States, action: BotLearn.Action)
+
+	case class Desire(desire: VecN)
+
 	def props(settings: BotClient.Settings) = Props(classOf[BotClient], settings)
 
 	implicit object JsObjectWriter extends RootJsonFormat[JsObject] {
@@ -83,40 +87,64 @@ object BotClient {
 	}
 
 	val jumpSpeed = 11
+
+	trait View {
+		def uuid: String
+		def timeOfDayTicks: Long
+		def stanceDelta: Double
+		def joined: Boolean
+		def food: Double
+		def heldItem: Int
+		def desire: VecN
+		def footBlock: Block
+		def selfEnt: Player
+		def selfId: Int
+
+		def footPos: Vec3 = selfEnt.pos - Vec3(0, stanceDelta, 0)
+		def footBlockPos = footPos + Vec3(0, 0.5, 0)
+
+		implicit val worldView: WorldView
+
+		def dead = selfEnt.health <= 0
+
+		//def botClient: ActorRef
+	}
+
+	trait ViewReceiver { _: ActorLogging with View =>
+		implicit val worldView: WorldView
+
+		var uuid: String = ""
+		var timeOfDayTicks: Long = 0
+		var stanceDelta: Double = 1.62
+		var joined: Boolean = false
+		var food: Double = 1
+		var heldItem: Int = 0
+		var selfId: Int = 0
+		var desire: VecN = VecN.zero
+		var footBlock: Block = WVBlock(IVec3(Vec3.zero))
+
+		def selfEnt: Player = worldView.entities(selfId).asInstanceOf[Player]
+
+		def viewReceive: Actor.Receive = {
+			case BotClient.Desire(d) => desire = d
+
+			case x: cpr.UpdateHealth =>
+				food = x.food
+				log.info("Health " + x.health)
+			case cpr.HeldItemChange(item) =>
+				heldItem = item
+			case cpr.TimeUpdate(newAge, newTimeOfDay) =>
+				timeOfDayTicks = newTimeOfDay
+			case cpr.JoinGame(eid, gamemode, dim, difficulty, maxPlayers, level) =>
+				log.info(s"Joined game: $level")
+				selfId = eid
+		}
+	}
 }
 
-trait BotClientViewReceiver extends Actor {
-	var uuid: String = ""
-	var timeOfDayTicks: Long = 0
-	var stanceDelta: Double = 1.62
-	var joined: Boolean = false
-	var food: Double = 1
-	var dead: Boolean = false
-	var heldItem: Int = 0
-	var desire: VecN = VecN.zero
-	var footBlock: Block = WVBlock(IVec3(Vec3.zero))
-	var selfEnt: Player = Player(0)
-}
 
-trait BotClientView {
-	def uuid: String
-	def timeOfDayTicks: Long
-	def stanceDelta: Double
-	def joined: Boolean
-	def food: Double
-	def dead: Boolean
-	def heldItem: Int
-	def desire: VecN
-	def footBlock: Block
-	def selfEnt: Player
 
-	def footPos: Vec3 = selfEnt.pos - Vec3(0, stanceDelta, 0)
-	def footBlockPos = footPos + Vec3(0, 0.5, 0)
 
-	implicit val worldView: WorldView
-
-	//def botClient: ActorRef
-}
 
 trait BotClientControl {
 	def jump()
@@ -130,8 +158,8 @@ trait BotClientControl {
 }
 
 class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
-		with Stash with WorldClient with BotThink with BotPathing
-		with BotMovement with BotClientView {
+		with Stash with WorldClient with BotPathing
+		with BotMovement with BotClient.View with BotClient.ViewReceiver {
 	import settings._
 	import BotClient._
 	import BotNavigation._
@@ -168,6 +196,9 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	def γ: Double = 0.8
 	def α0: Double = 0.7
 
+	val botThink = context.actorOf(Props(classOf[BotThinkActor], self, this), name = "bot-think")
+	context watch botThink
+
 	val tickDelta = 50.millis//50.millis
 	val pingTimer = safeSchedule(
 		tickDelta, self, PhysicsTick)
@@ -183,20 +214,12 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	//context.system.scheduler.scheduleOnce(5.seconds, stream, spr.ChatMessage("/kill"))
 
-	var uuid = "?"
-	//var selfEnt = Entity(-1, onGround = false)
-	var selfId = -1
-	var timeOfDayTicks: Long = 0
-	var stanceDelta = 1.62
-	var joined = false
-	var food = 1.0
 	var lastPosEnt: Option[Player] = None
-	var heldItem = 0
 	var lastTime = curTime
 	var subscribers = Set[ActorRef]()
-	var desire = VecN.zero
 	var direction = Vec3.zero
 	var targetingEnt: Option[Int] = None
+	var viewSubscribers: Set[ActorRef] = Set(botThink)
 
 	//var discoverTokens: Double = 0
 	var waterTokens: Double = 0
@@ -209,58 +232,47 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	def curTime = System.currentTimeMillis / 1000.0
 
-	def selfEnt = entities(selfId).asInstanceOf[Player]
-
 	def timeOfDay = (timeOfDayTicks % 24000).toDouble / 24000
 	def dayFac = math.sin(timeOfDay * math.Pi * 2)
 
-	def footBlock = getBlock(footBlockPos)
-
 	def isWpMaster = settings.wpMaster
 	def wpMaster = settings.wpMasterRef.get
-
-	override def isSane(sa: StateAction): Boolean = (sa.fromState, sa.action) match {
-		case (s: WorldTile.TileState, t @ WorldTile.TileTransition(dest)) =>
-			s.neighborMoves(t) && !getShortPath(s.pos, dest.pos).isEmpty && s != dest
-		case _ => false
-	}
 
 	override def resetGoal(): Unit = finishGoal
 
 	override def setDirection(vec: Vec3): Unit = direction = vec
 
-	implicit val clientView: BotClientView = this
+	implicit val clientView: BotClient.View = this
 	val worldView: WorldView = this
 
-	def dead = selfEnt.health <= 0
 	def movementSpeed = selfEnt.prop("generic.movementSpeed") * movementSpeedModifier
 	def maxHealth = selfEnt.prop("generic.maxHealth")
 
 	def finishGoal() {
-		actionFinished(1.0) //TODO: real time delta
-		maybeSelectGoal()
+		botThink ! BotThink.ActionFinished(1.0) //TODO: real time delta
+		botThink ! BotThink.MaybeSelectGoal
 	}
 
 	def actionSelected(states: BotLearn.States, action: BotLearn.Action) = action match {
 		case WorldTile.TileTransition(toTile) =>
-			val path = pathTo(footBlock.center, toTile)
+			val path = pathTo(selfEnt.pos, toTile)
 
 			if(footBlock.btyp.isWater)
-				rewardAcc += VecN("water" -> 0.1)
+				botThink ! BotThink.AccumReward(VecN("water" -> 0.1))
 
-			val q = qValue(states.map(pair =>
+			/*val q = qValue(states.map(pair =>
 				StateAction(pair._1, action) -> pair._2))
 
-			log.info("Selected action with q " + q)
+			log.info("Selected action with q " + q)*/
 
 			if(path.isEmpty) {
 				log.warning("Failed TileTransition action!")
-				currentAction = None
+				botThink ! BotThink.ClearGoal
 				//direction = Vec3.random //debugging
 				val t = 0.3
 				direction = Vec3(math.cos(curTime * t), 0, math.sin(curTime * t))
 				//desire += VecN("discover" -> 0.05)
-				rewardAcc += VecN("deadend" -> 0.1)
+				botThink ! BotThink.AccumReward(VecN("deadend" -> 0.1))
 			} else {
 				log.info("Following new path " + path)
 				curPath = path.toStream
@@ -268,7 +280,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			}
 		case _ =>
 			log.warning("dont know how to do " + action)
-			currentAction = None
+			botThink ! BotThink.ClearGoal
 			desire += VecN("discover" -> 0.05)
 	}
 
@@ -299,6 +311,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			"water" -> -(10.0 + water))
 
 		if(math.random < 0.2) log.info("desire " + desire)
+
+		botThink ! BotClient.Desire(desire)
 	}
 
 	def breakBlock(bl: Block) {
@@ -445,12 +459,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				e.copy(health = 0)
 			}*/
 			log.info("We died?")*/
-		case x: cpr.UpdateHealth =>
-			updateEntity(selfId) { case e: Player =>
-				e.copy(health = x.health)
-			}
-			food = x.food
-			log.info("Health " + x.health)
+
 		//case cpr.SpawnPosition(x, y, z) =>
 		//track spawn pos i guess?
 		case cpr.PositionAndLook(x, y, z, yaw, pitch, onGround) =>
@@ -495,17 +504,17 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 			}
 
-		case cpr.HeldItemChange(item) =>
-			heldItem = item
-		case cpr.TimeUpdate(newAge, newTimeOfDay) =>
-			timeOfDayTicks = newTimeOfDay
-		case cpr.KeepAlive(id) =>
-			//println(spr.KeepAlive(id))
-			stream ! spr.KeepAlive(id)
-			//Thread.sleep(2000)
-		case cpr.JoinGame(eid, gamemode, dim, difficulty, maxPlayers, level) =>
-			log.info(s"Joined game: $level")
-			selfId = eid
+		case x: cpr.UpdateHealth =>
+			updateEntity(selfId) { case e: Player =>
+				e.copy(health = x.health)
+			}
+			viewReceive(x)
+			viewSubscribers.foreach(_ ! x)
+
+		case x if viewReceive isDefinedAt x =>
+			viewReceive(x)
+			viewSubscribers.foreach(_ ! x)
+
 		case cpr.PluginMessage(chan, data) =>
 			pluginMessage = Some(spr.PluginMessage(chan, data))
 			//stream ! spr.ClientSettings("en_GB", 0, 0, false, 2, false)
@@ -525,6 +534,11 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		case x: cpr.SoundEffect =>
 		case x: cpr.PlayerListItem =>
 
+		case cpr.KeepAlive(id) =>
+			//println(spr.KeepAlive(id))
+			stream ! spr.KeepAlive(id)
+		//Thread.sleep(2000)
+
 		case x: login.client.EncryptionRequest =>
 			generateClientHash(x)
 		case login.client.LoginSuccess(_uuid, usr) =>
@@ -533,6 +547,9 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			uuid = _uuid
 			stream ! cpr
 
+		case ActionSelected(states, action) =>
+			log.info("ActionSelected")
+			actionSelected(states, action)
 
 		case PhysicsTick if joined && (curTime - lastTime) > 0.1 =>
 			val ct = curTime
@@ -628,7 +645,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			//direction = Point3D(1, 0, 0)
 
 			setDesires()
-			maybeSelectGoal()
+			botThink ! BotThink.MaybeSelectGoal
 
 			if(dead) {
 				context.system.scheduler.scheduleOnce(2.5.seconds, self, Respawn)
@@ -689,7 +706,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			println("home " + lastWaypoint)*/
 
 			say("home at " + selfEnt.pos)
-			rewardAcc += VecN("home" -> 100.0)
+			botThink ! BotThink.AccumReward(VecN("home" -> 100.0))
 
 		case "stop" =>
 			say("Stopping goal")

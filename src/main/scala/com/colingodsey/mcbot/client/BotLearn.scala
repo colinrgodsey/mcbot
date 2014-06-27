@@ -4,7 +4,21 @@ import com.colingodsey.collections._
 import com.colingodsey.logos.collections.{Vec3, IVec3}
 import com.colingodsey.ai.{BoltzmannSelector, QLearningValues, Selector}
 import com.colingodsey.mcbot.world.{Block, BlockPathFinder, WorldView}
-import akka.actor.{ActorLogging, Actor}
+import com.colingodsey.mcbot.client.BotClient.View
+import akka.actor._
+import com.colingodsey.mcbot.client.BotLearn.{StateAction, Action, States}
+import com.colingodsey.mcbot.client.BotThink.ActionFinished
+import org.tmatesoft.sqljet.core.table.SqlJetDb
+import java.io._
+import org.tmatesoft.sqljet.core.{SqlJetException, SqlJetTransactionMode}
+import scala.util.Try
+import scala.concurrent.blocking
+import com.colingodsey.mcbot.client.WorldTile.TileState
+import org.tmatesoft.sqljet.core.schema.SqlJetConflictAction
+import scala.Some
+import com.colingodsey.mcbot.client.BotThink.ActionFinished
+import com.colingodsey.mcbot.client.BotLearn.StateAction
+import scala.collection.immutable.VectorBuilder
 
 /*
 
@@ -122,10 +136,15 @@ trait BotLearn extends QLearningValues {
 	def calcQ(sa: StateAction, reward: VecN, dest: State, w: Double): VecN =
 		calcQ(sa, reward, controls(dest), w)
 
-	def policy(states: States, desire: VecN): Option[Action] = {
+	def policy(states: States, desire: VecN, ignoreStates0: Set[State]): Option[Action] = {
+		val stateSet = states.keySet
+		val ignoreStates: Set[Option[State]] =
+			ignoreStates0.map(Some.apply) ++ stateSet.map(Some.apply)
+
 		val actionPairs = for {
 			(fromState, w0) <- states.toSeq
 			ctr @ StateAction(_, action) <- controls(fromState)
+			if !ignoreStates(action.toStateOpt)
 			q = qValueForPolicy(ctr)
 			w1 = (desire * q) * w0
 			w1c = math.max(w1, 0)
@@ -217,7 +236,7 @@ trait WorldTile extends BotLearn {
 	import BotLearn._
 	import WorldTile._
 
-	implicit val clientView: BotClientView
+	implicit val clientView: BotClient.View
 	import clientView._
 
 	def tileStatesFor = TileState statesFor _
@@ -229,10 +248,17 @@ trait WorldTile extends BotLearn {
 
 object BotThink {
 	case class BlockPath(start: Block, moves: Seq[Vec3])
+
+	case class ActionFinished(dt: Double)
+	case object MaybeSelectGoal
+	case object SelectGoal
+	case object ClearGoal
+	case class AccumReward(r: VecN)
 }
 
 trait BotThink extends WorldTile with BotLearn with Actor with ActorLogging {
 	import BotLearn._
+	import BotThink._
 	import WorldTile._
 
 	def isSane(sa: StateAction): Boolean
@@ -265,7 +291,7 @@ trait BotThink extends WorldTile with BotLearn with Actor with ActorLogging {
 	override def qValueForPolicy(sa: StateAction): VecN = {
 		val q = qValue(sa)
 
-		if(q == Vec3.zero) VecN("discover" -> 1000.0)
+		if(q == VecN.zero) VecN("discover" -> 1000.0)
 		else q
 	}
 
@@ -331,22 +357,204 @@ trait BotThink extends WorldTile with BotLearn with Actor with ActorLogging {
 
 	//finished on action complete
 	def actionFinished(dt: Double = 1) {
+		log.debug("action finished")
 		val curStates = currentTileStates
 
-		if(currentAction.isDefined)
+		if(currentAction.isDefined) {
 			updateStates(lastStates, curStates, currentAction.get, rewardAcc, dt)
 
+			lastStates.toSeq.sortBy(-_._2).headOption match {
+				case Some((s: TileState, w)) =>
+					updateStates(curStates, lastStates, TileTransition(s), VecN.zero, dt * 0.25)
+				case _ =>
+			}
+		}
+
+		val prevOld = lastStates
 		lastStates = curStates
 		currentAction = None
-		maybeSelectGoal()
+		maybeSelectGoal(prevOld)
 	}
 
-	def maybeSelectGoal() = if(currentAction == None) {
-		currentAction = policy(currentTileStates, desire)
+	def maybeSelectGoal(prevOldStates: States = Map.empty) = if(currentAction == None) blocking {
+		currentAction = policy(currentTileStates, desire, prevOldStates.map(_._1).toSet)
 		log.info("Selecting new action " + currentAction)
 		rewardAcc = VecN.zero
 
 		if(currentAction != None)
 			actionSelected(currentTileStates, currentAction.get)
+	}
+}
+
+class BotThinkActor(bot: ActorRef, wv: WorldView) extends BotThink with Actor
+		with ActorLogging with BotClient.ViewReceiver with BotPathing with WorldTile {
+	import BotThink._
+
+	implicit val clientView: View = this
+	implicit val worldView: WorldView = wv
+
+	val stateSaveActor = context.actorOf(
+		Props(classOf[StateSaveActor], self).withDispatcher("mcbot.db-pinned-dispatcher"),
+		name = "state-save")
+
+	def γ: Double = 0.8
+	def α0: Double = 0.7
+
+	context watch stateSaveActor
+
+	override def isSane(sa: StateAction): Boolean = (sa.fromState, sa.action) match {
+		case (s: WorldTile.TileState, t @ WorldTile.TileTransition(dest)) =>
+			s.neighborMoves(t) && getShortPath(s.pos, dest.pos).length > 1 && s != dest
+		case _ => false
+	}
+
+	override def setQValue(sa: StateAction, q: VecN) {
+		super.setQValue(sa, q)
+
+		stateSaveActor ! StateSaveActor.SaveState(sa.fromState, stateActions(sa.fromState))
+	}
+
+	def actionSelected(states: States, action: Action) =
+		bot ! BotClient.ActionSelected(states, action)
+
+	def receive: Receive = viewReceive orElse {
+		case BotClient.Desire(d) => desire = d
+		case MaybeSelectGoal => maybeSelectGoal()
+		case ClearGoal =>
+			currentAction = None
+			rewardAcc = VecN.zero
+		case SelectGoal =>
+			self ! ClearGoal
+			self ! MaybeSelectGoal
+		case ActionFinished(dt) => actionFinished(dt)
+		case AccumReward(r) => rewardAcc += r
+		case StateSaveActor.LoadState(state, actions) =>
+			stateActions += state -> actions
+	}
+
+	override def postStop() {
+		context stop self
+	}
+}
+
+object StateSaveActor {
+	case class SaveState(state: BotLearn.State, map: Map[Action, VecN])
+	case class LoadState(state: BotLearn.State, map: Map[Action, VecN])
+}
+
+class StateSaveActor(botThink: ActorRef) extends Actor with ActorLogging {
+	import StateSaveActor._
+
+	val dbFileName = "./state.db"
+	val createTable = "CREATE TABLE tile_states (id VARCHAR PRIMARY KEY, " +
+			"x INTEGER, " +
+			"y INTEGER, " +
+			"z INTEGER, " +
+			"state VARBINARY(1024) NOT NULL, " +
+			"actions VARBINARY(4000) NOT NULL)"
+	val indexes = Seq(
+		"CREATE INDEX x_index ON tile_states(x)",
+		"CREATE INDEX y_index ON tile_states(y)",
+		"CREATE INDEX z_index ON tile_states(z)"
+	)
+
+	val dbFile = new File(dbFileName)
+	val db = SqlJetDb.open(dbFile, true)
+
+	Try(db.getOptions.setAutovacuum(true))
+
+	try {
+		db.beginTransaction(SqlJetTransactionMode.WRITE)
+		db.getOptions.setUserVersion(1)
+	} finally db.commit()
+
+	try {
+		db.beginTransaction(SqlJetTransactionMode.WRITE)
+
+		db.createTable(createTable)
+		indexes.foreach(db.createIndex)
+	} catch {
+		case x: SqlJetException =>
+			//log.error(x, "SQL failed")
+			log.info("db already exists, or failed to create")
+	} finally db.commit()
+
+	val table = db.getTable("tile_states")
+
+	loadAll()
+
+	def serialize(obj: Any) = {
+		val bos = new ByteArrayOutputStream
+		val out = new ObjectOutputStream(bos)
+
+		out.writeObject(obj)
+
+		val ba = bos.toByteArray
+
+		bos.close
+		out.close
+
+		ba
+	}
+
+	def deserialize[T](dat: Array[Byte]) = {
+		val bis = new ByteArrayInputStream(dat)
+		val in = new ObjectInputStream(bis)
+
+		val obj = in.readObject
+
+		bis.close
+		in.close
+
+		obj.asInstanceOf[T]
+	}
+
+	def loadAll() = blocking {
+		db.beginTransaction(SqlJetTransactionMode.READ_ONLY)
+		val cursor = table.order(table.getPrimaryKeyIndexName)
+
+		val builder = new VectorBuilder
+		var numLoaded = 0
+
+		def proc() {
+			val tileState = deserialize[TileState](cursor.getBlobAsArray("state"))
+			val actions = deserialize[Map[Action, VecN]](cursor.getBlobAsArray("actions"))
+
+			botThink ! LoadState(tileState, actions)
+		}
+
+		if(!cursor.eof()) {
+			proc()
+
+			while(cursor.next()) proc()
+		}
+		db.commit()
+
+		log.info(s"Loaded $numLoaded states from db")
+
+		numLoaded
+	}
+
+	def receive = {
+		case save @ SaveState(state: TileState, map) => blocking {
+			try {
+				db.beginTransaction(SqlJetTransactionMode.WRITE)
+				//TODO: should really use something other than hashcode and java ser lol
+				table.insertOr(SqlJetConflictAction.REPLACE,
+					state.hashCode().toString, state.tilePos.x: java.lang.Long,
+					state.tilePos.y: java.lang.Long,
+					state.tilePos.z: java.lang.Long,
+					serialize(state), serialize(map))
+				log.debug("inserted!")
+			} finally db.commit()
+		}
+
+		case save @ SaveState(state, map) =>
+			log.warning("dont know how to save state " + state)
+	}
+
+	override def postStop() {
+		db.close()
+		context stop self
 	}
 }

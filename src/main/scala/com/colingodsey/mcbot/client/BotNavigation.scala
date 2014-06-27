@@ -19,7 +19,7 @@ object BotNavigation {
 	case class MoveFound(move: Option[Vec3])
 }
 
-trait BotMovement extends BotClientView with BotClientControl
+trait BotMovement extends BotClient.View with BotClientControl
 		with CollisionDetection with ActorLogging with Actor {
 	implicit val worldView: WorldView
 	import worldView._
@@ -156,7 +156,7 @@ trait BotMovement extends BotClientView with BotClientControl
 	}
 }
 
-trait BotPathing extends BotClientView {
+trait BotPathing extends BotClient.View {
 	implicit val worldView: WorldView
 	import worldView._
 

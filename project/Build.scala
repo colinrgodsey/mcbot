@@ -41,13 +41,16 @@ object General {
 
 			//"com.typesafe.atmos"    %   "trace-akka-2.2.1_2.10"     % "1.3.0",
 
+			"org.tmatesoft.sqljet"  % "sqljet"                      % "1.1.10",
+
 			"org.scalatest" 		%%  "scalatest"                 % "1.9"  % "test",
 			"junit" 				%   "junit"					    % "4.10" % "test"
 		),
 
 		resolvers ++= Seq(
 			"spray repo" at "http://repo.spray.io/",
-			"jsi repo" at "http://sourceforge.net/projects/jsi/files/m2_repo"
+			"jsi repo" at "http://sourceforge.net/projects/jsi/files/m2_repo",
+			"tmate" at "http://maven.tmatesoft.com/content/repositories/releases"
 		)
 	) /*++ assemblySettings*/ ++ Revolver.settings ++ atmosSettings
 

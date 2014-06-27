@@ -311,15 +311,11 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 
 	val blockChange: Actor.Receive = {
 		case a @ cpr.BlockChange(x, y, z, blockID, blockMeta) => try {
-			val bpos = IVec3(x, y & 0xFF, z)
-			val chunk = getChunkAt(bpos)
+			val block = Block(IVec3(x, y & 0xFF, z))
+			val chunk = block.chunk
 
-			chunk.setTyp(bpos.x.toInt - chunk.x * Chunk.dims.x,
-				bpos.y.toInt - chunk.y * Chunk.dims.y,
-				bpos.z.toInt - chunk.z * Chunk.dims.z, blockID.x)
-			chunk.setMeta(bpos.x.toInt - chunk.x * Chunk.dims.x,
-				bpos.y.toInt - chunk.y * Chunk.dims.y,
-				bpos.z.toInt - chunk.z * Chunk.dims.z, blockMeta)
+			chunk.setTyp(block.cx, block.cy, block.cz, blockID.x)
+			chunk.setMeta(block.cx, block.cy, block.cz, blockMeta)
 		} catch {
 			//case t: Throwable => log.error(t, "Failed blockchange!")
 			case x: FindChunkError =>
