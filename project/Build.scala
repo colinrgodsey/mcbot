@@ -12,7 +12,7 @@ import com.typesafe.sbt.SbtAtmos.{ Atmos, atmosSettings }
 object General {
 	val settings = Defaults.defaultSettings ++ Seq (
 		name := "MCB",
-		version := "0.2",
+		version := "0.4",
 		scalaVersion := scalaV,
 		organization  := "com.colingodsey",
 		javacOptions ++= Seq("-encoding", "UTF-8", "-source", "1.6", "-target", "1.6"),
