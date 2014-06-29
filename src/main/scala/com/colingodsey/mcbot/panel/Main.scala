@@ -27,6 +27,7 @@ import com.colingodsey.collections.{VecN, MapVector}
 import com.colingodsey.mcbot.client.WorldTile.TileState
 import com.colingodsey.mcbot.client.BotLearn.Action
 import com.colingodsey.mcbot.client.StateSaveActor.LoadState
+import javafx.scene.input.ScrollEvent
 
 class Main extends Application {
 	val defCfg = ConfigFactory.load(getClass.getClassLoader)
@@ -69,7 +70,7 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 	import context.dispatcher
 
 	val yScale = 1 / 20
-	val latScale = 5.4
+	def latScale = 5.4 * scrollRatio
 
 	val subscribeTimer = context.system.scheduler.schedule(
 		1.seconds, 5.seconds, self, SubTimer)
@@ -86,6 +87,7 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 	var stateNodes = Map[TileState, Group]()
 	var curPos = Vec3.zero
 	var curDesire: Vec = MapVector()
+	var scrollRatio = 1.0
 
 	selfCircle.setFill(Color.TRANSPARENT)
 	selfCircle.setStroke(Color.WHITE)
@@ -107,6 +109,15 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 
 	stage setScene scene
 	root.getChildren add selfCircle
+
+	root.setOnScroll(new EventHandler[ScrollEvent] {
+		def handle(event: ScrollEvent) {
+			//node.setTranslateX(node.getTranslateX() + event.getDeltaX());
+			//node.setTranslateY(node.getTranslateY() + event.getDeltaY());
+
+			scrollRatio += event.getDeltaY / 100.0
+		}
+	})
 
 	log.info("UI starting...")
 
@@ -322,6 +333,9 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 			root.setTranslateX(-curPos.x * latScale)
 			root.setTranslateY(-curPos.z * latScale)
 			root.setTranslateZ(curPos.y - 1.2)
+
+			root.setScaleX(latScale)
+			root.setScaleY(latScale)
 
 			selfCircle.setTranslateX(curPos.x)
 			selfCircle.setTranslateY(curPos.z)

@@ -25,6 +25,8 @@ object Block {
 	case object Gravel extends ASolidBlockType(13)
 	case object GoldOre extends ASolidBlockType(14)
 	//
+	case object Bed extends ASolidBlockType(26)
+	//
 	case object Torch extends ABlockType(50)
 	//
 	case object RedstoneWire extends ABlockType(55)
@@ -68,7 +70,7 @@ object Block {
 	}
 
 	val typeSet = Set[BlockType](Air, Stone, Grass, Dirt, Bedrock, FlowWater,
-		FlowLava, Sand, Gravel, GoldOre, Torch, RedstoneWire, Fence, Gate,
+		FlowLava, Sand, Gravel, GoldOre, Bed, Torch, RedstoneWire, Fence, Gate,
 		WoodDoor, IronDoor, NetherFence, Rail, Lava, Water, Snow)
 
 	val halfBlockVec = Vec3.one / 2
@@ -132,6 +134,14 @@ trait Block extends Equals {
 
 	def below(implicit wv: WorldView) = wv.getBlock(pos - Vec3(0, 1, 0))
 	def above(implicit wv: WorldView) = wv.getBlock(pos.toVec3 + Vec3(0, 1, 0))
+
+	def neighbors(implicit wv: WorldView) = (for {
+		x <- -1 to 1
+		y <- -1 to 1
+		z <- -1 to 1
+		v = Vec3(x, y, z)
+		if v != Vec3.zero
+	} yield wv.getBlock(center - v)).toSet
 
 	def btyp(implicit wv: WorldView) = Block.types(typ)
 

@@ -255,6 +255,14 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			//log.info("in water")
 		}
 
+		//check block around for bed
+		val beds = footBlock.neighbors.filter(_.btyp == Block.Bed)
+
+		if(!beds.isEmpty) {
+			log.info("FOUND BED!")
+			botThink ! BotThink.AccumReward(VecN("home" -> 100.0))
+		}
+
 		botThink ! BotThink.ActionFinished(1.0) //TODO: real time delta
 		botThink ! BotThink.MaybeSelectGoal
 	}

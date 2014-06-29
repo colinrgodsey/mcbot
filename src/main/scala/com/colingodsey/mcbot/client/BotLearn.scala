@@ -16,7 +16,7 @@ import com.colingodsey.mcbot.client.WorldTile.TileState
 import scala.Some
 import com.colingodsey.mcbot.client.BotThink.ActionFinished
 import com.colingodsey.mcbot.client.BotLearn.StateAction
-import scala.collection.immutable.VectorBuilder
+import scala.collection.immutable.{Queue, VectorBuilder}
 import org.hsqldb.persist.HsqlProperties
 import java.sql.DriverManager
 
@@ -418,16 +418,23 @@ class BotThinkActor(bot: ActorRef, wv: WorldView) extends BotThink with Actor
 
 	var subscribers = Set[ActorRef]()
 
+	//only redo StateActions if we get stuck
+	var lastStateActions = Queue[StateAction]()
+
+	val maxSAQueueLength = 15
+
 	def γ: Double = 0.8
 	def α0: Double = 0.7
 
 	context watch stateSaveActor
 
-	override def isSane(sa: StateAction): Boolean = (sa.fromState, sa.action) match {
+	def isStale(sa: StateAction) = lastStateActions contains sa
+
+	override def isSane(sa: StateAction): Boolean = ((sa.fromState, sa.action) match {
 		case (s: WorldTile.TileState, t @ WorldTile.TileTransition(dest)) =>
 			s.neighborMoves(t) && pathTo(s.pos, dest).length > 1 && s != dest
 		case _ => false
-	}
+	}) && !isStale(sa)
 
 	override def setQValue(sa: StateAction, q: VecN) {
 		super.setQValue(sa, q)
@@ -439,8 +446,22 @@ class BotThinkActor(bot: ActorRef, wv: WorldView) extends BotThink with Actor
 		subscribers.foreach(_ ! StateSaveActor.LoadState(sa.fromState, stateActions(sa.fromState)))
 	}
 
-	def actionSelected(states: States, action: Action) =
+	def actionSelected(states0: States, action: Action) = {
+		val states = BotLearn.normalizeWeights(states0)
 		bot ! BotClient.ActionSelected(states, action)
+
+		val selQ = qValue(states0.map(x => StateAction(x._1, action) -> x._2))
+
+		log.info(s"Select action $action with q $selQ")
+
+		//not finding some good actions
+		if((selQ * desire) <= 0) lastStateActions = Queue.empty
+
+		if(lastStateActions.length > maxSAQueueLength)
+			lastStateActions = lastStateActions.drop(lastStateActions.length - maxSAQueueLength)
+
+		lastStateActions ++= states.map(pair => StateAction(pair._1, action))
+	}
 
 	def receive: Receive = viewReceive orElse {
 		case BotClient.Subscribe =>
@@ -490,10 +511,11 @@ class StateSaveActor(botThink: ActorRef) extends Actor with ActorLogging {
 			"state VARBINARY(10240) NOT NULL, " +
 			"actions VARBINARY(40000) NOT NULL, " +
 			"CONSTRAINT pk_pos PRIMARY KEY (x,y,z) )"
+	//val createAttachmentsTable = "CREATE TABLE IF NOT EXISTS attachments ( " +
 	val indexes = Seq(
-		"CREATE INDEX x_index ON tile_states(x)",
-		"CREATE INDEX y_index ON tile_states(y)",
-		"CREATE INDEX z_index ON tile_states(z)"
+		"CREATE INDEX IF NOT EXISTS x_index ON tile_states(x)",
+		"CREATE INDEX IF NOT EXISTS y_index ON tile_states(y)",
+		"CREATE INDEX IF NOT EXISTS z_index ON tile_states(z)"
 	)
 
 	var cachedSaves = Map[BotLearn.State, SaveState]()
