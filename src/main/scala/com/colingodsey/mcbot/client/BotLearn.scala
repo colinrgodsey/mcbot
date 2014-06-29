@@ -20,23 +20,6 @@ import scala.collection.immutable.{Queue, VectorBuilder}
 import org.hsqldb.persist.HsqlProperties
 import java.sql.DriverManager
 
-/*
-
-TODO:
-*tiled should produce a larger selection list, weighted appropriately
-*a movement into a tiled area produces a tiled transition with appr weights
-*qValue should be weighted average of discrete transition
-* motion tiled transition is weighted of discrete TileTransition
-*
-*
-*
-* AHHHHHH
-* There should be only one action and toState per Transition
-* toState exists only for reference to control
-* a StateAction has multiple states with weights
-* tiles can end up having StateAction relationships with tiles not directly connected
-* the above will result in lots of meshing
- */
 
 object BotLearn {
 	val tileD = 3.0
@@ -375,11 +358,15 @@ trait BotThink extends WorldTile with BotLearn with Actor with ActorLogging {
 	}
 
 	//finished on action complete
+	//TODO: make only  actions to a toState if we're more in the state than we were before.
+	//a weight based on how much movement towards the state were in ?
 	def actionFinished(dt: Double = 1) {
 		log.debug("action finished")
 		val curStates = currentTileStates
 
 		if(currentAction.isDefined) {
+			//TODO: this should allow transfers to non-sane states...
+			//can still be used in selection to further weight other tiles actions
 			updateStates(lastStates, curStates, currentAction.get, rewardAcc, dt)
 
 			lastStates.toSeq.sortBy(-_._2).headOption match {
@@ -397,7 +384,7 @@ trait BotThink extends WorldTile with BotLearn with Actor with ActorLogging {
 
 	def maybeSelectGoal(prevOldStates: States = Map.empty) = if(currentAction == None) blocking {
 		currentAction = policy(currentTileStates, desire, prevOldStates.map(_._1).toSet)
-		log.info("Selecting new action " + currentAction)
+		//log.info("Selecting new action " + currentAction)
 		rewardAcc = VecN.zero
 
 		if(currentAction != None)
@@ -432,7 +419,10 @@ class BotThinkActor(bot: ActorRef, wv: WorldView) extends BotThink with Actor
 
 	override def isSane(sa: StateAction): Boolean = ((sa.fromState, sa.action) match {
 		case (s: WorldTile.TileState, t @ WorldTile.TileTransition(dest)) =>
-			s.neighborMoves(t) && pathTo(s.pos, dest).length > 1 && s != dest
+			//use our position if were in this state, otherwise use center
+			val path = if(s.contains(footBlock.center) > 0) pathTo(selfEnt.pos, dest)
+			else pathTo(s.pos, dest)
+			/*s.neighborMoves(t) && */path.length > 1 && s != dest
 		case _ => false
 	}) && !isStale(sa)
 
@@ -452,7 +442,7 @@ class BotThinkActor(bot: ActorRef, wv: WorldView) extends BotThink with Actor
 
 		val selQ = qValue(states0.map(x => StateAction(x._1, action) -> x._2))
 
-		log.info(s"Select action $action with q $selQ")
+		log.info(s"Select action $action with q $selQ states $states ")
 
 		//not finding some good actions
 		if((selQ * desire) <= 0) lastStateActions = Queue.empty
@@ -491,198 +481,5 @@ class BotThinkActor(bot: ActorRef, wv: WorldView) extends BotThink with Actor
 	}
 }
 
-object StateSaveActor {
-	case class SaveState(state: BotLearn.State, map: Map[Action, VecN])
-	case class LoadState(state: BotLearn.State, map: Map[Action, VecN])
-}
-
-class StateSaveActor(botThink: ActorRef) extends Actor with ActorLogging {
-	import StateSaveActor._
-
-	implicit def ec = context.system.dispatcher
-
-	def saveDelay = 5.seconds
-
-	val dbFileName = "./state.db"
-	val createTable = "CREATE TABLE IF NOT EXISTS tile_states ( " +
-			"x INTEGER, " +
-			"y INTEGER, " +
-			"z INTEGER, " +
-			"state VARBINARY(10240) NOT NULL, " +
-			"actions VARBINARY(40000) NOT NULL, " +
-			"CONSTRAINT pk_pos PRIMARY KEY (x,y,z) )"
-	//val createAttachmentsTable = "CREATE TABLE IF NOT EXISTS attachments ( " +
-	val indexes = Seq(
-		"CREATE INDEX IF NOT EXISTS x_index ON tile_states(x)",
-		"CREATE INDEX IF NOT EXISTS y_index ON tile_states(y)",
-		"CREATE INDEX IF NOT EXISTS z_index ON tile_states(z)"
-	)
-
-	var cachedSaves = Map[BotLearn.State, SaveState]()
-
-	object SaveCached
-
-	val saveTimer = context.system.scheduler.schedule(15.seconds, saveDelay, self, SaveCached)
-
-	val hsqlProps = new HsqlProperties
-	val server = new org.hsqldb.Server()
-	server.setProperties(hsqlProps)
-	server.setDatabaseName(0, "mcbot");
-	server.setDatabasePath(0, "file:db/db");
-	//server.start()
-
-	classOf[org.hsqldb.jdbcDriver]
-	//val con = DriverManager.getConnection("jdbc:hsqldb:hsql://localhost/mcbot", "sa", "")
-	val con = DriverManager.getConnection("jdbc:hsqldb:file:db/db;shutdown=true")
-
-	try {
-		con.createStatement.executeUpdate(createTable)
-		indexes foreach con.createStatement.executeUpdate
-	} catch {
-		case x: Throwable =>
-			//log.error()
-	}
 
 
-
-	/*
-	val dbFile = new File(dbFileName)
-	val db = SqlJetDb.open(dbFile, true)
-
-	Try(db.getOptions.setAutovacuum(true))
-
-	try {
-		db.beginTransaction(SqlJetTransactionMode.WRITE)
-		db.getOptions.setUserVersion(1)
-	} finally db.commit()
-
-	try {
-		db.beginTransaction(SqlJetTransactionMode.WRITE)
-
-		db.createTable(createTable)
-		indexes.foreach(db.createIndex)
-	} catch {
-		case x: SqlJetException =>
-			//log.error(x, "SQL failed")
-			log.info("db already exists, or failed to create")
-	} finally db.commit()
-
-	val table = db.getTable("tile_states")*/
-
-	loadAll()
-
-	def serialize(obj: Any) = {
-		val bos = new ByteArrayOutputStream
-		val out = new ObjectOutputStream(bos)
-
-		out.writeObject(obj)
-
-		val ba = bos.toByteArray
-
-		bos.close
-		out.close
-
-		ba
-	}
-
-	def deserialize[T](dat: Array[Byte]) = {
-		val bis = new ByteArrayInputStream(dat)
-		val in = new ObjectInputStream(bis)
-
-		val obj = in.readObject
-
-		bis.close
-		in.close
-
-		obj.asInstanceOf[T]
-	}
-
-	def loadAll() = blocking {
-		val rs = con.createStatement.executeQuery("SELECT * FROM tile_states")
-
-		var numLoaded = 0
-		while(rs.next) {
-			val tileState = deserialize[TileState](rs.getBytes("state"))
-			val actions = deserialize[Map[Action, VecN]](rs.getBytes("actions"))
-
-			botThink ! LoadState(tileState, actions)
-
-			numLoaded += 1
-		}
-
-		log.info(s"Loaded $numLoaded states from db")
-
-		numLoaded
-	}
-
-	def receive = {
-		case SaveCached if !cachedSaves.isEmpty => blocking {
-			/*db.beginTransaction(SqlJetTransactionMode.WRITE)
-
-			cachedSaves.values foreach {
-				case save @ SaveState(state: TileState, map) =>
-						//TODO: should really use something other than hashcode and java ser lol
-						table.insertOr(SqlJetConflictAction.REPLACE,
-							state.hashCode().toString, state.tilePos.x: java.lang.Long,
-							state.tilePos.y: java.lang.Long,
-							state.tilePos.z: java.lang.Long,
-							serialize(state), serialize(map))
-				case save @ SaveState(state, map) =>
-					log.warning("dont know how to save state " + state)
-			}
-
-			cachedSaves = Map.empty
-
-			db.commit()*/
-
-			cachedSaves.values foreach {
-				case save @ SaveState(state: TileState, map) =>
-					val st2 = con.prepareStatement(
-						"INSERT INTO tile_states VALUES(?, ?, ?, ?, ?)")
-
-					st2.setInt(1, state.tilePos.x)
-					st2.setInt(2, state.tilePos.y)
-					st2.setInt(3, state.tilePos.z)
-					st2.setBytes(4, serialize(state))
-					st2.setBytes(5, serialize(map))
-
-					try st2.executeUpdate() catch {
-						case x: Throwable =>
-							log.info(x.toString)
-
-							val st = con.prepareStatement(
-								"UPDATE tile_states SET actions = ? WHERE x = ? " +
-										"AND y = ? AND z = ?")
-
-							st.setBytes(1, serialize(map))
-							st.setInt(2, state.tilePos.x)
-							st.setInt(3, state.tilePos.y)
-							st.setInt(4, state.tilePos.z)
-
-							st.executeUpdate()
-					}
-				case save @ SaveState(state, map) =>
-					log.warning("dont know how to save state " + state)
-			}
-
-			log.info("save states " + cachedSaves.size)
-
-			cachedSaves = Map.empty
-		}
-		case save @ SaveState(state, _) =>
-			cachedSaves += state -> save
-
-	}
-
-	override def postStop() {
-		if(con != null) {
-			val st = con.createStatement
-			st.execute("SHUTDOWN")
-			con.close()
-		}
-
-		//db.close()
-		//server.stop()
-		context stop self
-	}
-}

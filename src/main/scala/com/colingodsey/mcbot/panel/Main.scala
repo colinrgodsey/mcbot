@@ -230,11 +230,11 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 		node.getChildren add circle
 
 		circle.setFill(Color.WHITE)
-		circle.setRadius(2)
+		circle.setRadius(0.5)
 
 		actions foreach {
 			case (WorldTile.TileTransition(dest), q) =>
-				val vec = dest.pos - tileState.pos
+				val vec = (dest.pos - tileState.pos) / 2
 
 				//Some(v, q * curDesire)
 				val line = new Line
