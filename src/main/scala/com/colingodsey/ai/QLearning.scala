@@ -146,7 +146,9 @@ trait QLearning[T, U <: VecLike[U]] extends QLearningValues {
 }*/
 
 trait QLearningValues {
-	def γ: Double //gamma, how much the max q of associated state is blended in
+	//gamma, how much the max q of associated state is blended in
+	//higer means more foresight
+	def γ: Double
 	def α0: Double //alpha, familiarity
 
 	def gamma = γ

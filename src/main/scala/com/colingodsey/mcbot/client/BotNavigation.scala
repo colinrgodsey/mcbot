@@ -194,7 +194,8 @@ trait BotPathing extends BotClient.View {
 		val endBlock = getBlock(to.pos)
 
 		getPath(startBlock, endBlock, 500)(bl =>
-			to.contains(bl.center) > 0 && bl != startBlock)
+			to.contains(bl.center) > 0 && bl != startBlock &&
+				(bl.pos - startBlock.pos).length > 1)
 	}
 
 	def getShortPath(from: Vec3, to: Vec3): Seq[Block] = blocking {

@@ -43,9 +43,8 @@ object Main extends App {
 	// start a new HTTP server on port 8080 with our service actor as the handler
 	//IO(Http) ? Http.Bind(service, interface = "0.0.0.0", port = 8099)
 
-	//system.awaitTermination
-	while(!system.isTerminated) {
-		Thread.sleep(500)
-
+	sys addShutdownHook {
+		system.shutdown()
+		system.awaitTermination()
 	}
 }

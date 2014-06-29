@@ -41,7 +41,8 @@ object General {
 
 			//"com.typesafe.atmos"    %   "trace-akka-2.2.1_2.10"     % "1.3.0",
 
-			"org.tmatesoft.sqljet"  % "sqljet"                      % "1.1.10",
+			//"org.tmatesoft.sqljet"  % "sqljet"                      % "1.1.10",
+			"org.hsqldb" % "hsqldb" % "2.3.2",
 
 			"org.scalatest" 		%%  "scalatest"                 % "1.9"  % "test",
 			"junit" 				%   "junit"					    % "4.10" % "test"

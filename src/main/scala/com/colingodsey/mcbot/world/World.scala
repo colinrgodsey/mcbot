@@ -183,7 +183,7 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 
 			val terminal = if(isWater) terminal0 / 2 else terminal0
 			val drag = if(isWater) drag0 * 1.3
-			else if(ent.onGround) drag0 * 1.1
+			else if(ent.onGround) drag0 * 1.2
 			else drag0
 
 			val gravAcc = if(isWater) Vec3(0, -gravity / 20, 0)
@@ -195,7 +195,9 @@ trait WorldClient extends World with WorldView with CollisionDetection {
 			val dragFac = (1 - drag * dt)
 
 			val evalVel = ent.vel.clamp(terminal) + gravAcc * dt
-			val terminalVel = (evalVel * dragFac) clamp terminal
+			val terminalVel0 = (evalVel * dragFac) clamp terminal
+			val terminalVel = if(terminalVel0.length > 0.2) terminalVel0
+			else Vec3.zero
 
 			//TODO: add real start solid detection
 			//println("start trymkove")

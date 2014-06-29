@@ -96,14 +96,14 @@ object BotClient {
 		def food: Double
 		def heldItem: Int
 		def desire: VecN
-		def footBlock: Block
 		def selfEnt: Player
 		def selfId: Int
 
+		implicit val worldView: WorldView
+
 		def footPos: Vec3 = selfEnt.pos - Vec3(0, stanceDelta, 0)
 		def footBlockPos = footPos + Vec3(0, 0.5, 0)
-
-		implicit val worldView: WorldView
+		def footBlock = worldView.getBlock(footBlockPos)
 
 		def dead = selfEnt.health <= 0
 
@@ -121,7 +121,7 @@ object BotClient {
 		var heldItem: Int = 0
 		var selfId: Int = 0
 		var desire: VecN = VecN.zero
-		var footBlock: Block = WVBlock(IVec3(Vec3.zero))
+		//var footBlock: Block = WVBlock(IVec3(Vec3.zero))
 
 		def selfEnt: Player = worldView.entities(selfId).asInstanceOf[Player]
 
@@ -249,6 +249,12 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	def maxHealth = selfEnt.prop("generic.maxHealth")
 
 	def finishGoal() {
+		//log.info("finish goal")
+		if(footBlock.above.btyp.isWater) {
+			botThink ! BotThink.AccumReward(VecN("water" -> 0.1))
+			//log.info("in water")
+		}
+
 		botThink ! BotThink.ActionFinished(1.0) //TODO: real time delta
 		botThink ! BotThink.MaybeSelectGoal
 	}
@@ -256,9 +262,6 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	def actionSelected(states: BotLearn.States, action: BotLearn.Action) = action match {
 		case WorldTile.TileTransition(toTile) =>
 			val path = pathTo(selfEnt.pos, toTile)
-
-			if(footBlock.btyp.isWater)
-				botThink ! BotThink.AccumReward(VecN("water" -> 0.1))
 
 			/*val q = qValue(states.map(pair =>
 				StateAction(pair._1, action) -> pair._2))
@@ -274,9 +277,12 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 				//desire += VecN("discover" -> 0.05)
 				botThink ! BotThink.AccumReward(VecN("deadend" -> 0.1))
 			} else {
+				if(footBlock.btyp.isWater) jump()
+
 				log.info("Following new path " + path)
 				curPath = path.toStream
 				lastPathTime = curTime
+				botThink ! BotThink.AccumReward(VecN("visited" -> 0.1))
 			}
 		case _ =>
 			log.warning("dont know how to do " + action)
@@ -304,7 +310,10 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 		val lostFac = if(isLost) 15 else 0
 
-		desire = VecN("discover" -> (20.0 * dayFac + lostFac),
+		val discover = (20.0 * dayFac + lostFac)
+
+		desire = VecN("discover" -> discover,
+			"visited" -> math.min(-discover, 0),
 			"deadend" -> -(10 * dayFac + lostFac),
 			"up" -> (if(isLost) 1.0 else 0.0),
 			"home" -> (homeFac * 1000 + rainHome + waterHome),
@@ -440,10 +449,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	}
 
 	def makeBotSnapshot: BotSnapshot = {
-		/*val wps = getNearWaypoints(selfEnt.pos, radius = 600, maxNum = 500)
-		BotSnapshot(nearWaypoints = wps.toSet,
-			curPos = selfEnt.pos, desire = desire)*/
-		???
+		BotSnapshot(curPos = selfEnt.pos, desire = desire)
 	}
 
 	def normal: Receive = worldClientReceive orElse blockChange orElse clientThink orElse unhandled
@@ -681,6 +687,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			//log.info(s"$sender just subscribed!")
 
 			context watch sender
+
+			botThink.tell(Subscribe, sender)
 
 			sender ! makeBotSnapshot
 		case Terminated(ref) if subscribers(ref) =>

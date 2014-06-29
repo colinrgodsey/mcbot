@@ -17,13 +17,16 @@ import java.util.concurrent.{AbstractExecutorService, ExecutorService, ThreadFac
 import java.util
 import javafx.scene.shape.{Line, Circle}
 import com.colingodsey.mcbot.client.BotClient.{BotPosition, BotSnapshot}
-import com.colingodsey.mcbot.client.BotClient
+import com.colingodsey.mcbot.client.{WorldTile, BotLearn, BotClient}
 import com.colingodsey.logos.collections.{Vec, Vec3}
 import javafx.event.EventHandler
 import javafx.geometry.Pos
 import javafx.beans.value.{ObservableValue, ChangeListener}
 import javax.swing.event.ChangeEvent
 import com.colingodsey.collections.{VecN, MapVector}
+import com.colingodsey.mcbot.client.WorldTile.TileState
+import com.colingodsey.mcbot.client.BotLearn.Action
+import com.colingodsey.mcbot.client.StateSaveActor.LoadState
 
 class Main extends Application {
 	val defCfg = ConfigFactory.load(getClass.getClassLoader)
@@ -35,11 +38,11 @@ class Main extends Application {
 		"akka.tcp://MCBotClient@192.168.0.102:3488/user/bot-client")
 
 	override def start(primaryStage: Stage) {
-		/*val uiProps = Props(classOf[UIStageActor],
+		val uiProps = Props(classOf[UIStageActor],
 			primaryStage, botSel).withDispatcher("jfx-dispatcher")
 		val ui = system.actorOf(uiProps, "ui")
 
-		ui ! UIStageActor.Show*/
+		ui ! UIStageActor.Show
 	}
 
 	override def stop {
@@ -51,13 +54,13 @@ class Main extends Application {
 object Main extends App {
 	Application.launch(classOf[Main], args: _*)
 }
-/*
+
 object UIStageActor {
 	case object Show
 	case object SubTimer
 
-	case class AddWaypoint(wp: Waypoint)
-	case class DelWaypoint(wpId: Int)
+	case class AddTileState(state: TileState)
+	case class DelState(state: TileState)
 }
 
 class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLogging {
@@ -79,8 +82,8 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 	camera.setFieldOfView(160)//90)
 	scene.setCamera(camera)
 
-	var wpNodes = Map[Int, Group]()
-	var waypoints = Map[Int, Waypoint]()
+	var tileStates = Map[TileState, Map[Action, VecN]]()
+	var stateNodes = Map[TileState, Group]()
 	var curPos = Vec3.zero
 	var curDesire: Vec = MapVector()
 
@@ -109,16 +112,17 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 
 	bot ! BotClient.Subscribe
 
-	def removeWaypoint(wpId: Int) = wpNodes.get(wpId) match {
+	def removeTileState(tileState: TileState) = stateNodes.get(tileState) match {
 		case Some(x) =>
 			root.getChildren remove x
-			wpNodes -= wpId
-			waypoints -= wpId
+			//x.getParent.asInstanceOf[Group].getChildren remove x
+			stateNodes -= tileState
+			tileStates -= tileState
 			true
 		case None => false
 	}
 
-	def addConnections(wp: Waypoint) {
+	/*def addConnections(wp: Waypoint) {
 		val node = wpNodes(wp.id)
 
 		//if(node.getChildren.size() > 1) return
@@ -152,9 +156,9 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 				case x: Throwable =>
 			}
 		}
-	}
+	}*/
 
-	def addWaypoint(wp: Waypoint) {
+	/*def addWaypoint(wp: Waypoint) {
 		removeWaypoint(wp.id)
 
 		val node = new Group()
@@ -194,6 +198,57 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 		root.getChildren add node
 		wpNodes += wp.id -> node
 		waypoints += wp.id -> wp
+	}*/
+
+	def addTileState(loadState: LoadState) {
+		val LoadState(tileState: TileState, actions) = loadState
+
+		removeTileState(tileState)
+
+		val node = new Group()
+		val circle = new Circle()
+
+		node.setLayoutX(0)
+		node.setLayoutY(0)
+		node.setAutoSizeChildren(false)
+
+		node.setTranslateX(tileState.pos.x)
+		node.setTranslateY(tileState.pos.z)
+		node.setTranslateZ(-tileState.pos.y)
+
+		node.getChildren add circle
+
+		circle.setFill(Color.WHITE)
+		circle.setRadius(2)
+
+		actions foreach {
+			case (WorldTile.TileTransition(dest), q) =>
+				val vec = dest.pos - tileState.pos
+
+				//Some(v, q * curDesire)
+				val line = new Line
+
+				val desireWeight = q * curDesire
+
+				val col = desireWeight / 20
+				val discoverFactor = math.max(math.min(col, 1), 0)
+				//println(disc, discoverFactor)
+				line.setStroke(Color.color(1 - discoverFactor, discoverFactor, 0))
+
+				line.setStartX(0)
+				line.setStartY(0)
+				line.setEndX(vec.x)
+				line.setEndY(vec.z)
+
+				line.setStrokeWidth(0.3)
+
+				node.getChildren add line
+			case _ =>
+		}
+
+		root.getChildren add node
+		tileStates += tileState -> actions
+		stateNodes += tileState -> node
 	}
 
 	override def postStop {
@@ -225,9 +280,12 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 			stage.show()
 		case SubTimer =>
 			bot ! BotClient.Subscribe
-		case AddWaypoint(wp) => addWaypoint(wp)
-		case DelWaypoint(id) => removeWaypoint(id)
-		case BotSnapshot(wps, pos, desire) =>
+		case a @ LoadState(state: TileState, actions) =>
+			addTileState(a)
+			//log.info("got tile state")
+ 		//case AddWaypoint(wp) => addWaypoint(wp)
+		//case DelWaypoint(id) => removeWaypoint(id)
+		case BotSnapshot(pos, desire) =>
 			log.info("Got snapshot!")
 
 			curPos = pos
@@ -241,13 +299,7 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 			selfCircle.setTranslateY(curPos.z)
 			selfCircle.setTranslateZ(-curPos.y)
 */
-			wpNodes.keySet foreach removeWaypoint
-
-			waypoints.values map { wp =>
-				val dy = wp.pos.y - curPos.y
-
-				//if(math.abs(dy) > 10) removeWaypoint(wp.id)
-			}
+			//stateNodes.keySet foreach removeTileState
 
 			/*val screen = Screen.getPrimary
 			val bounds = screen.getVisualBounds
@@ -260,18 +312,10 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 			stage setScene scene
 			stage.show()
 
-			var newWps = Set[Waypoint]()
-			wps foreach { wp =>
-				val dy = wp.pos.y - curPos.y
-				if(waypoints.get(wp.id) == Some(wp)) {
-					//do nothing?
-				} else { //if(math.abs(dy) < 10) {
-					addWaypoint(wp)
-					newWps += wp
-				}
-			}
+			stateNodes.keySet.filter { s =>
+				(s.pos - pos).length > 100 && math.abs(s.pos.y - pos.y) < 5
+			} foreach removeTileState
 
-			newWps foreach addConnections
 		case BotPosition(pos) =>
 			curPos = pos
 
@@ -279,10 +323,8 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 			root.setTranslateY(-curPos.z * latScale)
 			root.setTranslateZ(curPos.y - 1.2)
 
-
-
 			selfCircle.setTranslateX(curPos.x)
 			selfCircle.setTranslateY(curPos.z)
 			selfCircle.setTranslateZ(-curPos.y)
 	}
-}*/
+}
