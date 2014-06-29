@@ -249,6 +249,7 @@ trait BotThink extends WorldTile with BotLearn with Actor with ActorLogging {
 	import WorldTile._
 
 	def isSane(sa: StateAction): Boolean
+	def isStale(sa: StateAction): Boolean
 	def actionSelected(states: States, action: Action)
 	def desire: VecN
 	def desire_=(x: VecN)
@@ -275,11 +276,14 @@ trait BotThink extends WorldTile with BotLearn with Actor with ActorLogging {
 		map.getOrElse(action, VecN.zero)
 	}
 
+	//perceptual need weighting
 	override def qValueForPolicy(sa: StateAction): VecN = {
 		if(sa.action.toStateOpt.isDefined) {
 			val to = sa.action.toStateOpt.get
 
-			if(stateActions.get(to) == None) VecN("discover" -> 1000.0)
+
+			if(isStale(sa)) VecN("stale" -> 100.0)
+			else if(stateActions.get(to) == None) VecN("discover" -> 1000.0)
 			else qValue(sa)
 		} else qValue(sa)
 	}
@@ -424,7 +428,7 @@ class BotThinkActor(bot: ActorRef, wv: WorldView) extends BotThink with Actor
 			else pathTo(s.pos, dest)
 			/*s.neighborMoves(t) && */path.length > 1 && s != dest
 		case _ => false
-	}) && !isStale(sa)
+	}) //&& !isStale(sa)
 
 	override def setQValue(sa: StateAction, q: VecN) {
 		super.setQValue(sa, q)

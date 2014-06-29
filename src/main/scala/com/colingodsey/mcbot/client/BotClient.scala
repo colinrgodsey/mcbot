@@ -323,6 +323,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 		desire = VecN("discover" -> discover,
 			"visited" -> math.min(-discover, 0),
 			"deadend" -> -(10 * dayFac + lostFac),
+			"stale" -> -50,
 			"up" -> (if(isLost) 1.0 else 0.0),
 			"home" -> (homeFac * 1000 + rainHome + waterHome),
 			"water" -> -(10.0 + water))

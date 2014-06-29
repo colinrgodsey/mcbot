@@ -133,84 +133,6 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 		case None => false
 	}
 
-	/*def addConnections(wp: Waypoint) {
-		val node = wpNodes(wp.id)
-
-		//if(node.getChildren.size() > 1) return
-
-		wp.connections.values.map { conn =>
-			try {
-				val other = waypoints(conn.destId)
-
-				val vec = (other.pos - wp.pos).normal * 8
-
-				val line = new Line
-
-				//val disc = math.max(0, conn.weight("discover"))
-				val desireWeight = MapVector(conn.weights) * curDesire
-
-				val col = desireWeight / 20
-				val discoverFactor = math.max(math.min(col, 1), 0)
-				//println(disc, discoverFactor)
-				line.setStroke(Color.color(1 - discoverFactor, discoverFactor, 0))
-
-				line.setStartX(0)
-				line.setStartY(0)
-				line.setEndX(vec.x)
-				line.setEndY(vec.z)
-
-				line.setStrokeWidth(0.3)
-
-				node.getChildren add line
-				//root.getChildren add line
-			} catch {
-				case x: Throwable =>
-			}
-		}
-	}*/
-
-	/*def addWaypoint(wp: Waypoint) {
-		removeWaypoint(wp.id)
-
-		val node = new Group()
-		val circle = new Circle()
-
-		node.setLayoutX(0)
-		node.setLayoutY(0)
-		node.setAutoSizeChildren(false)
-
-		node.getChildren add circle
-
-		circle.setFill(Color.WHITE)
-
-		val vec = wp.pos - curPos
-
-		val circleSize = 2
-
-		//if(math.abs(vec.y) < 4) {
-			circle.setRadius(circleSize)
-		//} else {
-		//	val yFac = math.min(math.abs(vec.y) * yScale, 1)
-		//	circle.setRadius((1 - yFac) * circleSize)
-		//}
-
-		circle.setFill(Color.WHITE)
-
-		/*val disc = math.max(0, wp.connections.map(_._2.weight("discover")).max)
-
-		val discoverFactor = math.min(disc / 70, 1)
-		//println(disc, discoverFactor)
-		circle.setFill(Color.color(1 - discoverFactor, discoverFactor, 0))*/
-
-		node.setTranslateX(wp.pos.x)
-		node.setTranslateY(wp.pos.z)
-		node.setTranslateZ(-wp.pos.y)
-
-		root.getChildren add node
-		wpNodes += wp.id -> node
-		waypoints += wp.id -> wp
-	}*/
-
 	def addTileState(loadState: LoadState) {
 		val LoadState(tileState: TileState, actions) = loadState
 
@@ -229,7 +151,7 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 
 		node.getChildren add circle
 
-		circle.setFill(Color.WHITE)
+		circle.setFill(Color.color(1, 1, 1, 0.2))
 		circle.setRadius(0.5)
 
 		actions foreach {
@@ -244,7 +166,7 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 				val col = desireWeight / 20
 				val discoverFactor = math.max(math.min(col, 1), 0)
 				//println(disc, discoverFactor)
-				line.setStroke(Color.color(1 - discoverFactor, discoverFactor, 0))
+				line.setStroke(Color.color(1 - discoverFactor, discoverFactor, 0, 0.2))
 
 				line.setStartX(0)
 				line.setStartY(0)
@@ -285,6 +207,9 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 		stage.show()
 	}
 
+	def shouldHideState(s: TileState) =
+		(s.pos - curPos).length > 100 || math.abs(s.pos.y - curPos.y) > 5
+
 	def receive = {
 		case Show =>
 			log.info("UI started! Showing...")
@@ -292,7 +217,7 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 		case SubTimer =>
 			bot ! BotClient.Subscribe
 		case a @ LoadState(state: TileState, actions) =>
-			addTileState(a)
+			if(!shouldHideState(state)) addTileState(a)
 			//log.info("got tile state")
  		//case AddWaypoint(wp) => addWaypoint(wp)
 		//case DelWaypoint(id) => removeWaypoint(id)
@@ -323,9 +248,7 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 			stage setScene scene
 			stage.show()
 
-			stateNodes.keySet.filter { s =>
-				(s.pos - pos).length > 100 && math.abs(s.pos.y - pos.y) < 5
-			} foreach removeTileState
+			stateNodes.keySet.filter(shouldHideState) foreach removeTileState
 
 		case BotPosition(pos) =>
 			curPos = pos
