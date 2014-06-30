@@ -196,7 +196,8 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 	def γ: Double = 0.8
 	def α0: Double = 0.7
 
-	val botThink = context.actorOf(Props(classOf[BotThinkActor], self, this), name = "bot-think")
+	val botThink = context.actorOf(Props(classOf[BotThinkActor],
+		self, this, settings), name = "bot-think")
 	context watch botThink
 
 	val tickDelta = 50.millis//50.millis
@@ -300,7 +301,7 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 
 	def setDesires() {
 		val homeFac = math.max((-dayFac), 0)
-		val rainHome = if(isRaining) 100 else 0
+		val rainHome = if(isRaining) 20 else 0
 
 		val water = waterTokens * 10
 		val waterHome = water * 0.01
@@ -685,6 +686,9 @@ class BotClient(settings: BotClient.Settings) extends Actor with ActorLogging
 			addWaypoint(wp, isWpMaster)
 			//subscribers.foreach(_ ! wp)*/
 
+		case x: StateSaveActor.LoadState => botThink ! x
+		case StateSaveActor.SaveState(state, map) =>
+			subscribers.foreach(_.tell(StateSaveActor.LoadState(state, map), sender))
 		case snap: BotSnapshot =>
 			/*snap.nearWaypoints foreach { x =>
 				addWaypoint(x, false)

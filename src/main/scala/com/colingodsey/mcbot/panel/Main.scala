@@ -36,7 +36,7 @@ class Main extends Application {
 	implicit val system = ActorSystem("MCBotPanel", panelConfig)
 
 	val botSel = system.actorSelection(
-		"akka.tcp://MCBotClient@192.168.0.102:3488/user/bot-client")
+		"akka.tcp://MCBotClient@192.168.0.102:3488/user/bot-client2")
 
 	override def start(primaryStage: Stage) {
 		val uiProps = Props(classOf[UIStageActor],
@@ -76,6 +76,7 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 		1.seconds, 5.seconds, self, SubTimer)
 
 	val root = new StackPane
+	val content = new StackPane
 	val scene = new Scene(root, 800, 600, Color.BLACK)
 	val camera = new PerspectiveCamera
 	val selfCircle = new Circle
@@ -109,6 +110,9 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 
 	stage setScene scene
 	root.getChildren add selfCircle
+	root.getChildren add content
+
+	content setCache true
 
 	root.setOnScroll(new EventHandler[ScrollEvent] {
 		def handle(event: ScrollEvent) {
@@ -125,7 +129,7 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 
 	def removeTileState(tileState: TileState) = stateNodes.get(tileState) match {
 		case Some(x) =>
-			root.getChildren remove x
+			content.getChildren remove x
 			//x.getParent.asInstanceOf[Group].getChildren remove x
 			stateNodes -= tileState
 			tileStates -= tileState
@@ -179,7 +183,7 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 			case _ =>
 		}
 
-		root.getChildren add node
+		content.getChildren add node
 		tileStates += tileState -> actions
 		stateNodes += tileState -> node
 	}
@@ -208,7 +212,7 @@ class UIStageActor(stage: Stage, bot: ActorSelection) extends Actor with ActorLo
 	}
 
 	def shouldHideState(s: TileState) =
-		(s.pos - curPos).length > 100 || math.abs(s.pos.y - curPos.y) > 5
+		(s.pos - curPos).length > 100 || math.abs(s.pos.y - curPos.y) > 10
 
 	def receive = {
 		case Show =>

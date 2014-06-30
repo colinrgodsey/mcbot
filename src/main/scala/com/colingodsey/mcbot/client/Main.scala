@@ -26,17 +26,19 @@ object Main extends App {
 
 	// we need an ActorSystem to host our application in
 	implicit val system = ActorSystem("MCBotClient")
+	implicit val ec = system.dispatcher
 
 	val bot = system.actorOf(BotClient.props(botSettings), name = "bot-client")
 
-	/*val otherBots = for(i <- 2 to 6) yield {
-		Thread.sleep(6000)
-		val ob = system.actorOf(BotClient.props(botSettings.copy(
-			username = "funnybot" + i, wpMasterRef = Some(bot))),
-			name = "bot-client" + i)
-		bot.tell(BotClient.Subscribe, ob)
-		ob
-	}*/
+	val otherBots = for(i <- 2 to 3) yield {
+		system.scheduler.scheduleOnce((i * 16).seconds) {
+			val ob = system.actorOf(BotClient.props(botSettings.copy(
+				username = "funnybot" + i, wpMasterRef = Some(bot))),
+				name = "bot-client" + i)
+			bot.tell(BotClient.Subscribe, ob)
+			ob
+		}
+	}
 
 	implicit val timeout = Timeout(5.seconds)
 

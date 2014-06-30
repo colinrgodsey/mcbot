@@ -253,6 +253,7 @@ trait BotThink extends WorldTile with BotLearn with Actor with ActorLogging {
 	def actionSelected(states: States, action: Action)
 	def desire: VecN
 	def desire_=(x: VecN)
+	def temperature: Double
 
 	implicit val worldView: WorldView
 	import worldView._
@@ -262,7 +263,7 @@ trait BotThink extends WorldTile with BotLearn with Actor with ActorLogging {
 	var currentAction: Option[Action] = None
 	var rewardAcc = VecN.zero
 
-	def selector: Selector = BoltzmannSelector.default
+	val selector: Selector = BoltzmannSelector(temperature)
 
 	def stateActionsFor(state: State) =
 		stateActions.getOrElse(state, Map.empty)
@@ -396,16 +397,19 @@ trait BotThink extends WorldTile with BotLearn with Actor with ActorLogging {
 	}
 }
 
-class BotThinkActor(bot: ActorRef, wv: WorldView) extends BotThink with Actor
+class BotThinkActor(bot: ActorRef, wv: WorldView, settings: BotClient.Settings) extends BotThink with Actor
 		with ActorLogging with BotClient.ViewReceiver with BotPathing with WorldTile {
 	import BotThink._
 
 	implicit val clientView: View = this
 	implicit val worldView: WorldView = wv
 
-	val stateSaveActor = context.actorOf(
+	def isMaster = settings.wpMasterRef == None
+
+	val stateSaveActor = if(isMaster) context.actorOf(
 		Props(classOf[StateSaveActor], self).withDispatcher("mcbot.db-pinned-dispatcher"),
-		name = "state-save")
+			name = "state-save")
+	else settings.wpMasterRef.get
 
 	var subscribers = Set[ActorRef]()
 
@@ -414,6 +418,7 @@ class BotThinkActor(bot: ActorRef, wv: WorldView) extends BotThink with Actor
 
 	val maxSAQueueLength = 15
 
+	def temperature = 0.2
 	def γ: Double = 0.8
 	def α0: Double = 0.7
 
@@ -431,13 +436,19 @@ class BotThinkActor(bot: ActorRef, wv: WorldView) extends BotThink with Actor
 	}) //&& !isStale(sa)
 
 	override def setQValue(sa: StateAction, q: VecN) {
+		val oldStates = stateActions.get(sa.fromState)
+
 		super.setQValue(sa, q)
 
+		val newStates = stateActions.get(sa.fromState)
+
 		val save = StateSaveActor.SaveState(sa.fromState, stateActions(sa.fromState))
+		val load = StateSaveActor.LoadState(sa.fromState, stateActions(sa.fromState))
 
-		stateSaveActor ! save
-
-		subscribers.foreach(_ ! StateSaveActor.LoadState(sa.fromState, stateActions(sa.fromState)))
+		if(newStates != oldStates) {
+			stateSaveActor ! save
+			subscribers.foreach(_ ! load)
+		}
 	}
 
 	def actionSelected(states0: States, action: Action) = {
@@ -470,6 +481,7 @@ class BotThinkActor(bot: ActorRef, wv: WorldView) extends BotThink with Actor
 		case ClearGoal =>
 			currentAction = None
 			rewardAcc = VecN.zero
+			log.info("Have states now: " + stateActions.size)
 		case SelectGoal =>
 			self ! ClearGoal
 			self ! MaybeSelectGoal
@@ -477,7 +489,9 @@ class BotThinkActor(bot: ActorRef, wv: WorldView) extends BotThink with Actor
 		case AccumReward(r) => rewardAcc += r
 		case load @ StateSaveActor.LoadState(state, actions) =>
 			stateActions += state -> actions
-			subscribers.foreach(_ ! load)
+			//log.warning("laod state from " + sender)
+			if(settings.wpMaster)
+				subscribers.foreach(_ ! load)
 	}
 
 	override def postStop() {

@@ -18,6 +18,8 @@ package object collections {
 
 	final case class IVec3(x: Int, y: Int, z: Int) {
 		def toVec3 = Vec3(x, y, z)
+
+		override lazy val hashCode = (x, y, z).hashCode
 	}
 
 	implicit def IPoint3DToPoint3D(x: IVec3) = x.toVec3
